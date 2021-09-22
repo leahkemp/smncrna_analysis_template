@@ -24,10 +24,6 @@ genome_version="hg38"
 # set the adapter sequence to use in trimming
 adapter="AGATCGGAAGAGC"
 
-# note. if a nextflex adapter sequence was used in sequencing you might need to include an
-# additional hardtrim of 4bp each side by passing `TRIM_N_BASES_5p=4 TRIM_N_BASES_3p=4` to
-# the excerpt pipeline run script below
-
 # set the minimum read length
 min_read_length="17"
 
