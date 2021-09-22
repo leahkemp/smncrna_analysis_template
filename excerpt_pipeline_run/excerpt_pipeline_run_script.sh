@@ -50,14 +50,14 @@ if [[ $genome_version == "hg19" ]]; then
 	# download the database file
     wget http://org.gersteinlab.excerpt.s3-website-us-east-1.amazonaws.com/exceRptDB_v4_hg19_lowmem.tgz -P $excerpt_database_dir
     # unzip and put in public data directory
-    tar -xvf exceRptDB_v4_hg19_lowmem.tgz --directory $excerpt_database_dir
+    tar -xvf $excerpt_database_dir/exceRptDB_v4_hg19_lowmem.tgz --directory $excerpt_database_dir
     # cleanup
     rm $excerpt_database_dir/exceRptDB_v4_hg19_lowmem.tgz
 elif [[ $genome_version == "hg38" ]]; then
 	# download the database file
     wget http://org.gersteinlab.excerpt.s3-website-us-east-1.amazonaws.com/exceRptDB_v4_hg38_lowmem.tgz -P $excerpt_database_dir
     # unzip and put in public data directory
-    tar -xvf exceRptDB_v4_hg38_lowmem.tgz --directory $excerpt_database_dir
+    tar -xvf $excerpt_database_dir/exceRptDB_v4_hg38_lowmem.tgz --directory $excerpt_database_dir
     # cleanup
     rm $excerpt_database_dir/exceRptDB_v4_hg38_lowmem.tgz
 else
