@@ -17,11 +17,12 @@ Analysis template for analysing Illumina Small RNA sequencing data with a focus 
   - [How to use this template](#how-to-use-this-template)
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
     - [2. Take this template to the data on your local machine](#2-take-this-template-to-the-data-on-your-local-machine)
-    - [3. Analyse your data](#3-analyse-your-data)
-    - [4. Commit and push to your forked version of the github repo](#4-commit-and-push-to-your-forked-version-of-the-github-repo)
-    - [5. Repeat step 4 each time you re-run the analysis with different parameters](#5-repeat-step-4-each-time-you-re-run-the-analysis-with-different-parameters)
-    - [6. Create a github page (optional)](#6-create-a-github-page-optional)
-    - [7. Create a pull request with the upstream repo to merge any useful changes (optional)](#7-create-a-pull-request-with-the-upstream-repo-to-merge-any-useful-changes-optional)
+    - [3. Format your input files](#3-format-your-input-files)
+    - [4. Analyse your data](#4-analyse-your-data)
+    - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
+    - [6. Repeat step 4 each time you re-run the analysis with different parameters](#6-repeat-step-4-each-time-you-re-run-the-analysis-with-different-parameters)
+    - [7. Create a github page (optional)](#7-create-a-github-page-optional)
+    - [8. Contribute back!](#8-contribute-back)
 
 ## What this template can do
 
@@ -30,7 +31,8 @@ This template uses open source tools and includes several scripts for researcher
 ## What this template can't do
 
 - Tell you what analysis tools and parameters are appropriate for your data or research question, the assumption is that the tools this template uses are tools you've intentionally chosen to use and that you will actively adapt this template for your use-case
-- Account for different operating systems - this means there might be some coding/bioinformatic skill required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems)
+- Account for different operating systems - this means there might be some coding/bioinformatic skill required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) to make the R code more portable
+- The whole analysis isn't automated because it probably shouldn't be
 
 ## What's the template gonna do?
 
@@ -84,7 +86,19 @@ Clone the forked [smncrna_analysis_template](https://github.com/leahkemp/smncrna
 git clone https://github.com/leahkemp/smncrna_analysis_template.git
 ```
 
-### 3. Analyse your data
+### 3. Format your input files
+
+fastq naming convention
+
+```bash
+
+```
+
+
+
+Metadata file
+
+### 4. Analyse your data
 
 - [Run smrnaseq pipeline](./smrnaseq_pipeline_run/run_smrnaseq_pipeline.md)
 - [Run excerpt pipeline](./excerpt_pipeline_run/run_excerpt_pipeline.md)
@@ -96,7 +110,7 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 - [Clustering/MDS plots](./clustering/clustering.Rmd)
 - [RNA species composition plotting](./rna_species_composition/rna_species_composition.Rmd)
 
-### 4. Commit and push to your forked version of the github repo
+### 5. Commit and push to your forked version of the github repo
 
 To maintain reproducibility of your analysis, commit and push:
 
@@ -104,12 +118,14 @@ To maintain reproducibility of your analysis, commit and push:
 - All run scripts
 - All your documentation/notes
 
-### 5. Repeat step 4 each time you re-run the analysis with different parameters
+### 6. Repeat step 4 each time you re-run the analysis with different parameters
 
-### 6. Create a github page (optional)
+### 7. Create a github page (optional)
 
-### 7. Create a pull request with the [upstream repo](https://github.com/leahkemp/smncrna_analysis_template) to merge any useful changes (optional)
+### 8. Contribute back!
 
-Contributions and feedback are more than welcome! :blush:
+- Raise issues in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
+- Create feature requests in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
+- Contribute your code! Create your own branch from the [development branch](https://github.com/leahkemp/smncrna_analysis_template/tree/dev) and create a pull request to the [development branch](https://github.com/leahkemp/smncrna_analysis_template/tree/dev) once the code is on point!
 
-See [here](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request) for help
+Contributions and feedback are always welcome! :blush:
