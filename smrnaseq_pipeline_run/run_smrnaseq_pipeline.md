@@ -1,7 +1,7 @@
 # Run smrnaseq pipeline
 
 **Pipeline:** [smrnaseq](https://github.com/nf-core/smrnaseq), [pipeline documentation](https://nf-co.re/smrnaseq)
-**Prerequisite software:** [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [wget](https://www.gnu.org/software/wget/), [conda](https://docs.conda.io/en/latest/), [GNU screen](https://www.gnu.org/software/screen/), [git](https://git-scm.com/), [nextflow](https://www.nextflow.io/), [zgrep](https://linux.die.net/man/1/zgrep)
+**Prerequisite software:** [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [wget](https://www.gnu.org/software/wget/), [singularity](https://singularity.hpcng.org/), [GNU screen](https://www.gnu.org/software/screen/), [git](https://git-scm.com/), [nextflow](https://www.nextflow.io/), [zgrep](https://linux.die.net/man/1/zgrep)
 
 ## Table of contents
 
