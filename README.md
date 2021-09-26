@@ -2,7 +2,7 @@
 
 ---
 
-Analysis template for analysing [Illumina Small RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing/small-rna-seq.html) data with a focus on small non-coding RNA's that are sometimes forgotten. Think of this as a collection of scripts not a fully automated workflow.
+Analysis template for analysing, visualising and communicating the findings of [Illumina Small RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing/small-rna-seq.html) data with a focus on small non-coding RNA's that are sometimes forgotten (ie. looking at and beyond miRNA's). This is set up to analyse human data, but can be adapted to other species with some tweaks to the code, namely the pipeline inputs. Think of this as a collection of scripts that will require some familiarity with UNIX/R rather than a fully automated workflow.
 
 ---
 
@@ -31,7 +31,7 @@ This template uses open source tools and includes several scripts for researcher
 ## What this template can't do
 
 - Tell you what analysis tools and parameters are appropriate for your data or research question, the assumption is that the tools this template uses are tools you've intentionally chosen to use and that you will actively adapt this template for your use-case
-- Account for different operating systems - this means there might be some coding/bioinformatic skill required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) to make the R code more portable.
+- Account for different operating systems - this means there likely be some UNIX experience required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
 - The whole analysis isn't automated because it probably shouldn't be
 
 ## What's the template gonna do?
