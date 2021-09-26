@@ -1,7 +1,7 @@
 # Run exceRpt pipeline
 
 **Pipeline:** [exceRpt](https://github.com/rkitchen/exceRpt), [pipeline documentation](https://rkitchen.github.io/exceRpt/)
-**Prerequisite software:** [GNU cat](https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html), [GNU sed](https://www.gnu.org/software/sed/), [GNU parallel](https://www.gnu.org/software/parallel/), [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [wget](https://www.gnu.org/software/wget/), [docker](https://docs.docker.com/get-docker/), [R](https://www.r-project.org/), [GNU screen](https://www.gnu.org/software/screen/), [git](https://git-scm.com/)
+**Prerequisite software:** [GNU cat](https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html), [GNU sed](https://www.gnu.org/software/sed/), [GNU parallel](https://www.gnu.org/software/parallel/), [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [wget](https://www.gnu.org/software/wget/), [docker](https://docs.docker.com/get-docker/), [R](https://www.r-project.org/), [GNU screen](https://www.gnu.org/software/screen/), [git](https://git-scm.com/), [zgrep](https://linux.die.net/man/1/zgrep)
 
 ## Table of contents
 

@@ -13,7 +13,7 @@
 fastq_dir="/my_project/fastq"
 
 # set the directory to where the excerpt database will be downloaded
-excerpt_database_dir="/NGS/scratch/KSCBIOM/HumanGenomics/publicData/excerptDB"
+excerpt_database_dir="/my_project/publicData/excerptDB"
 
 # set the output directory to write pipeline results to
 output_dir="/my_project/smncrna_analysis_template/excerpt_pipeline_run/"
