@@ -2,7 +2,7 @@
 
 ---
 
-Analysis template for analysing Illumina Small RNA sequencing data with a focus on analysing small non-coding RNA's.
+Analysis template for analysing [Illumina Small RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing/small-rna-seq.html) data with a focus on small non-coding RNA's that are sometimes forgotten. Think of this as a collection of scripts not a fully automated workflow.
 
 ---
 
@@ -31,7 +31,7 @@ This template uses open source tools and includes several scripts for researcher
 ## What this template can't do
 
 - Tell you what analysis tools and parameters are appropriate for your data or research question, the assumption is that the tools this template uses are tools you've intentionally chosen to use and that you will actively adapt this template for your use-case
-- Account for different operating systems - this means there might be some coding/bioinformatic skill required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) to make the R code more portable
+- Account for different operating systems - this means there might be some coding/bioinformatic skill required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) to make the R code more portable.
 - The whole analysis isn't automated because it probably shouldn't be
 
 ## What's the template gonna do?
@@ -57,12 +57,12 @@ Lastly, the composition of the RNA species are explored.
 
 The main output files you'll end up with:
 
-- Smrnaseq read counts (mirtop.tsv)
-- ExceRpt miRNA read counts (exceRpt_miRNA_read counts.txt)
-- ExceRpt piRNA read counts (exceRpt_piRNA_read counts.txt)
-- ExceRpt tRNA read counts (exceRpt_tRNA_read counts.txt)
-- ExceRpt circularRNA read counts (exceRpt_circularRNA_read counts.txt)
-- ExceRpt gencode read counts (exceRpt_gencode_read counts.txt)
+- smrnaseq read counts (mirtop.tsv)
+- exceRpt miRNA read counts (exceRpt_miRNA_read counts.txt)
+- exceRpt piRNA read counts (exceRpt_piRNA_read counts.txt)
+- exceRpt tRNA read counts (exceRpt_tRNA_read counts.txt)
+- exceRpt circularRNA read counts (exceRpt_circularRNA_read counts.txt)
+- exceRpt gencode read counts (exceRpt_gencode_read counts.txt)
 - Sequencing read QC (sequencing_read_QC.html)
 - Multiqc report - smrnaseq (multiqc_report.html)
 - Mirtrace report - smrnaseq (mirtrace-report.html)
@@ -91,8 +91,10 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 fastq naming convention
 
 ```bash
-
+.fastq.gz
 ```
+
+List of samples
 
 
 
