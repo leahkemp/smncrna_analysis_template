@@ -9,7 +9,7 @@
 ##### USER PARAMETERS #####
 
 # set the path to the fastq files to be analysed
-fastq_dir="/my_project/fastq/*.fastq.gz"
+fastq_files="/my_project/fastq/*.fastq.gz"
 
 # set the directory to where the smrnaseq database (mirbase) will be downloaded
 smrnaseq_database_dir="/my_project/publicData/mirbase"
@@ -38,7 +38,7 @@ done
 
 # run smrnaseq pipeline
 run nf-core/smrnaseq \
---reads '$fastq_dir' \
+--reads '$fastq_files' \
 --protocol $adapter \
 -profile singularity \
 --mature $smrnaseq_database_dir/mirbase.org/pub/mirbase/CURRENT/mature.fa \
