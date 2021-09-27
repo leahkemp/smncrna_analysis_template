@@ -14,6 +14,10 @@ Analysis template for analysing, visualising and communicating the findings of [
   - [What this template can't do](#what-this-template-cant-do)
   - [What's this template gonna do?](#whats-this-template-gonna-do)
   - [Output files](#output-files)
+    - [Raw counts](#raw-counts)
+    - [Processed counts](#processed-counts)
+    - [QC](#qc)
+    - [Plotting/analysis](#plottinganalysis)
   - [How to use this template](#how-to-use-this-template)
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
     - [2. Take this template to the data on your local machine](#2-take-this-template-to-the-data-on-your-local-machine)
@@ -57,20 +61,33 @@ Lastly, the composition of the RNA species are explored.
 
 The main output files you'll end up with:
 
-- smrnaseq read counts (mirtop.tsv)
-- exceRpt miRNA read counts (exceRpt_miRNA_read counts.txt)
-- exceRpt piRNA read counts (exceRpt_piRNA_read counts.txt)
-- exceRpt tRNA read counts (exceRpt_tRNA_read counts.txt)
-- exceRpt circularRNA read counts (exceRpt_circularRNA_read counts.txt)
-- exceRpt gencode read counts (exceRpt_gencode_read counts.txt)
-- Sequencing read QC (sequencing_read_QC.html)
-- Multiqc report - smrnaseq (multiqc_report.html)
-- Mirtrace report - smrnaseq (mirtrace-report.html)
-- Diagnostic plots - excerpt (exceRpt_DiagnosticPlots.pdf)
-- RNA expression plotting (http://your-account.shinyapps.io/rna_expression_plotting)
-- MDS/PCA plots (clustering.html)
-- RNA species composition (rna_species_composition.html)
-- Differential expression (diff_expression.html)
+### Raw counts
+
+- smrnaseq read counts (smrnaseq_pipeline_run/results/mirtop/mirtop.tsv)
+- exceRpt miRNA read counts (excerpt_pipeline_run/merged/exceRpt_miRNA_read counts.txt)
+- exceRpt piRNA read counts (excerpt_pipeline_run/merged/exceRpt_piRNA_read counts.txt)
+- exceRpt tRNA read counts (excerpt_pipeline_run/merged/exceRpt_tRNA_read counts.txt)
+- exceRpt circularRNA read counts (excerpt_pipeline_run/merged/exceRpt_circularRNA_read counts.txt)
+- exceRpt gencode read counts (excerpt_pipeline_run/merged/exceRpt_gencode_read counts.txt)
+
+### Processed counts
+
+- raw, counts per million and log counts per million for all samples and RNA species (prepare_counts/counts.csv)
+
+### QC
+
+- Multiqc report - smrnaseq (smrnaseq_pipeline_run/results/MultiQC/multiqc_report.html)
+- Mirtrace report - smrnaseq (smrnaseq_pipeline_run/results/miRTrace/mirtrace/mirtrace-report.html)
+- Diagnostic plots - excerpt (excerpt_pipeline_run/merged/exceRpt_DiagnosticPlots.pdf)
+- Sequencing read QC (sequencing_read_QC/sequencing_read_QC.html)
+
+### Plotting/analysis
+
+- RNA expression plotting ()
+- MDS plots (mds/mds.html)
+- PCA plots ()
+- RNA species composition (rna_species_composition/rna_species_composition.html)
+- Differential expression (diff_expression/diff_expression.html)
 
 ## How to use this template
 
@@ -105,15 +122,22 @@ Metadata file
 - [Run smrnaseq pipeline](./smrnaseq_pipeline_run/run_smrnaseq_pipeline.md)
 - [Run excerpt pipeline](./excerpt_pipeline_run/run_excerpt_pipeline.md)
 - [Summarise the read counts/mapping rates for both pipelines](./mapping_rates/calculate_mapping_metrics.md)
+- [Prepare count data](./prepare_counts/prepare_counts.Rmd)
+- [RNA species composition plotting](./rna_species_composition/rna_species_composition.Rmd)
+- [MDS plots](./mds/mds.Rmd)
+- PCA plots:
+  - [Data prep for app](./pca/data_prep_for_app.R)
+  - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./pca/server.R) and [ui](./pca/ui.R) that comprise the app
 - [Differential expression analysis](./diff_expression/diff_expression.Rmd)
-- RNA expression plotting in RShiny:
+- Expression plots:
   - [Data prep for app](./expression_plotting/data_prep_for_app.R)
   - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./expression_plotting/server.R) and [ui](./expression_plotting/ui.R) that comprise the app
-- [Summarise the read counts/mapping rates for both pipelines](./mapping_rates/calculate_mapping_metrics.md)
-- [Clustering/MDS plots](./clustering/clustering.Rmd)
-- [RNA species composition plotting](./rna_species_composition/rna_species_composition.Rmd)
 
 ### 5. Commit and push to your forked version of the github repo
+
+Push all the results files you're comfortable with being online:
+
+- 
 
 To maintain reproducibility of your analysis, commit and push:
 
