@@ -31,7 +31,7 @@ This template uses open source tools and includes several scripts for researcher
 ## What this template can't do
 
 - Tell you what analysis tools and parameters are appropriate for your data or research question, the assumption is that the tools this template uses are tools you've intentionally chosen to use and that you will actively adapt this template for your use-case
-- Account for different operating systems - this means there likely be some UNIX experience required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
+- Account for different operating systems and compute infrastructures - this means there likely be some UNIX experience required to run the pipelines/scripts on your operating system, job scheduler. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
 - The whole analysis isn't automated because it probably shouldn't be
 
 ## What's this template gonna do?
