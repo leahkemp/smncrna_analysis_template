@@ -12,7 +12,7 @@
 
 ## Set user parameters
 
-Set user parameters in the [extract_mapping_info.sh](./extract_mapping_info.sh) and [merge_mapping_rate.py](./merge_mapping_rate.py) scripts (the `##### USER PARAMETERS #####` section)
+Set user parameters in the [extract_mapping_info.sh](./extract_mapping_info.sh) and [merge_mapping_rates.py](./merge_mapping_rates.py) scripts (the `##### USER PARAMETERS #####` section)
 
 ## Create screen to run pipeline in
 
