@@ -23,10 +23,10 @@ Set user parameters in the `excerpt_pipeline_run_script.sh` script (the `##### U
 
 ```bash
 # for example to check how many reads in a fastq file have the nextflex adapter
-zgrep TGGAATTCTCGG /my/path/to/my_sample.fastq.gz | wc -l
+zgrep TGGAATTCTCGG /my_project/smncrna_analysis_template/fastq/my_sample.fastq.gz | wc -l
 
 # and to look at a few reads with their adapter sequences
-zgrep TGGAATTCTCGG /my/path/to/my_sample.fastq.gz | head
+zgrep TGGAATTCTCGG /my_project/smncrna_analysis_template/fastq/my_sample.fastq.gz | head
 ```
 
 *A last note: this script downloads a large database ~31G so make sure you have enough space to download this*
@@ -42,7 +42,7 @@ screen -S excerpt_run
 Run pipeline, for example
 
 ```bash
-bash /my/path/to/excerpt_pipeline_run_script.sh
+bash /my_project/smncrna_analysis_template/excerpt_pipeline_run/excerpt_pipeline_run_script.sh
 ```
 
 ## Merge results from all samples
@@ -56,22 +56,16 @@ git clone https://github.com/rkitchen/exceRpt.git
 *Note. make sure you have the same version of the pipeline that you ran your data through. The `excerpt_pipeline_run_script.sh` script, the pipeline version can be changed with the following*
 
 ```bash
-cd /my/path/to/exceRpt
+cd /my_project/smncrna_analysis_template/excerpt_pipeline_run/exceRpt/
 git checkout tags/4.3.2
-```
-
-Create a dir for merged output
-
-```bash
-mkdir /data/lkemp/covid_sncrna/merged/
 ```
 
 Run in R, I needed to run this script in an RStudio session so I can say yes to prompts to download libraries
 
 ```r
-setwd("/my/path/to/exceRpt/")
+setwd("/my_project/smncrna_analysis_template/excerpt_pipeline_run/exceRpt/")
 source("mergePipelineRuns_functions.R")
-processSamplesInDir("/my/path/to/exceRpt_output/", "/where/to/write/output/files/")
+processSamplesInDir("/my_project/smncrna_analysis_template/excerpt_pipeline_run/exceRpt_output/", "/my_project/smncrna_analysis_template/excerpt_pipeline_run/merged/")
 ```
 
 ## Clean up

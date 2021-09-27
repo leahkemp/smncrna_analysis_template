@@ -20,10 +20,10 @@ Set user parameters in the `smrnaseq_pipeline_run_script.sh` script (the `##### 
 
 ```bash
 # for example to check how many reads in a fastq file have the nextflex adapter
-zgrep TGGAATTCTCGG /my/path/to/my_sample.fastq.gz | wc -l
+zgrep TGGAATTCTCGG /my_project/smncrna_analysis_template/fastq/my_sample.fastq.gz | wc -l
 
 # and to look at a few reads with their adapter sequences
-zgrep TGGAATTCTCGG /my/path/to/my_sample.fastq.gz | head
+zgrep TGGAATTCTCGG /my_project/smncrna_analysis_template/fastq/my_sample.fastq.gz | head
 ```
 
 ## Create screen to run pipeline in
@@ -41,5 +41,5 @@ See info [here](https://www.nextflow.io/docs/latest/config.html)
 Run pipeline, for example
 
 ```bash
-bash /my/path/to/smrnaseq_pipeline_run_script.sh
+bash /my_project/smncrna_analysis_template/smrnaseq_pipeline_run/smrnaseq_pipeline_run_script.sh
 ```

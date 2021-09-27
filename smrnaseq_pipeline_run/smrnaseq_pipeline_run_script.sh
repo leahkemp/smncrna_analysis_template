@@ -9,10 +9,10 @@
 ##### USER PARAMETERS #####
 
 # set the path to the fastq files to be analysed
-fastq_files="/my_project/fastq/*.fastq.gz"
+fastq_files="/my_project/smncrna_analysis_template/fastq/*.fastq.gz"
 
 # set the directory to where the smrnaseq database (mirbase) will be downloaded
-smrnaseq_database_dir="/my_project/publicData/mirbase"
+smrnaseq_database_dir="/my_project/smncrna_analysis_template/publicData/mirbase"
 
 # choose if the GRCh37 or GRCh38 smrnaseq database should be used in the pipeline
 genome_version="GRCh37"

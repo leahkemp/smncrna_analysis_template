@@ -104,6 +104,7 @@ Metadata file
 
 - [Run smrnaseq pipeline](./smrnaseq_pipeline_run/run_smrnaseq_pipeline.md)
 - [Run excerpt pipeline](./excerpt_pipeline_run/run_excerpt_pipeline.md)
+- [Summarise the read counts/mapping rates for both pipelines](./mapping_rates/calculate_mapping_metrics.md)
 - [Differential expression analysis](./diff_expression/diff_expression.Rmd)
 - RNA expression plotting in RShiny:
   - [Data prep for app](./expression_plotting/data_prep_for_app.R)

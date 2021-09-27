@@ -9,14 +9,14 @@
 
 ##### USER PARAMETERS #####
 
-# set the directory where the fastq files to be analysed are
-fastq_dir="/my_project/fastq"
+# set the path to the fastq files to be analysed
+fastq_dir="/my_project/smncrna_analysis_template/fastq/*.fastq.gz"
 
 # set the directory to where the excerpt database will be downloaded
-excerpt_database_dir="/my_project/publicData/excerptDB"
+excerpt_database_dir="/my_project/smncrna_analysis_template/publicData/excerptDB"
 
-# set the output directory to write pipeline results to
-output_dir="/my_project/smncrna_analysis_template/excerpt_pipeline_run/"
+# set the directory to where the smncrna_analysis_template is on your machine
+template_dir="/my_project/smncrna_analysis_template/smncrna_analysis_template/"
 
 # choose if the hg19 or hg38 excerpt database should be downloaded
 genome_version="hg38"
@@ -41,6 +41,9 @@ java_ram="24G"
 # create the directory to download the exerpt database if it doesn't yet exist
 mkdir -p $excerpt_database_dir
 
+# also create the directory to put merged results downstream if it doesn't yet exist
+mkdir -p $template_dir/excerpt_pipeline_run/merged/
+
 # download the excerpt database
 if [[ $genome_version == "hg19" ]]; then
 	# download the database file into the user specified directory
@@ -61,18 +64,18 @@ else
 fi
 
 # get list of files in the fastq dir (without hidden files)
-ls -A $fastq_dir > $output_dir/fastq_files_tmp.txt
+ls -A $fastq_dir > $template_dir/excerpt_pipeline_run/fastq_files_tmp.txt
 
 # strip the '.fastq.gz' suffix to just have sample names
-cat $output_dir/fastq_files_tmp.txt | sed "s/.fastq.gz//" > $output_dir/fastq_files.txt
+cat $template_dir/excerpt_pipeline_run/fastq_files_tmp.txt | sed "s/.fastq.gz//" > $template_dir/excerpt_pipeline_run/fastq_files.txt
 
 # remove temp file
-rm $output_dir/fastq_files_tmp.txt
+rm $template_dir/excerpt_pipeline_run/fastq_files_tmp.txt
 
 # run excerpt pipeline, run in parallel over all files specified in fastq_files.txt
 parallel -j $num_parallel_samples \
 "docker run -v $fastq_dir:/exceRptInput \
-                -v $output_dir:/exceRptOutput \
+                -v $template_dir/excerpt_pipeline_run:/exceRptOutput \
                 -v $excerpt_database_dir/$genome_version/:/exceRpt_DB/$genome_version \
                 -t rkitchen/excerpt:latest \
                 INPUT_FILE_PATH=/exceRptInput/{}.fastq.gz \
