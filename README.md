@@ -12,7 +12,7 @@ Analysis template for analysing, visualising and communicating the findings of [
   - [Table of contents](#table-of-contents)
   - [What this template can do](#what-this-template-can-do)
   - [What this template can't do](#what-this-template-cant-do)
-  - [What's the template gonna do?](#whats-the-template-gonna-do)
+  - [What's this template gonna do?](#whats-this-template-gonna-do)
   - [Output files](#output-files)
   - [How to use this template](#how-to-use-this-template)
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
@@ -34,7 +34,7 @@ This template uses open source tools and includes several scripts for researcher
 - Account for different operating systems - this means there likely be some UNIX experience required to run the pipelines/scripts on your operating system. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
 - The whole analysis isn't automated because it probably shouldn't be
 
-## What's the template gonna do?
+## What's this template gonna do?
 
 This template will guide you through processing the data through two pipelines:
 
