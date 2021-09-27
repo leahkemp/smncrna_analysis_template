@@ -1,0 +1,167 @@
+---
+title: "Prepare counts"
+author: "Leah Kemp"
+date: "27/09/2021"
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+  editor_options: 
+    chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+
+# activate renv
+renv::activate()
+
+# load libraries
+library(dplyr)
+library(textshape)
+library(edgeR)
+library(tibble)
+```
+
+```{r, user_configuration}
+#### USER CONFIGURATION #####
+
+# set the directory to where the smncrna_analysis_template is on your machine
+template_dir <- "/my_project/smncrna_analysis_template/smncrna_analysis_template"
+```
+
+```{r, read_data, results = "hide"}
+# load the count data
+mirna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_miRNA_ReadCounts.txt"), header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+pirna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_piRNA_ReadCounts.txt"), header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+trna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_tRNA_ReadCounts.txt"), header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+circrna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_circularRNA_ReadCounts.txt"), header = TRUE, stringsAsFactors = FALSE, comment.char = "")
+gencode_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_gencode_ReadCounts.txt"), header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+mirna_smrnaseq_data <- utils::read.table(file.path(template_dir, "smrnaseq_pipeline_run/results/mirtop/mirtop.tsv"), header = TRUE, stringsAsFactors = TRUE)
+
+# get only the count data (for the raw count data from the smrnaseq pipeline) and remove the unnecessary columns
+mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
+  dplyr::select(-c("UID", "Read", "Variant", starts_with("iso_")))
+
+# "squash" out the isoform info
+mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
+  dplyr::group_by(miRNA) %>%
+  dplyr::summarise_each(sum)
+
+# convert column to rownames for downstream processing
+mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
+  textshape::column_to_rownames("miRNA")
+```
+
+```{r, user_configuration_2}
+#### USER CONFIGURATION #####
+
+# create a list of the count datasets you want to work with
+
+# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are too low
+# you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
+# DON'T include the offending datasets here so the analysis can continue without these datasets
+
+# disclaimer. we're not sure if it make sense to calculate counts per million for the gencode dataset (gencode_excerpt_data)
+# since this dataset is comprised of several different types of RNA species, analyse at your own risk
+
+# dataset's available: mirna_smrnaseq_data, mirna_excerpt_data, pirna_excerpt_data, trna_excerpt_data, circrna_excerpt_data, gencode_excerpt_data
+
+# assign each dataset a name in the following list the in the format of "rna species", underscore, "pipeline"
+# it is important to assign these variables correctly!!
+
+count_datasets <- list(mirna_smrnaseq = mirna_smrnaseq_data,
+                       mirna_excerpt = mirna_excerpt_data,
+                       pirna_excerpt = pirna_excerpt_data,
+                       trna_excerpt = trna_excerpt_data,
+                       gencode_excerpt = gencode_excerpt_data)
+```
+
+```{r, prepare_counts}
+# calculate counts per million (loop over all the count datasets the user has specified)
+counts_cpm <- lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+  
+  # calculate counts per million for all datasets in the list
+  edgeR::cpm(y[[i]]) %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("rna") %>%
+    # make data long
+    tidyr::pivot_longer(-rna, names_to = "sample", values_to = "counts_per_million") %>%
+    # create a column that has defines the rna_species the data has come from
+    # based on the names of the "count_dataset" list, grab everything BEFORE 
+    # the underscore
+    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    # also create a column that defines the pipeline the data has come from
+    # based on the names of the "count_dataset" list, grab everything AFTER
+    # the underscore
+    dplyr::mutate(pipeline = pipeline[[i]])
+}, y=count_datasets,
+rna_species=sub("\\_.*", "", paste(names(count_datasets))),
+pipeline=sub(".*\\_", "", paste(names(count_datasets)))
+)
+
+# calculate log counts per million (loop over all the count datasets the user has specified)
+counts_lcpm <- lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+  
+  # calculate log counts per million for all datasets in the list
+  edgeR::cpm(y[[i]], log = TRUE) %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("rna") %>%
+    # make data long
+    tidyr::pivot_longer(-rna, names_to = "sample", values_to = "log_counts_per_million") %>%
+    # create a column that has defines the rna_species the data has come from
+    # based on the names of the "count_dataset" list, grab everything BEFORE 
+    # the underscore
+    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    # also create a column that defines the pipeline the data has come from
+    # based on the names of the "count_dataset" list, grab everything AFTER
+    # the underscore
+    dplyr::mutate(pipeline = pipeline[[i]])
+}, y=count_datasets,
+rna_species=sub("\\_.*", "", paste(names(count_datasets))),
+pipeline=sub(".*\\_", "", paste(names(count_datasets)))
+)
+
+# prepare raw counts (loop over all the count datasets the user has specified)
+counts_raw <- lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+  
+  # prepare raw counts for all datasets in the list
+  y[[i]] %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("rna") %>%
+    # make data long
+    tidyr::pivot_longer(-rna, names_to = "sample", values_to = "raw_counts") %>%
+    # create a column that has defines the rna_species the data has come from
+    # based on the names of the "count_dataset" list, grab everything BEFORE 
+    # the underscore
+    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    # also create a column that defines the pipeline the data has come from
+    # based on the names of the "count_dataset" list, grab everything AFTER
+    # the underscore
+    dplyr::mutate(pipeline = pipeline[[i]])
+}, y=count_datasets,
+rna_species=sub("\\_.*", "", paste(names(count_datasets))),
+pipeline=sub(".*\\_", "", paste(names(count_datasets)))
+)
+
+# collapse my list of dataframes into single dataframes
+counts_cpm <- Reduce(rbind, counts_cpm)
+counts_lcpm <- Reduce(rbind, counts_lcpm)
+counts_raw <- Reduce(rbind, counts_raw)
+
+# join all three dataframes into one large dataframe of all count data!
+counts <- full_join(counts_cpm, counts_lcpm, by = c("rna", "sample", "pipeline", "rna_species")) 
+counts <- full_join(counts, counts_raw, by = c("rna", "sample", "pipeline", "rna_species")) 
+
+# further split the gencode data into different RNA categories
+# overwrite the rna_species column with a partial string from the rna column (for the gencode data)
+# otherwise overwrite the rna_species column with what is already in the rna_species column
+counts <- mutate(counts, rna_species = case_when(
+  rna_species == "gencode" ~ sub('.*:', '', counts$rna),
+  rna_species != "gencode" ~ counts$rna_species
+))
+
+# write the data to a csv file so I can use it in other documents
+write.csv(counts, "./counts.csv", row.names = FALSE)
+```
