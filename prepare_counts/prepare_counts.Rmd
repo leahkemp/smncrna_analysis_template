@@ -22,6 +22,7 @@ library(dplyr)
 library(textshape)
 library(edgeR)
 library(tibble)
+library(gtools)
 ```
 
 ```{r, user_configuration}
@@ -37,23 +38,33 @@ template_dir <- "/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template"
 mirna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_miRNA_ReadCounts.txt"),
                                         header = TRUE,
                                         stringsAsFactors = FALSE,
-                                        check.names = FALSE)
+                                        check.names = FALSE) %>%
+    # remove S*_R1.fastq suffix from the sample/column names
+    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 pirna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_piRNA_ReadCounts.txt"),
                                         header = TRUE,
                                         stringsAsFactors = FALSE,
-                                        check.names = FALSE)
+                                        check.names = FALSE) %>%
+    # remove S*_R1.fastq suffix from the sample/column names
+    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 trna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_tRNA_ReadCounts.txt"),
                                        header = TRUE,
                                        stringsAsFactors = FALSE,
-                                       check.names = FALSE)
+                                       check.names = FALSE) %>%
+    # remove S*_R1.fastq suffix from the sample/column names
+    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 circrna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_circularRNA_ReadCounts.txt"),
                                           header = TRUE,
                                           stringsAsFactors = FALSE,
-                                          comment.char = "")
+                                          comment.char = "") %>%
+    # remove S*_R1.fastq suffix from the sample/column names
+    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 gencode_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_gencode_ReadCounts.txt"),
                                           header = TRUE,
                                           stringsAsFactors = FALSE,
-                                          check.names = FALSE)
+                                          check.names = FALSE) %>%
+    # remove S*_R1.fastq suffix from the sample/column names
+    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 mirna_smrnaseq_data <- utils::read.table(file.path(template_dir, "smrnaseq_pipeline_run/results/mirtop/mirtop.tsv"),
                                          header = TRUE,
                                          stringsAsFactors = TRUE)
@@ -103,6 +114,9 @@ counts_cpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_
   # calculate counts per million for all datasets in the list
   edgeR::cpm(y[[i]]) %>%
     base::as.data.frame() %>%
+    # sort all the columns in the different datasets so they are consistent among each other
+    # (important for specifying the treatment groups downstream)
+    dplyr::select(mixedsort(current_vars())) %>%
     tibble::rownames_to_column("rna") %>%
     # make data long
     tidyr::pivot_longer(-rna, names_to = "sample", values_to = "counts_per_million") %>%
@@ -125,6 +139,9 @@ counts_lcpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna
   # calculate log counts per million for all datasets in the list
   edgeR::cpm(y[[i]], log = TRUE) %>%
     base::as.data.frame() %>%
+    # sort all the columns in the different datasets so they are consistent among each other
+    # (important for specifying the treatment groups downstream)
+    select(mixedsort(current_vars())) %>%
     tibble::rownames_to_column("rna") %>%
     # make data long
     tidyr::pivot_longer(-rna, names_to = "sample", values_to = "log_counts_per_million") %>%
@@ -147,6 +164,9 @@ counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_
   # prepare raw counts for all datasets in the list
   y[[i]] %>%
     base::as.data.frame() %>%
+    # sort all the columns in the different datasets so they are consistent among each other
+    # (important for specifying the treatment groups downstream)
+    select(mixedsort(current_vars())) %>%
     tibble::rownames_to_column("rna") %>%
     # make data long
     tidyr::pivot_longer(-rna, names_to = "sample", values_to = "raw_counts") %>%
@@ -175,8 +195,8 @@ counts <- dplyr::full_join(counts, counts_raw, by = c("rna", "sample", "pipeline
 # further split the gencode data into different RNA categories
 # overwrite the rna_species column with a partial string from the rna column (for the gencode data)
 # otherwise overwrite the rna_species column with what is already in the rna_species column
-counts <- dplyr::mutate(counts,rna_species = dplyr::case_when(rna_species == "gencode" ~ base::sub('.*:', '', counts$rna),
-                                                              rna_species != "gencode" ~ counts$rna_species
+counts <- dplyr::mutate(counts, rna_species = dplyr::case_when(rna_species == "gencode" ~ base::sub('.*:', '', counts$rna),
+                                                               rna_species != "gencode" ~ counts$rna_species
 ))
 
 # rename mirna (from "rna_species") so that it matches up with miRNA and gets put in the same group in downstream analyses
@@ -187,4 +207,10 @@ counts <- counts %>%
 
 # write the data to a csv file so I can use it in other documents
 utils::write.csv(counts, "./counts.csv", row.names = FALSE)
+```
+
+```{r, results = "hide"}
+# save session info
+writeLines(capture.output(R.Version()), "R_version_info.txt")
+writeLines(capture.output(sessionInfo()), "R_session_info.txt")
 ```

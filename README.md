@@ -22,6 +22,9 @@ Analysis template for analysing, visualising and communicating the findings of [
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
     - [2. Take this template to the data on your local machine](#2-take-this-template-to-the-data-on-your-local-machine)
     - [3. Format your input files](#3-format-your-input-files)
+  - [fastq naming convention](#fastq-naming-convention)
+  - [List of samples](#list-of-samples)
+  - [Metadata file](#metadata-file)
     - [4. Analyse your data](#4-analyse-your-data)
     - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
     - [6. Repeat step 4 each time you re-run the analysis with different parameters](#6-repeat-step-4-each-time-you-re-run-the-analysis-with-different-parameters)
@@ -105,17 +108,22 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 
 ### 3. Format your input files
 
-fastq naming convention
+## fastq naming convention
 
 ```bash
-.fastq.gz
+S*_R1.fastq.gz
 ```
 
-List of samples
+## List of samples
 
 
 
-Metadata file
+## Metadata file
+
+Columns:
+
+- "sample"
+- "treatment"
 
 ### 4. Analyse your data
 
