@@ -16,9 +16,6 @@ template_dir="/my_project/smncrna_analysis_template/"
 
 ##### SCRIPT #####
 
-# move to correct directory in case I'm not already there
-cd /NGS/scratch/KSCBIOM/HumanGenomics/covid_sncrna/mapping_rates/
-
 # remove any old outputs of this script to avoid results being written twice to a file
 rm -rf $template_dir/mapping_rates/extracted_all_samples
 
