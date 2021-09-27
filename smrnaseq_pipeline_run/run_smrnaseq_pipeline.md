@@ -14,7 +14,7 @@
 
 ## Set user parameters
 
-Set user parameters in the `smrnaseq_pipeline_run_script.sh` script (the `##### USER PARAMETERS #####` section)
+Set user parameters in the [smrnaseq_pipeline_run_script.sh](./smrnaseq_pipeline_run_script.sh) script (the `##### USER PARAMETERS #####` section)
 
 *A note. correct trimming is VERY important for these little RNA's because it strongly influences how many RNA's you get mapping to the references, check the adapter sequence you think is in the data is actually in the data with the following few commands:*
 

@@ -15,7 +15,7 @@
 
 ## Set user parameters
 
-Set user parameters in the `excerpt_pipeline_run_script.sh` script (the `##### USER PARAMETERS #####` section)
+Set user parameters in the [excerpt_pipeline_run_script.sh](./excerpt_pipeline_run_script.sh) script (the `##### USER PARAMETERS #####` section)
 
 *Note. if a nextflex adapter sequence was used in sequencing you might need to include an additional hardtrim of 4bp each side by passing `TRIM_N_BASES_5p=4 TRIM_N_BASES_3p=4` to the excerpt pipeline run script*
 
