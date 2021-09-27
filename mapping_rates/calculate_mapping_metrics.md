@@ -7,14 +7,14 @@
 - [Calculate mapping metrics](#calculate-mapping-metrics)
   - [Table of contents](#table-of-contents)
   - [Set user parameters](#set-user-parameters)
-  - [Create screen to run pipeline in](#create-screen-to-run-pipeline-in)
+  - [Create screen to run script in](#create-screen-to-run-script-in)
   - [Run script to generate csv file](#run-script-to-generate-csv-file)
 
 ## Set user parameters
 
 Set user parameters in the [extract_mapping_info.sh](./extract_mapping_info.sh) and [merge_mapping_rates.py](./merge_mapping_rates.py) scripts (the `##### USER PARAMETERS #####` section)
 
-## Create screen to run pipeline in
+## Create screen to run script in
 
 ```bash
 screen -S extract_mapping_rates
