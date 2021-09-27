@@ -1,7 +1,9 @@
 ---
 title: "Prepare counts"
-author: "Leah Kemp"
-date: "27/09/2021"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
 output:
   html_document:
     code_download: true
@@ -29,8 +31,7 @@ library(gtools)
 #### USER CONFIGURATION #####
 
 # set the directory to where the smncrna_analysis_template is on your machine
-# template_dir <- "/my_project/smncrna_analysis_template/smncrna_analysis_template"
-template_dir <- "/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template"
+template_dir <- "/my_project/smncrna_analysis_template/smncrna_analysis_template"
 ```
 
 ```{r, read_data, results = "hide"}

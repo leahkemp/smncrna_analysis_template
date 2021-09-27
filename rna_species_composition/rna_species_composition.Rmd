@@ -1,7 +1,9 @@
 ---
 title: "RNA species composition"
-author: "Leah Kemp"
-date: "27/09/2021"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
 output:
   html_document:
     code_download: true
@@ -24,8 +26,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FAL
 #### USER CONFIGURATION #####
 
 # set the directory to where the metadata file is on your machine
-# metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
-metadata_path <- "../metadata.csv"
+metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
 ```
 
 - *The total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group*

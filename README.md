@@ -27,7 +27,7 @@ Analysis template for analysing, visualising and communicating the findings of [
   - [Metadata file](#metadata-file)
     - [4. Analyse your data](#4-analyse-your-data)
     - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
-    - [6. Repeat step 4 each time you re-run the analysis with different parameters](#6-repeat-step-4-each-time-you-re-run-the-analysis-with-different-parameters)
+    - [6. Repeat step 5 each time you re-run the analysis with different parameters](#6-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
     - [7. Create a github page (optional)](#7-create-a-github-page-optional)
     - [8. Contribute back!](#8-contribute-back)
 
@@ -153,7 +153,7 @@ To maintain reproducibility of your analysis, commit and push:
 - All run scripts
 - All your documentation/notes
 
-### 6. Repeat step 4 each time you re-run the analysis with different parameters
+### 6. Repeat step 5 each time you re-run the analysis with different parameters
 
 ### 7. Create a github page (optional)
 
