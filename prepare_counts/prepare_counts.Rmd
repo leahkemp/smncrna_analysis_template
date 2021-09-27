@@ -28,7 +28,8 @@ library(tibble)
 #### USER CONFIGURATION #####
 
 # set the directory to where the smncrna_analysis_template is on your machine
-template_dir <- "/my_project/smncrna_analysis_template/smncrna_analysis_template"
+# template_dir <- "/my_project/smncrna_analysis_template/smncrna_analysis_template"
+template_dir <- "/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template"
 ```
 
 ```{r, read_data, results = "hide"}
@@ -163,9 +164,9 @@ pipeline=sub(".*\\_", "", base::paste(names(count_datasets)))
 )
 
 # collapse my list of dataframes into single dataframes
-counts_cpm <- purrr::Reduce(rbind, counts_cpm)
-counts_lcpm <- purrr::Reduce(rbind, counts_lcpm)
-counts_raw <- purrr::Reduce(rbind, counts_raw)
+counts_cpm <- base::Reduce (rbind, counts_cpm)
+counts_lcpm <- base::Reduce(rbind, counts_lcpm)
+counts_raw <- base::Reduce(rbind, counts_raw)
 
 # join all three dataframes into one large dataframe of all count data!
 counts <- dplyr::full_join(counts_cpm, counts_lcpm, by = c("rna", "sample", "pipeline", "rna_species")) 
@@ -177,6 +178,12 @@ counts <- dplyr::full_join(counts, counts_raw, by = c("rna", "sample", "pipeline
 counts <- dplyr::mutate(counts,rna_species = dplyr::case_when(rna_species == "gencode" ~ base::sub('.*:', '', counts$rna),
                                                               rna_species != "gencode" ~ counts$rna_species
 ))
+
+# rename mirna (from "rna_species") so that it matches up with miRNA and gets put in the same group in downstream analyses
+counts <- counts %>%
+  mutate(rna_species = case_when(
+    rna_species == "miRNA" ~ "mirna", 
+    TRUE ~ rna_species))
 
 # write the data to a csv file so I can use it in other documents
 utils::write.csv(counts, "./counts.csv", row.names = FALSE)
