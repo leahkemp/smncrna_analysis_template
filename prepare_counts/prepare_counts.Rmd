@@ -75,7 +75,9 @@ gencode_excerpt_data <- utils::read.table(file.path(config$template_dir,
 mirna_smrnaseq_data <- utils::read.table(file.path(config$template_dir,
                                                    "smrnaseq_pipeline_run/results/mirtop/mirtop.tsv"),
                                          header = TRUE,
-                                         stringsAsFactors = TRUE)
+                                         stringsAsFactors = TRUE) %>%
+    # remove S*_R1.fastq suffix from the sample/column names
+    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 
 # get only the count data (for the raw count data from the smrnaseq pipeline) and remove the unnecessary columns
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
