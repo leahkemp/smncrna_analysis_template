@@ -139,7 +139,7 @@ Set up [rna_species_config.yaml](rna_species_config.yaml)
 - [RNA species composition plotting](./rna_species_composition/rna_species_composition.Rmd)
 - [MDS plots](./mds/mds.Rmd)
 - PCA plots:
-  - [Data prep for app](./pca/data_prep_for_app.R)
+  - [Data prep for app](./pca/data_prep_for_app.Rmd)
   - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./pca/server.R) and [ui](./pca/ui.R) that comprise the app
 - [Differential expression analysis](./diff_expression/diff_expression.Rmd)
 - Expression plots:
