@@ -31,7 +31,7 @@ library(gtools)
 # read in yaml config file specifying which rna species to analyse
 config <- yaml::yaml.load_file("../config.yaml")
 
-# load the count data
+# load all the count datasets
 mirna_excerpt_data <- utils::read.table(file.path(config$template_dir,
                                                   "excerpt_pipeline_run/merged/exceRpt_miRNA_ReadCounts.txt"),
                                         header = TRUE,
@@ -90,28 +90,28 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
   textshape::column_to_rownames("miRNA")
 
-# create a dataframe defining the rna species to analyse (that are set to TRUE) based on the yaml user configuration file
+# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config %>%
   base::as.data.frame() %>%
   base::t() %>%
   base::as.data.frame() %>%
   tibble::rownames_to_column("rna_species") %>%
   dplyr::rename("analyse" = "V1") %>%
-  dplyr::filter(analyse == TRUE)
+  tidyr::separate(rna_species, c("rna_species", "pipeline")) %>%
+  dplyr::filter(analyse == TRUE) %>%
+  dplyr::mutate(dataset_name = base::paste0(rna_species, "_", pipeline)) %>%
+  dplyr::pull(dataset_name)
 
-# also create a list for downstream filtering
-to_analyse_list <- to_analyse %>%
-  dplyr::pull(rna_species) %>%
-  base::as.list()
+# set up a vector of all the possible datasets to analyse
+count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
+                             mirna_excerpt = mirna_excerpt_data,
+                             pirna_excerpt = pirna_excerpt_data,
+                             trna_excerpt = trna_excerpt_data,
+                             circrna_excerpt = circrna_excerpt_data,
+                             gencode_excerpt = gencode_excerpt_data)
 
-# setup a 
-count_datasets <- base::paste0(to_analyse_list)
-
-count_datasets <- list(mirna_smrnaseq = mirna_smrnaseq_data,
-                       mirna_excerpt = mirna_excerpt_data,
-                       pirna_excerpt = pirna_excerpt_data,
-                       trna_excerpt = trna_excerpt_data,
-                       gencode_excerpt = gencode_excerpt_data)
+# filter all possible datasets by the datasets the user has specified to analyse
+count_datasets <- count_datasets[to_analyse]
 
 # calculate counts per million (loop over all the count datasets the user has specified)
 counts_cpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
