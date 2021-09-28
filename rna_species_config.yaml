@@ -1,0 +1,9 @@
+# create a list of the count datasets you wish to analyse
+# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are too low
+# you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
+# set the offending datasets to false here so the analysis can continue without these datasets
+mirna: true
+pirna: true
+trna: true
+circrna: false
+gencode: false

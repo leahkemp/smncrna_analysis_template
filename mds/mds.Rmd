@@ -1,0 +1,529 @@
+---
+title: "MDS"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: hide
+    toc: false
+  editor_options: 
+    chunk_output_type: console
+---
+
+# {.tabset .tabset-fade}
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
+```
+
+```{r, user_configuration}
+#### USER CONFIGURATION #####
+
+# set the directory to where the metadata file is on your machine
+metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv
+```
+
+```{r, setup_2}
+# activate renv
+renv::activate()
+
+# load libraries
+library(plyr)
+library(dplyr)
+library(plotly)
+library(gtools)
+library(BiocManager)
+library(limma)
+library(textshape)
+library(DT)
+library(yaml)
+
+# read in yaml config file specifying which rna species to analyse
+config <- yaml.load_file("../rna_species_config.yaml")
+
+# create a dataframe definning the rna species to analyse (that are set to TRUE) based on the yaml user configuration file
+to_analyse <- config %>%
+  as.data.frame() %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("rna_species") %>%
+  dplyr::rename("analyse" = "V1") %>%
+  filter(analyse == TRUE)
+
+# also create a list for downstream filtering
+to_analyse_list <- to_analyse %>%
+  pull(rna_species) %>%
+  as.list()
+
+# read in pre-prepared count data
+counts <- utils::read.csv("../prepare_counts/counts.csv")
+
+# read in metadata
+metadata <- utils::read.csv(metadata_path)
+
+# join with metadata
+counts <- dplyr::left_join(counts, metadata, by = "sample")
+```
+
+```{bash}
+# create a directory to write data to file (if it doesn't yet exist)
+mkdir -p mds_results/mds/
+```
+
+```{r, eval = config$all_rnas, results = "asis"}
+# pretty format the text for the header
+to_analyse_pretty <- to_analyse %>%
+  as.data.frame() %>%
+    mutate(rna_species = replace(rna_species, rna_species == "mirna", "miRNA's")) %>%
+    mutate(rna_species = replace(rna_species, rna_species == "pirna", "piRNA's")) %>%
+    mutate(rna_species = replace(rna_species, rna_species == "trna", "tRNA's")) %>%
+    mutate(rna_species = replace(rna_species, rna_species == "gencode", "gencode's"))
+
+# create a character string (from the list) of the rna species being analysed to put into the header
+to_analyse_pretty <- to_analyse_pretty %>%
+  pull(rna_species) %>%
+  as.list()
+
+to_analyse_pretty <- paste0(to_analyse_pretty, collapse = " ")
+
+# dynamically build up a header based on the rna species being analysed
+cat(paste0("## All RNA's analysed: ", to_analyse_pretty, " ", "{.tabset .tabset-fade}"))
+```
+
+```{r, eval = config$all_rnas, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  # analyse/plot only the rna species the user has specified to analyse
+  dplyr::filter(rna_species %in% to_analyse_list) %>%
+  dplyr::select(sample, rna, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("rna") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <-base:: cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+write.csv(data, "mds_results/mds/mds_excerpt_all_rnas.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plot_ly(mode = "markers",
+          x = ~dim1,
+          y = ~dim2,
+          color = ~treatment,
+          hoverinfo = "text",
+          text = ~paste("</br> Sample:", sample,
+                        "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                        "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  layout(xaxis = list(title = "Dim1"),
+         yaxis = list(title = "Dim2"))
+```
+
+```{r, eval = config$all_rnas, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$mirna, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+cat("## miRNA's")
+```
+
+```{r, eval = config$mirna, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "mirna") %>%
+  dplyr::select(sample, rna, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("rna") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <-base:: cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+write.csv(data, "mds_results/mds/mds_excerpt_pirnas.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plot_ly(mode = "markers",
+          x = ~dim1,
+          y = ~dim2,
+          color = ~treatment,
+          hoverinfo = "text",
+          text = ~paste("</br> Sample:", sample,
+                        "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                        "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  layout(xaxis = list(title = "Dim1"),
+         yaxis = list(title = "Dim2"))
+```
+
+```{r, eval = config$mirna, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$pirna, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+cat("## piRNA's")
+```
+
+```{r, eval = config$pirna, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "pirna") %>%
+  dplyr::select(sample, rna, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("rna") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <-base:: cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+write.csv(data, "mds_results/mds/mds_excerpt_pirnas.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plot_ly(mode = "markers",
+          x = ~dim1,
+          y = ~dim2,
+          color = ~treatment,
+          hoverinfo = "text",
+          text = ~paste("</br> Sample:", sample,
+                        "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                        "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  layout(xaxis = list(title = "Dim1"),
+         yaxis = list(title = "Dim2"))
+```
+
+```{r, eval = config$pirna, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$trna, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+cat("## tRNA's")
+```
+
+```{r, eval = config$trna, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "trna") %>%
+  dplyr::select(sample, rna, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("rna") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <-base:: cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+write.csv(data, "mds_results/mds/mds_excerpt_trnas.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plot_ly(mode = "markers",
+          x = ~dim1,
+          y = ~dim2,
+          color = ~treatment,
+          hoverinfo = "text",
+          text = ~paste("</br> Sample:", sample,
+                        "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                        "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  layout(xaxis = list(title = "Dim1"),
+         yaxis = list(title = "Dim2"))
+```
+
+```{r, eval = config$trna, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$circrna, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+cat("## circRNA's")
+```
+
+```{r, eval = config$circrna, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "circrna") %>%
+  dplyr::select(sample, rna, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("rna") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <-base:: cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+write.csv(data, "mds_results/mds/mds_excerpt_circrnas.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plot_ly(mode = "markers",
+          x = ~dim1,
+          y = ~dim2,
+          color = ~treatment,
+          hoverinfo = "text",
+          text = ~paste("</br> Sample:", sample,
+                        "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                        "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  layout(xaxis = list(title = "Dim1"),
+         yaxis = list(title = "Dim2"))
+```
+
+```{r, eval = config$circrna, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$gencode, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+cat("## gencode's")
+```
+
+```{r, eval = config$gencode, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "gencode") %>%
+  dplyr::select(sample, rna, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("rna") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <-base:: cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+write.csv(data, "mds_results/mds/mds_excerpt_gencode.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plot_ly(mode = "markers",
+          x = ~dim1,
+          y = ~dim2,
+          color = ~treatment,
+          hoverinfo = "text",
+          text = ~paste("</br> Sample:", sample,
+                        "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                        "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  layout(xaxis = list(title = "Dim1"),
+         yaxis = list(title = "Dim2"))
+```
+
+```{r, eval = config$gencode, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
