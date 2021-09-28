@@ -77,7 +77,7 @@ mirna_smrnaseq_data <- utils::read.table(file.path(config$template_dir,
                                          header = TRUE,
                                          stringsAsFactors = TRUE) %>%
     # remove S*_R1.fastq suffix from the sample/column names
-    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
+    dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1", "", .))
 
 # get only the count data (for the raw count data from the smrnaseq pipeline) and remove the unnecessary columns
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
