@@ -24,7 +24,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FAL
 #### USER CONFIGURATION #####
 
 # set the directory to where the metadata file is on your machine
-metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
+# metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
+metadata_path <- "/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/metadata.csv"
 ```
 
 ```{r, setup_2}
@@ -45,13 +46,14 @@ library(yaml)
 # read in yaml config file specifying which rna species to analyse
 config <- yaml::yaml.load_file("../rna_species_config.yaml")
 
-# create a dataframe definning the rna species to analyse (that are set to TRUE) based on the yaml user configuration file
+# create a dataframe defining the rna species to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config %>%
   base::as.data.frame() %>%
   base::t() %>%
   base::as.data.frame() %>%
   tibble::rownames_to_column("rna_species") %>%
   dplyr::rename("analyse" = "V1") %>%
+  tidyr::separate(rna_species, c("rna_species", "pipeline")) %>%
   dplyr::filter(analyse == TRUE)
 
 # also create a list for downstream filtering
@@ -78,17 +80,25 @@ mkdir -p mds_results/mds/
 # pretty format the text for the header
 to_analyse_pretty <- to_analyse %>%
   base::as.data.frame() %>%
-    dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "mirna", "miRNA's")) %>%
-    dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "pirna", "piRNA's")) %>%
-    dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "trna", "tRNA's")) %>%
-    dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "gencode", "gencode's"))
+  dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "mirna", "miRNA's")) %>%
+  dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "mirna", "miRNA's")) %>%
+  dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "pirna", "piRNA's")) %>%
+  dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "trna", "tRNA's")) %>%
+  dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "circrna", "circRNA's")) %>%
+  dplyr::mutate(rna_species = base::replace(rna_species, rna_species == "gencode", "gencode's")) %>%
+  dplyr::mutate(pipeline = base::replace(pipeline, pipeline == "smrnaseq", "(smrnaseq)")) %>%
+  dplyr::mutate(pipeline = base::replace(pipeline, pipeline == "excerpt", "(exceRpt)"))
 
-# create a character string (from the list) of the rna species being analysed to put into the header
-to_analyse_pretty <- to_analyse_pretty %>%
+# create a character string (from the list) of the rna species and pipelines being analysed to put into the header
+rna_species_pretty <- to_analyse_pretty %>%
   dplyr::pull(rna_species) %>%
   base::as.list()
 
-to_analyse_pretty <- base::paste0(to_analyse_pretty, collapse = " ")
+pipeline_pretty <- to_analyse_pretty %>%
+  dplyr::pull(pipeline) %>%
+  base::as.list()
+
+to_analyse_pretty <- base::paste0(rna_species_pretty, " ", pipeline_pretty, collapse = " ")
 
 # dynamically build up a header based on the rna species being analysed
 base::cat(base::paste0("## All RNA's analysed: ", to_analyse_pretty, " ", "{.tabset .tabset-fade}"))
@@ -163,12 +173,85 @@ DT::datatable(data %>%
                        I("colvis"))))
 ```
 
-```{r, eval = config$mirna, results = "asis"}
+```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## miRNA's")
+base::cat("## miRNA's (smrnaseq)")
 ```
 
-```{r, eval = config$mirna, out.width = "100%"}
+```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "smrnaseq") %>%
+  dplyr::filter(rna_species == "mirna") %>%
+  dplyr::select(sample, rna, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("rna") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <- base::cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+utils::write.csv(data, "mds_results/mds/mds_excerpt_pirnas.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- dplyr::left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plotly::plot_ly(mode = "markers",
+                  x = ~dim1,
+                  y = ~dim2,
+                  color = ~treatment,
+                  hoverinfo = "text",
+                  text = ~paste("</br> Sample:", sample,
+                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = list(title = "Dim1"),
+                 yaxis = list(title = "Dim2"))
+```
+
+```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$mirna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("## miRNA's (excerpt)")
+```
+
+```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # calculate MDS
 mds <- counts %>%
   dplyr::filter(pipeline == "excerpt") %>%
@@ -206,7 +289,7 @@ data %>%
                  yaxis = list(title = "Dim2"))
 ```
 
-```{r, eval = config$mirna, out.width = "100%"}
+```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
                 dplyr::select(sample,
@@ -236,12 +319,12 @@ DT::datatable(data %>%
                        I("colvis"))))
 ```
 
-```{r, eval = config$pirna, results = "asis"}
+```{r, eval = config$pirna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## piRNA's")
+base::cat("## piRNA's (excerpt)")
 ```
 
-```{r, eval = config$pirna, out.width = "100%"}
+```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # calculate MDS
 mds <- counts %>%
   dplyr::filter(pipeline == "excerpt") %>%
@@ -279,7 +362,7 @@ data %>%
                  yaxis = list(title = "Dim2"))
 ```
 
-```{r, eval = config$pirna, out.width = "100%"}
+```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
                 dplyr::select(sample,
@@ -309,12 +392,12 @@ DT::datatable(data %>%
                        I("colvis"))))
 ```
 
-```{r, eval = config$trna, results = "asis"}
+```{r, eval = config$trna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## tRNA's")
+base::cat("## tRNA's (excerpt)")
 ```
 
-```{r, eval = config$trna, out.width = "100%"}
+```{r, eval = config$trna_excerpt, out.width = "100%"}
 # calculate MDS
 mds <- counts %>%
   dplyr::filter(pipeline == "excerpt") %>%
@@ -352,7 +435,7 @@ data %>%
                  yaxis = list(title = "Dim2"))
 ```
 
-```{r, eval = config$trna, out.width = "100%"}
+```{r, eval = config$trna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
                 dplyr::select(sample,
@@ -382,12 +465,12 @@ DT::datatable(data %>%
                        I("colvis"))))
 ```
 
-```{r, eval = config$circrna, results = "asis"}
+```{r, eval = config$circrna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## circRNA's")
+base::cat("## circRNA's (excerpt)")
 ```
 
-```{r, eval = config$circrna, out.width = "100%"}
+```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # calculate MDS
 mds <- counts %>%
   dplyr::filter(pipeline == "excerpt") %>%
@@ -425,7 +508,7 @@ data %>%
                  yaxis = list(title = "Dim2"))
 ```
 
-```{r, eval = config$circrna, out.width = "100%"}
+```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
                 dplyr::select(sample,
@@ -455,12 +538,12 @@ DT::datatable(data %>%
                        I("colvis"))))
 ```
 
-```{r, eval = config$gencode, results = "asis"}
+```{r, eval = config$gencode_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## gencode's")
+base::cat("## gencode's (excerpt)")
 ```
 
-```{r, eval = config$gencode, out.width = "100%"}
+```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # calculate MDS
 mds <- counts %>%
   dplyr::filter(pipeline == "excerpt") %>%
@@ -498,7 +581,7 @@ data %>%
                  yaxis = list(title = "Dim2"))
 ```
 
-```{r, eval = config$gencode, out.width = "100%"}
+```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
                 dplyr::select(sample,

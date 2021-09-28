@@ -2,8 +2,9 @@
 # note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are too low
 # you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
 # set the offending datasets to false here so the analysis can continue without these datasets
-mirna: true
-pirna: true
-trna: true
-circrna: false
-gencode: false
+mirna_smrnaseq: true
+mirna_excerpt: true
+pirna_excerpt: true
+trna_excerpt: true
+circrna_excerpt: false
+gencode_excerpt: false
