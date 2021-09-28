@@ -15,7 +15,9 @@ output:
 ```{r setup, include=FALSE}
 # setup default chunk settings
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
 
+```{r, prepare_counts}
 # activate renv
 renv::activate()
 
@@ -25,48 +27,53 @@ library(textshape)
 library(edgeR)
 library(tibble)
 library(gtools)
-```
 
-```{r, user_configuration}
-#### USER CONFIGURATION #####
+# read in yaml config file specifying which rna species to analyse
+config <- yaml::yaml.load_file("../config.yaml")
 
-# set the directory to where the smncrna_analysis_template is on your machine
-template_dir <- "/my_project/smncrna_analysis_template/smncrna_analysis_template"
-```
-
-```{r, read_data, results = "hide"}
 # load the count data
-mirna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_miRNA_ReadCounts.txt"),
+mirna_excerpt_data <- utils::read.table(file.path(config$template_dir,
+                                                  "excerpt_pipeline_run/merged/exceRpt_miRNA_ReadCounts.txt"),
                                         header = TRUE,
                                         stringsAsFactors = FALSE,
                                         check.names = FALSE) %>%
     # remove S*_R1.fastq suffix from the sample/column names
     dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-pirna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_piRNA_ReadCounts.txt"),
+
+pirna_excerpt_data <- utils::read.table(file.path(config$template_dir,
+                                                  "excerpt_pipeline_run/merged/exceRpt_piRNA_ReadCounts.txt"),
                                         header = TRUE,
                                         stringsAsFactors = FALSE,
                                         check.names = FALSE) %>%
     # remove S*_R1.fastq suffix from the sample/column names
     dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-trna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_tRNA_ReadCounts.txt"),
+
+trna_excerpt_data <- utils::read.table(file.path(config$template_dir,
+                                                 "excerpt_pipeline_run/merged/exceRpt_tRNA_ReadCounts.txt"),
                                        header = TRUE,
                                        stringsAsFactors = FALSE,
                                        check.names = FALSE) %>%
     # remove S*_R1.fastq suffix from the sample/column names
     dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-circrna_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_circularRNA_ReadCounts.txt"),
+
+circrna_excerpt_data <- utils::read.table(file.path(config$template_dir,
+                                                    "excerpt_pipeline_run/merged/exceRpt_circularRNA_ReadCounts.txt"),
                                           header = TRUE,
                                           stringsAsFactors = FALSE,
                                           comment.char = "") %>%
     # remove S*_R1.fastq suffix from the sample/column names
     dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-gencode_excerpt_data <- utils::read.table(file.path(template_dir, "excerpt_pipeline_run/merged/exceRpt_gencode_ReadCounts.txt"),
+
+gencode_excerpt_data <- utils::read.table(file.path(config$template_dir,
+                                                    "excerpt_pipeline_run/merged/exceRpt_gencode_ReadCounts.txt"),
                                           header = TRUE,
                                           stringsAsFactors = FALSE,
                                           check.names = FALSE) %>%
     # remove S*_R1.fastq suffix from the sample/column names
     dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-mirna_smrnaseq_data <- utils::read.table(file.path(template_dir, "smrnaseq_pipeline_run/results/mirtop/mirtop.tsv"),
+
+mirna_smrnaseq_data <- utils::read.table(file.path(config$template_dir,
+                                                   "smrnaseq_pipeline_run/results/mirtop/mirtop.tsv"),
                                          header = TRUE,
                                          stringsAsFactors = TRUE)
 
@@ -82,33 +89,30 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
 # convert column to rownames for downstream processing
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
   textshape::column_to_rownames("miRNA")
-```
 
-```{r, user_configuration_2}
-#### USER CONFIGURATION #####
+# create a dataframe defining the rna species to analyse (that are set to TRUE) based on the yaml user configuration file
+to_analyse <- config %>%
+  base::as.data.frame() %>%
+  base::t() %>%
+  base::as.data.frame() %>%
+  tibble::rownames_to_column("rna_species") %>%
+  dplyr::rename("analyse" = "V1") %>%
+  dplyr::filter(analyse == TRUE)
 
-# create a list of the count datasets you want to work with
+# also create a list for downstream filtering
+to_analyse_list <- to_analyse %>%
+  dplyr::pull(rna_species) %>%
+  base::as.list()
 
-# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are too low
-# you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
-# DON'T include the offending datasets here so the analysis can continue without these datasets
-
-# disclaimer. we're not sure if it make sense to calculate counts per million for the gencode dataset (gencode_excerpt_data)
-# since this dataset is comprised of several different types of RNA species, analyse at your own risk
-
-# dataset's available: mirna_smrnaseq_data, mirna_excerpt_data, pirna_excerpt_data, trna_excerpt_data, circrna_excerpt_data, gencode_excerpt_data
-
-# assign each dataset a name in the following list the in the format of "rna species", underscore, "pipeline"
-# it is important to assign these variables correctly!!
+# setup a 
+count_datasets <- base::paste0(to_analyse_list)
 
 count_datasets <- list(mirna_smrnaseq = mirna_smrnaseq_data,
                        mirna_excerpt = mirna_excerpt_data,
                        pirna_excerpt = pirna_excerpt_data,
                        trna_excerpt = trna_excerpt_data,
                        gencode_excerpt = gencode_excerpt_data)
-```
 
-```{r, prepare_counts}
 # calculate counts per million (loop over all the count datasets the user has specified)
 counts_cpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
   
