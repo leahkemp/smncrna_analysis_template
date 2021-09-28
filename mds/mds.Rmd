@@ -600,3 +600,10 @@ DT::datatable(data %>%
                             text = "Download"),
                        I("colvis"))))
 ```
+
+```{r, results = "hide"}
+# save session info
+writeLines(capture.output(R.Version()), "R_version_info.txt")
+writeLines(capture.output(sessionInfo()), "R_session_info.txt")
+```
+
