@@ -22,14 +22,15 @@ Analysis template for analysing, visualising and communicating the findings of [
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
     - [2. Take this template to the data on your local machine](#2-take-this-template-to-the-data-on-your-local-machine)
     - [3. Format your input files](#3-format-your-input-files)
-  - [fastq naming convention](#fastq-naming-convention)
-  - [List of samples](#list-of-samples)
-  - [Metadata file](#metadata-file)
-    - [4. Analyse your data](#4-analyse-your-data)
-    - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
-    - [6. Repeat step 5 each time you re-run the analysis with different parameters](#6-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
-    - [7. Create a github page (optional)](#7-create-a-github-page-optional)
-    - [8. Contribute back!](#8-contribute-back)
+      - [fastq naming convention](#fastq-naming-convention)
+      - [List of samples](#list-of-samples)
+      - [Metadata file](#metadata-file)
+    - [4. Configure the configuration file](#4-configure-the-configuration-file)
+    - [5. Analyse your data](#5-analyse-your-data)
+    - [6. Commit and push to your forked version of the github repo](#6-commit-and-push-to-your-forked-version-of-the-github-repo)
+    - [7. Repeat step 5 each time you re-run the analysis with different parameters](#7-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
+    - [8. Create a github page (optional)](#8-create-a-github-page-optional)
+    - [9. Contribute back!](#9-contribute-back)
 
 ## What this template can do
 
@@ -108,24 +109,28 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 
 ### 3. Format your input files
 
-## fastq naming convention
+#### fastq naming convention
 
 ```bash
 S*_R1.fastq.gz
 ```
 
-## List of samples
+#### List of samples
 
 
 
-## Metadata file
+#### Metadata file
 
 Columns:
 
 - "sample"
 - "treatment"
 
-### 4. Analyse your data
+### 4. Configure the configuration file
+
+Set up [rna_species_config.yaml](rna_species_config.yaml)
+
+### 5. Analyse your data
 
 - [Run smrnaseq pipeline](./smrnaseq_pipeline_run/run_smrnaseq_pipeline.md)
 - [Run excerpt pipeline](./excerpt_pipeline_run/run_excerpt_pipeline.md)
@@ -141,7 +146,7 @@ Columns:
   - [Data prep for app](./expression_plotting/data_prep_for_app.R)
   - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./expression_plotting/server.R) and [ui](./expression_plotting/ui.R) that comprise the app
 
-### 5. Commit and push to your forked version of the github repo
+### 6. Commit and push to your forked version of the github repo
 
 Push all the results files you're comfortable with being online:
 
@@ -153,11 +158,11 @@ To maintain reproducibility of your analysis, commit and push:
 - All run scripts
 - All your documentation/notes
 
-### 6. Repeat step 5 each time you re-run the analysis with different parameters
+### 7. Repeat step 5 each time you re-run the analysis with different parameters
 
-### 7. Create a github page (optional)
+### 8. Create a github page (optional)
 
-### 8. Contribute back!
+### 9. Contribute back!
 
 - Raise issues in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
 - Create feature requests in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
