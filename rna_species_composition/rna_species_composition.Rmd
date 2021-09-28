@@ -8,11 +8,6 @@ output:
   html_document:
     code_download: true
     code_folding: hide
-    toc: true
-    toc_depth: 4
-    toc_float:
-      collapsed: true
-      smooth_scroll: true
   editor_options: 
     chunk_output_type: console
 ---
@@ -22,16 +17,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
 
-```{r, user_configuration}
-#### USER CONFIGURATION #####
-
-# set the directory to where the metadata file is on your machine
-metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
-```
-
+- **The pie charts present only the RNA's the user has chosen to analyse**
 - *The total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group*
-- *The pie charts present only the RNA's identified in the excerpt pipeline (and not the smrnaseq pipeline) given the smrnaseq pipeline identifies only miRNAs*
 - *Values have been rounded*
+
+# {.tabset .tabset-fade}
 
 ```{r}
 # activate renv
@@ -46,25 +36,28 @@ library(DT)
 # read in pre-prepared count data
 counts <- utils::read.csv("../prepare_counts/counts.csv")
 
+# read in yaml config file specifying which rna species to analyse
+config <- yaml::yaml.load_file("../config.yaml")
+
 # read in metadata
-metadata <- utils::read.csv(metadata_path)
+metadata <- utils::read.csv(file.path(config$metadata))
 
 # get the total RNA counts by RNA species, sample and pipeline (collapse individual RNAs)
-data_raw <- counts %>%
+data <- counts %>%
   dplyr::group_by(rna_species, sample, pipeline) %>%
   dplyr::summarise(total_raw_count = base::sum(raw_counts))
 
 # join with metadata
-data_raw <- dplyr::left_join(data_raw, metadata, by = "sample")
+data <- dplyr::left_join(data, metadata, by = "sample")
 
 # get the average RNA counts by RNA species (and pipeline)
-data_raw <- data_raw %>%
+data <- data %>%
   dplyr::group_by(treatment, rna_species, pipeline) %>%
   dplyr::summarise(mean_total_raw_count = base::mean(total_raw_count)) %>%
   dplyr::arrange(dplyr::desc(treatment, mean_total_raw_count))
 
 # create datatable of data
-data_raw %>%
+data %>%
   dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
   DT::datatable(selection = "single",
                 filter = "top",
@@ -90,7 +83,13 @@ data_raw %>%
                          I("colvis"))))
 ```
 
+## smrnaseq pipeline
+
 ```{r}
+# filter to get only the data for the smrnaseq pipeline
+data_smrnaseq <- data %>%
+  filter(pipeline == "smrnaseq")
+
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
 colors_list <- list(
@@ -111,10 +110,10 @@ colors_list <- list(
   "rRNA" = "#ff576e"
 )
 
-data_raw$my_colour <- dplyr::recode(data_raw$rna_species, !!!colors_list)
+data_smrnaseq$my_colour <- dplyr::recode(data_smrnaseq$rna_species, !!!colors_list)
 
 # get maximum RNA count to scale bar plots to
-max_range_barplot <- base::round(base::max(data_raw$mean_total_raw_count), digits = 0)
+max_range_barplot <- base::round(base::max(data_smrnaseq$mean_total_raw_count), digits = 0)
 
 # make a list of the number of samples in each treatment group (so it can be passed to the tooltip below)
 num_samples_by_treatment <- metadata %>%
@@ -125,11 +124,10 @@ num_samples_by_treatment <- metadata %>%
 # see issue I faced with a for loop in Rmd here: https://stackoverflow.com/questions/49990653/plotly-plot-doesnt-render-within-for-loop-of-rmarkdown-document
 # and solution I applied here: https://github.com/ropensci/plotly/issues/273#issuecomment-195611009
 
-htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_raw$treatment)), function(x) { 
-
-  data_raw %>%
+htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$treatment)), function(x) { 
+  
+  data_smrnaseq %>%
     dplyr::filter(treatment == x) %>%
-    dplyr::filter(pipeline == "excerpt") %>%
     
     # add pie chart
     plotly::plot_ly(labels = ~rna_species,
@@ -142,6 +140,94 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_raw$treatmen
                     text = ~paste(" RNA species:", rna_species,
                                   "</br></br>",
                                   "Treatment:", treatment,
+                                  "</br>",
+                                  "Pipeline:", pipeline,
+                                  "</br>",
+                                  "Number of samples: ", (num_samples_by_treatment %>% dplyr::filter(treatment == x)) %>% dplyr::select(num_samples),
+                                  "</br>",
+                                  "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
+                                  "</br>",
+                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                    showlegend = FALSE,
+                    width = 4) %>%
+    add_pie() %>%
+    plotly::layout(title = x,
+                   xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, domain = c(0.8,1))) %>%
+    
+    # add bar chart
+    plotly::add_trace(x = ~rna_species,
+                      y = ~mean_total_raw_count,
+                      type = "bar",
+                      marker = list(color = ~my_colour),
+                      textposition = "none",
+                      showlegend = FALSE,
+                      domain = list(x = c(0, 0.05))) %>%
+    # get the same xaxis range for easy visual comparing between plots
+    plotly::layout(yaxis = list(title = " ", range = c(0, max_range_barplot)),
+                   xaxis = list(title = "RNA species"))
+  
+}))
+```
+
+## excerpt pipeline
+
+```{r}
+# filter to get only the data for the smrnaseq pipeline
+data_excerpt <- data %>%
+  filter(pipeline == "excerpt")
+
+# hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
+# are consistant between all the plots
+colors_list <- list(
+  "trna" = "#173b4e",
+  "mirna" = "#D95F02",
+  "pirna" = "#7570B3",
+  "protein_coding" = "#b17eb1",
+  "Mt_rRNA" = "#66A61E",
+  "misc_RNA" = "#27408b",
+  "retained_intron" = "#ffec8b",
+  "processed_transcript" = "#88d4c3",
+  "nonsense_mediated_decay" = "#1B9E77",
+  "lincRNA" = "#ff9457",
+  "antisense" = "#f190c1",
+  "processed_pseudogene" = "#27408b",
+  "snoRNA" = "#2b5540",
+  "snRNA" = "#a91e69",
+  "rRNA" = "#ff576e"
+)
+
+data_excerpt$my_colour <- dplyr::recode(data_excerpt$rna_species, !!!colors_list)
+
+# get maximum RNA count to scale bar plots to
+max_range_barplot <- base::round(base::max(data_excerpt$mean_total_raw_count), digits = 0)
+
+# make a list of the number of samples in each treatment group (so it can be passed to the tooltip below)
+num_samples_by_treatment <- metadata %>%
+  dplyr::group_by(treatment) %>%
+  dplyr::summarise(num_samples = n())
+
+# create a plot for each unique sample
+# see issue I faced with a for loop in Rmd here: https://stackoverflow.com/questions/49990653/plotly-plot-doesnt-render-within-for-loop-of-rmarkdown-document
+# and solution I applied here: https://github.com/ropensci/plotly/issues/273#issuecomment-195611009
+
+htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$treatment)), function(x) { 
+  
+  data_excerpt %>%
+    dplyr::filter(treatment == x) %>%
+    
+    # add pie chart
+    plotly::plot_ly(labels = ~rna_species,
+                    values = ~mean_total_raw_count,
+                    textposition = "inside",
+                    textinfo = "label+percent",
+                    insidetextfont = list(color = "#FFFFFF"),
+                    hoverinfo = "text",
+                    marker = list(colors = ~my_colour),
+                    text = ~paste(" RNA species:", rna_species,
+                                  "</br></br>",
+                                  "Treatment:", treatment,
+                                  "</br>",
+                                  "Pipeline:", pipeline,
                                   "</br>",
                                   "Number of samples: ", (num_samples_by_treatment %>% dplyr::filter(treatment == x)) %>% dplyr::select(num_samples),
                                   "</br>",
