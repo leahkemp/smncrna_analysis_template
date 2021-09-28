@@ -24,8 +24,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FAL
 #### USER CONFIGURATION #####
 
 # set the directory to where the metadata file is on your machine
-# metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
-metadata_path <- "/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/metadata.csv"
+metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
 ```
 
 ```{r, setup_2}
