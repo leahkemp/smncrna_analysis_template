@@ -18,16 +18,7 @@ output:
 ```{r setup, include=FALSE}
 # setup default chunk settings
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
-```
 
-```{r, user_configuration}
-#### USER CONFIGURATION #####
-
-# set the directory to where the metadata file is on your machine
-metadata_path <- "/my_project/smncrna_analysis_template/metadata.csv"
-```
-
-```{r, setup_2}
 # activate renv
 renv::activate()
 
@@ -64,7 +55,7 @@ to_analyse_list <- to_analyse %>%
 counts <- utils::read.csv("../prepare_counts/counts.csv")
 
 # read in metadata
-metadata <- utils::read.csv(metadata_path)
+metadata <- utils::read.csv(config$metadata_path)
 
 # join with metadata
 counts <- dplyr::left_join(counts, metadata, by = "sample")

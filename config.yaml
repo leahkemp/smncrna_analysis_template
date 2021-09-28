@@ -8,3 +8,6 @@ pirna_excerpt: true
 trna_excerpt: true
 circrna_excerpt: false
 gencode_excerpt: false
+
+# set the path to your metadata file
+metadata_path: "/my_project/smncrna_analysis_template/metadata.csv"
