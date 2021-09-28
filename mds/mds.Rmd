@@ -34,7 +34,7 @@ library(DT)
 library(yaml)
 
 # read in yaml config file specifying which rna species to analyse
-config <- yaml::yaml.load_file("../rna_species_config.yaml")
+config <- yaml::yaml.load_file("../config.yaml")
 
 # create a dataframe defining the rna species to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config %>%
