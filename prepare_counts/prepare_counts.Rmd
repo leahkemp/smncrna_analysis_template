@@ -95,6 +95,12 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config %>%
   base::as.data.frame() %>%
+  dplyr::select(mirna_smrnaseq,
+                mirna_excerpt,
+                pirna_excerpt,
+                trna_excerpt,
+                circrna_excerpt,
+                gencode_excerpt) %>%
   base::t() %>%
   base::as.data.frame() %>%
   tibble::rownames_to_column("rna_species") %>%

@@ -1,16 +1,29 @@
-# create a list of the count datasets you wish to analyse
-# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are too low
-# you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
+# choose the count datasets you wish to analyse
+# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are
+# too low you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
 # set the offending datasets to false here so the analysis can continue without these datasets
 mirna_smrnaseq: true
 mirna_excerpt: true
 pirna_excerpt: true
 trna_excerpt: true
 circrna_excerpt: false
-gencode_excerpt: false
+gencode_excerpt: true
 
 # set the path to your smncrna_analysis_template directory
-template_dir: "/my_project/smncrna_analysis_template/"
+#template_dir: "/my_project/smncrna_analysis_template/"
+
+template_dir: "/my_project/smncrna_analysis_template"
 
 # set the path to your metadata file
 metadata_path: "/my_project/smncrna_analysis_template/metadata.csv"
+
+# set the low sequencing read count flag, the number of reads at which you consider the sequencing read count
+# to be low eg. 5000000 (5 million)
+low_sequencing_read_count: 5000000
+
+# choose which differential expression methods to employ
+# limma/voom(https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29)
+# deseq2 (https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8)
+
+limma_voom: true
+deseq: true
