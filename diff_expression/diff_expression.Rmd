@@ -210,6 +210,11 @@ base::cat(paste0(" - ", config$contrasts, "\n"))
 
 ## limma/voom
 
+```{r, results = "asis"}
+# print the filtering options the user has chosen to use
+base::cat(paste0(" - ", config$min_total_count, "\n", " - ", config$min_count, "\n"))
+```
+
 ```{r, limma_voom}
 # create DGEList objects for the datasets (loop over all count datasets)
 dge <- base::lapply(count_datasets, function(x) {
@@ -221,31 +226,54 @@ dge <- base::lapply(count_datasets, function(x) {
 # filter lowly expressed RNA
 keep <- base::lapply(dge, function(x) {
   
-  filterByExpr(x, group=ordered_treatments)
+  filterByExpr(x, group=ordered_treatments, min.count = config$min_count, min.total.count = config$min_total_count)
 
 })
+```
 
-# dge_filtered <- base::lapply(dge, function(x) {
-#   
-#   x[keep$x, keep.lib.sizes=FALSE]
-# 
-# })
-
-# get a list of RNA's that were filtered out (are FALSE in the the keep_exprs lists)
-rnas_filtered <- base::lapply(keep, function(x) {
-
-  x[x==FALSE]
-  
-})
-
-# calculate normalization factors to scale the raw library sizes
+```{r, eval = config$mirna_smrnaseq}
+# filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-norm_factors <- base::lapply(dge, function(x) {
+dge_mirna_smrnaseq_filtered <- dge$mirna_smrnaseq[keep$mirna_smrnaseq,, keep.lib.sizes=FALSE] %>%
+  edgeR::calcNormFactors(method="TMM")
+```
 
-  edgeR::calcNormFactors(x, method="TMM")
+```{r, eval = config$mirna_excerpt}
+# filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
+# (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
+dge_mirna_excerpt_filtered <- dge$mirna_excerpt[keep$mirna_excerpt,, keep.lib.sizes=FALSE] %>%
+  edgeR::calcNormFactors(method="TMM")
+```
 
-})
+```{r, eval = config$pirna_excerpt}
+# filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
+# (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
+dge_pirna_excerpt_filtered <- dge$pirna_excerpt[keep$pirna_excerpt,, keep.lib.sizes=FALSE] %>%
+  edgeR::calcNormFactors(method="TMM")
+```
 
+```{r, eval = config$trna_excerpt}
+# filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
+# (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
+dge_trna_excerpt_filtered <- dge$trna_excerpt[keep$trna_excerpt,, keep.lib.sizes=FALSE] %>%
+  edgeR::calcNormFactors(method="TMM")
+```
+
+```{r, eval = config$circrna_excerpt}
+# filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
+# (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
+dge_circrna_excerpt_filtered <- dge$circrna_excerpt[keep$circrna_excerpt,, keep.lib.sizes=FALSE] %>%
+  edgeR::calcNormFactors(method="TMM")
+```
+
+```{r, eval = config$gencode_excerpt}
+# filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
+# (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
+dge_gencode_excerpt_filtered <- dge$gencode_excerpt[keep$gencode_excerpt,, keep.lib.sizes=FALSE] %>%
+  edgeR::calcNormFactors(method="TMM")
+```
+
+```{r}
 # create a model matrix
 # also simplify the column names in the model matrix (loop over all count datasets)
 model_matrix <- base::lapply(dge, function(x) {
@@ -274,7 +302,7 @@ base::cat("#### miRNA's (smrnaseq)")
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-mirna_smrnaseq_limmavoom_v <- voom(dge$mirna_smrnaseq,  model_matrix$mirna_smrnaseq, plot=TRUE)
+mirna_smrnaseq_limmavoom_v <- voom(dge_mirna_smrnaseq_filtered,  model_matrix$mirna_smrnaseq, plot=TRUE)
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -284,7 +312,7 @@ base::cat("#### miRNA's (excerpt)")
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-mirna_excerpt_limmavoom_v <-voom(dge$mirna_excerpt,  model_matrix$mirna_excerpt, plot=TRUE)
+mirna_excerpt_limmavoom_v <- voom(dge_mirna_excerpt_filtered,  model_matrix$mirna_excerpt, plot=TRUE)
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -294,7 +322,7 @@ base::cat("#### piRNA's (excerpt)")
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-pirna_excerpt_limmavoom_v <-voom(dge$pirna_excerpt,  model_matrix$pirna_excerpt, plot=TRUE)
+pirna_excerpt_limmavoom_v <- voom(dge_pirna_excerpt_filtered,  model_matrix$pirna_excerpt, plot=TRUE)
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -302,9 +330,9 @@ pirna_excerpt_limmavoom_v <-voom(dge$pirna_excerpt,  model_matrix$pirna_excerpt,
 base::cat("#### tRNA's (excerpt)")
 ```
 
-```{r, eval = config$trna_excerpt, results = "asis"}
+```{r, eval = config$trna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-trna_excerpt_limmavoom_v <-voom(dge$trna_excerpt,  model_matrix$trna_excerpt, plot=TRUE)
+trna_excerpt_limmavoom_v <- voom(dge_trna_excerpt_filtered,  model_matrix$trna_excerpt, plot=TRUE)
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -314,7 +342,7 @@ base::cat("#### circRNA's (excerpt)")
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-circrna_excerpt_limmavoom_v <-voom(dge$circrna_excerpt,  model_matrix$circrna_excerpt, plot=TRUE)
+circrna_excerpt_limmavoom_v <- voom(dge_circrna_excerpt_filtered,  model_matrix$circrna_excerpt, plot=TRUE)
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -324,7 +352,7 @@ base::cat("#### gencodes (excerpt)")
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-gencodes_excerpt_limmavoom_v <-voom(dge$gencode_excerpt,  model_matrix$gencodes_excerpt, plot=TRUE)
+gencodes_excerpt_limmavoom_v <- voom(dge_gencode_excerpt_filtered,  model_matrix$gencodes_excerpt, plot=TRUE)
 ```
 
 ### Residual variances {.tabset .tabset-fade}

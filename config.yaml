@@ -28,3 +28,17 @@ low_sequencing_read_count: 5000000
 contrasts: 
 - "treatment1 - treatment2"
 - "treatment3 - treatment4"
+
+##### FILTERING ######
+
+# filtering settings for limma/voom analysis
+
+# minimum count required for at least some samples
+# see info about this flag here: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
+# default is 10
+min_count: 10
+
+# minimum total count required
+# see info about this flag here: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
+# default is 15
+min_total_count: 15
