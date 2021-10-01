@@ -143,7 +143,7 @@ Set up [rna_species_config.yaml](rna_species_config.yaml)
   - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./pca/server.R) and [ui](./pca/ui.R) that comprise the app
 - [Differential expression analysis](./diff_expression/diff_expression.Rmd)
 - Expression plots:
-  - [Data prep for app](./expression_plotting/data_prep_for_app.R)
+  - [Data prep for app](./expression_plotting/data_prep_for_app.Rmd)
   - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./expression_plotting/server.R) and [ui](./expression_plotting/ui.R) that comprise the app
 
 ### 6. Commit and push to your forked version of the github repo
