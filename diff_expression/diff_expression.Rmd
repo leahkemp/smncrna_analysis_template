@@ -1555,7 +1555,7 @@ datatable(diff_expr_results %>%
 
 ```{r}
 # write differential expression results to file
-diff_expr_data %>%
+diff_expr_results %>%
   write.table(file = "./diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
 ```
 
