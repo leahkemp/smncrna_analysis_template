@@ -1,0 +1,138 @@
+---
+title: "Data prep for app"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+  editor_options: 
+    chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{bash}
+# create a directory to write data to file (if it doesn't yet exist)
+mkdir -p data/
+```
+
+```{r}
+##################################################################
+##                          Setup                               ##
+##################################################################
+
+# activate renv
+renv::activate()
+
+# load libraries
+library(dplyr)
+library(DBI)
+
+# read in processed count data (processed in the differential expression document)
+counts <- utils::read.csv("../prepare_counts/counts.csv")
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(config$metadata_path)
+
+# read in differential expression data
+diff_expr_data <- read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+
+##################################################################
+##           Prep of differential expression data               ##
+##################################################################
+
+# extract a list of the significant RNAs (at three significance levels)
+sig_diff_expr_data_1 <- diff_expr_data %>%
+  filter(significance == "significant_1%") %>%
+  select(rna) %>%
+  distinct(rna)
+
+sig_diff_expr_data_5 <- diff_expr_data %>%
+  filter(significance == "significant_5%") %>%
+  select(rna) %>%
+  distinct(rna)
+
+sig_diff_expr_data_10 <- diff_expr_data %>%
+  filter(significance == "significant_10%") %>%
+  select(rna) %>%
+  distinct(rna)
+
+##################################################################
+##                   Fix for CSS highlighting                   ##
+##################################################################
+
+# fix for css highlighting in shiny app not working for rnas/rows with ":" or "|"
+
+# | needed to be escaped with \\ in order to be interpreted correctly
+# also need to use gsub instead of sub to replace all occurrences instead of just the first one
+
+counts <- counts %>%
+  mutate(rna = gsub(":", "_", rna)) %>%
+  mutate(rna = gsub("\\|", "_", rna))
+
+diff_expr_data <- diff_expr_data %>%
+  mutate(rna = gsub(":", "_", rna)) %>%
+  mutate(rna = gsub("\\|", "_", rna))
+
+sig_diff_expr_data_1 <- sig_diff_expr_data_1 %>%
+  mutate(rna = gsub(":", "_", rna)) %>%
+  mutate(rna = gsub("\\|", "_", rna))
+
+sig_diff_expr_data_5 <- sig_diff_expr_data_5 %>%
+  mutate(rna = gsub(":", "_", rna)) %>%
+  mutate(rna = gsub("\\|", "_", rna))
+
+sig_diff_expr_data_10 <- sig_diff_expr_data_10 %>%
+  mutate(rna = gsub(":", "_", rna)) %>%
+  mutate(rna = gsub("\\|", "_", rna))
+
+#################################################################
+##                        Write to file                        ##
+#################################################################
+
+# Differential expression data
+write.csv(diff_expr_data, file = "./data/master_diff_expr_data.csv", row.names = FALSE)
+write.csv(sig_diff_expr_data_1, file = "./data/master_sig_diff_expr_data_1.csv", row.names = FALSE)
+write.csv(sig_diff_expr_data_5, file = "./data/master_sig_diff_expr_data_5.csv", row.names = FALSE)
+write.csv(sig_diff_expr_data_10, file = "./data/master_sig_diff_expr_data_10.csv", row.names = FALSE)
+
+# count data
+# this data was written to an sql lite database
+# this significantly speeds up the app compared to reading a csv file of the data and filtering/subsetting the data
+
+# initialise a database
+db <- dbConnect(RSQLite::SQLite(), "./data/master-count.sqlite")
+
+# get all unique rna species
+species_choices <- data.frame(unique(as.character(counts$rna_species)))
+
+# create dataframe of unique combinations of rna species and rna
+rna_choices <- data.frame(unique(counts[c("rna_species", "rna")]))
+
+# write dataframes and count data to database tables
+dbWriteTable(db, "species", species_choices, overwrite=TRUE)
+dbWriteTable(db, "rna_choices", rna_choices, overwrite=TRUE)
+dbWriteTable(db, "counts", counts, overwrite=TRUE)
+
+# create indexes for common data lookups the app with do (will further speed up app, particularly index_rna)
+# note. I tried to make more indexes, but it made the database too large to deploy to shiny apps io
+dbSendQuery(db,"CREATE INDEX index_rna ON counts (rna, rna_species)")
+
+# close the connection to the database
+dbDisconnect(db)
+```
+
+```{r, results = "hide"}
+# save session info
+writeLines(capture.output(R.Version()), "R_version_info.txt")
+writeLines(capture.output(sessionInfo()), "R_session_info.txt")
+```
