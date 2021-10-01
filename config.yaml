@@ -7,23 +7,24 @@ mirna_excerpt: true
 pirna_excerpt: true
 trna_excerpt: true
 circrna_excerpt: false
-gencode_excerpt: true
+gencode_excerpt: false
 
 # set the path to your smncrna_analysis_template directory
 #template_dir: "/my_project/smncrna_analysis_template/"
 
-template_dir: "/my_project/smncrna_analysis_template"
+template_dir: "/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template"
 
 # set the path to your metadata file
-metadata_path: "/my_project/smncrna_analysis_template/metadata.csv"
+metadata_path: "/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/metadata.csv"
 
 # set the low sequencing read count flag, the number of reads at which you consider the sequencing read count
 # to be low eg. 5000000 (5 million)
 low_sequencing_read_count: 5000000
 
-# choose which differential expression methods to employ
-# limma/voom(https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29)
-# deseq2 (https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8)
-
-limma_voom: true
-deseq: true
+# specify the contrasts/treatment groups to compare
+# in the following format:
+# "first contrast" - "second contrast"
+# one or multiple contrasts can be included here (maximum of 6)
+contrasts: 
+- "treatment1 - treatment2"
+- "treatment3 - treatment4"
