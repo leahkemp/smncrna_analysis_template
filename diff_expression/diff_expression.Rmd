@@ -1552,3 +1552,16 @@ datatable(diff_expr_results %>%
                         text = "Download"),
                    I("colvis"))))
 ```
+
+```{r}
+# write differential expression results to file
+diff_expr_data %>%
+  write.table(file = "./diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
+```
+
+```{r, results = "hide"}
+# save session info
+renv::snapshot()
+writeLines(capture.output(R.Version()), "R_version_info.txt")
+writeLines(capture.output(sessionInfo()), "R_session_info.txt")
+```
