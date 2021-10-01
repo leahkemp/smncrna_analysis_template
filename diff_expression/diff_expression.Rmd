@@ -212,7 +212,8 @@ base::cat(paste0(" - ", config$contrasts, "\n"))
 
 ```{r, results = "asis"}
 # print the filtering options the user has chosen to use
-base::cat(paste0(" - ", config$min_total_count, "\n", " - ", config$min_count, "\n"))
+base::cat(paste0("Filtering settings:"))
+base::cat(paste0("- Min total count:", config$min_total_count, "\n", " - Min count:", config$min_count, "\n"))
 ```
 
 ```{r, limma_voom}
