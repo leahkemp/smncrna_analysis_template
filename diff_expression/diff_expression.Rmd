@@ -1130,7 +1130,7 @@ deseq_results_1 <- deseq_results_1 %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[1]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
 # define the source of the statistics (column names) before join
@@ -1198,7 +1198,7 @@ deseq_results_2 <- deseq_results_2 %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[2]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
 # define the source of the statistics (column names) before join
@@ -1266,7 +1266,7 @@ deseq_results_3 <- deseq_results_3 %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[3]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
 # define the source of the statistics (column names) before join
@@ -1334,7 +1334,7 @@ deseq_results_4 <- deseq_results_4 %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
 # define the source of the statistics (column names) before join
@@ -1470,7 +1470,7 @@ deseq_results_6 <- deseq_results_6 %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[6]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
 # define the source of the statistics (column names) before join
