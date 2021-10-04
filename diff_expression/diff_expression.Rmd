@@ -18,7 +18,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
 
 ```{bash}
@@ -1506,13 +1506,19 @@ diff_expr_results <- diff_expr_results %>%
 
 # then replace any NA's with "not_significant"
 diff_expr_results <- diff_expr_results %>%
-  mutate_at(vars(significance), ~replace(., is.na(.), "not_significant"))
+  dplyr::mutate_at(vars(significance), ~replace(., is.na(.), "not_significant"))
+
+# since there is a row for each differential expresion method (for each RNA and pipeline)...
+# make one column for log fold change and adjusted p-value
+diff_expr_results <- diff_expr_results %>% 
+  tidyr::unite(log_fc, c("logFC_limma_voom", "log2FoldChange_deseq2"), na.rm = TRUE) %>% 
+  tidyr::unite(adj_p_value, c("adj.P.Val_limma_voom", "padj_deseq2"), na.rm = TRUE)
 
 # add NA when empty cell (and still allow filtering on number ranges)
 # options(htmlwidgets.TOJSON_ARGS = list(na = "string"))
 # currently can't use because it causes and error in my downstream heatmap (see https://github.com/ropensci/plotly/issues/1853)
 
-# Create datatable to explore the data
+# create datatable to explore the data
 datatable(diff_expr_results %>%
             mutate_if(is.numeric, signif, digits = 4) %>%
             select(rna,
@@ -1520,10 +1526,8 @@ datatable(diff_expr_results %>%
                    pipeline,
                    diff_expr_method,
                    comparison,
-                   logFC_limma_voom,
-                   log2FoldChange_deseq2,
-                   adj.P.Val_limma_voom,
-                   padj_deseq2,
+                   log_fc,
+                   adj_p_value,
                    significance),
           filter = "top",
           rownames = FALSE,
@@ -1532,20 +1536,19 @@ datatable(diff_expr_results %>%
                        "Pipeline",
                        "Differential expression method",
                        "Comparison",
-                       "Log fold change (limma voom)",
-                       "Log fold change (deseq2)",
-                       "Adjusted p-value (limma voom)",
-                       "Adjusted p-value (deseq2)",
+                       "Log fold change",
+                       "Adjusted p-value",
                        "Significance"),
           extensions = list("ColReorder" = NULL,
                             "Buttons" = NULL,
                             "FixedColumns" = list(leftColumns=1)),
           options = list(
             dom = "BRrltpi",
-            autoWidth = TRUE,
-            columnDefs = list(list(width = "200px", targets = 0)),
+            autoWidth = FALSE,
+            columnDefs = list(list(width = "150px", targets = 1)),
             lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
             ColReorder = TRUE,
+            fixedColumns = TRUE,
             buttons =
               list("copy",
                    list(extend = "collection",

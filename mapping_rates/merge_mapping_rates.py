@@ -14,13 +14,13 @@ import os
 with open("config.yaml") as config:
     config_dict = yaml.safe_load(config)
 
-# extract the template dir parameter from the config file
+# extract the template dir and metadata_path parameters from the config file
 template_dir=config_dict["template_dir"]
+metadata_path=config_dict["metadata_path"]
 
 # sample names
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/raw_read_count_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    sample_names=pd.DataFrame(data,columns=['sample'])
+metadata = pd.read_csv(os.path.join(template_dir, "metadata.csv"))
+sample_names=metadata[["sample"]]
 
 # data from raw fastq
 with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/raw_read_count_fastq_file.txt")) as file:
