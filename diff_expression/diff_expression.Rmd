@@ -1402,7 +1402,7 @@ deseq_results_5 <- deseq_results_5 %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[5]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
 # define the source of the statistics (column names) before join
