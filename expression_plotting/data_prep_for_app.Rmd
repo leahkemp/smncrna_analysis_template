@@ -46,6 +46,26 @@ metadata <- utils::read.csv(config$metadata_path)
 # read in differential expression data
 diff_expr_data <- read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 
+# read in mapping rates data
+mapping_rates <- utils::read.csv("../mapping_rates/mapping_rates.csv")
+
+##################################################################
+##                   Prep of count data                         ##
+##################################################################
+
+# set up a flag for when the sequencing read counts for a sample is low (arbitrary line at 5 million)
+low_read_count_flag <- mapping_rates %>%
+  filter(raw_read_count_fastq_file < config$low_sequencing_read_count) %>%
+  group_by(sample) %>%
+  summarise() %>%
+  pull(sample)
+
+# make a column that flags when a sample was low in read counts
+counts <- mutate(counts, fastq_read_count_less_than_5M = sample %in% low_read_count_flag)
+
+# append metadata to the count data
+counts <- left_join(counts, metadata, by= "sample")
+
 ##################################################################
 ##           Prep of differential expression data               ##
 ##################################################################
