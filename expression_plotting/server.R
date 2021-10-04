@@ -59,7 +59,7 @@ server <- function(input, output, session) {
       #                                                 "No_T2D"))) %>%
       
       # also format logical variable so it renders properly
-      mutate(fastq_read_count_less_than_5M = as.logical(fastq_read_count_less_than_5M))
+      mutate(low_sequencing_read_count = as.logical(low_sequencing_read_count))
   })
   
   # subset differential expression data based on the user choice of rna_species and rna ----
@@ -182,7 +182,8 @@ server <- function(input, output, session) {
                 text = ~paste("</br> Counts per million:", format(counts_per_million, big.mark = ",", scientific = FALSE, digits = 2),
                               "</br> Sample:", x$sample,
                               "</br> Treatment:", treatment,
-                              "</br> Pipeline:", pipeline)) %>%
+                              "</br> Pipeline:", pipeline,
+                              "</br> Low sequencing read count:", low_sequencing_read_count)) %>%
           layout(showlegend = FALSE) %>%
           layout(yaxis = list(title = "Counts per million"),
                  xaxis = list(title = "", tickangle = 270, type = "category"))
@@ -224,7 +225,8 @@ server <- function(input, output, session) {
                 text = ~paste("</br> Raw count:", format(raw_counts, big.mark = ",", scientific = FALSE, digits = 2),
                               "</br> Sample:", x$sample,
                               "</br> Treatment:", treatment,
-                              "</br> Pipeline:", pipeline)) %>%
+                              "</br> Pipeline:", pipeline,
+                              "</br> Low sequencing read count:", low_sequencing_read_count)) %>%
           layout(showlegend = FALSE) %>%
           layout(yaxis = list(title = "Raw counts"),
                  xaxis = list(title = "", tickangle = 270, type = "category")) }) %>%
@@ -237,7 +239,7 @@ server <- function(input, output, session) {
     datatable(subset_count_data() %>% select(rna,
                                              rna_species,
                                              sample,
-                                             fastq_read_count_less_than_5M,
+                                             low_sequencing_read_count,
                                              pipeline,
                                              raw_counts,
                                              counts_per_million,
@@ -249,7 +251,7 @@ server <- function(input, output, session) {
               colnames = c("RNA",
                            "RNA species",
                            "Sample",
-                           "Sequencing read count less than 5M",
+                           "Low sequencing read count",
                            "Pipeline",
                            "Raw counts",
                            "Counts per million",

@@ -61,7 +61,7 @@ low_read_count_flag <- mapping_rates %>%
   pull(sample)
 
 # make a column that flags when a sample was low in read counts
-counts <- mutate(counts, fastq_read_count_less_than_5M = sample %in% low_read_count_flag)
+counts <- mutate(counts, low_sequencing_read_count = sample %in% low_read_count_flag)
 
 # append metadata to the count data
 counts <- left_join(counts, metadata, by= "sample")
