@@ -4,26 +4,52 @@
 
 # this script gets various info from the raw fastq files and smrnaseq and excerpt pipeline
 # outputs for all samples relating to the number of raw reads and number of reads trimmed,
-# clipped and mapped. it outputs several text files. 
-
-##### USER PARAMETERS #####
-
-# set the path to the fastq files that were analysed
-fastq_files="/my_project/smncrna_analysis_template/fastq/*.fastq.gz"
-
-# set the directory to where the smncrna_analysis_template is on your machine
-template_dir="/my_project/smncrna_analysis_template/"
+# clipped and mapped. it outputs several text files and parses/uses the config.yaml file
+# from the smncrna_analysis_template the user sets paratemers in
 
 ##### SCRIPT #####
 
+# a bash-only parser that leverages sed and awk to parse simple yaml files
+# grabbed from here: https://stackoverflow.com/questions/5014632/how-can-i-parse-a-yaml-file-from-a-linux-shell-script
+function parse_yaml {
+   local prefix=$2
+   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+   sed -ne "s|^\($s\):|\1|" \
+        -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+   awk -F$fs '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}
+
+# parse and create bash variables out of everything in the configuration file
+eval $(parse_yaml config.yaml)
+
 # remove any old outputs of this script to avoid results being written twice to a file
 rm -rf $template_dir/mapping_rates/extracted_all_samples
+rm -rf $template_dir/smrnaseq_pipeline_run/results/fastqc_unzipped
+rm -rf $template_dir/mapping_rates/mapping_rates.csv
 
 # make directory to put results in if it doesn't yet exist
 mkdir -p $template_dir/mapping_rates/extracted_all_samples/
 
+# also make a directory to put unzipped fastqc files in if it doesn't yet exist
+mkdir -p $template_dir/smrnaseq_pipeline_run/results/fastqc_unzipped
+
+# unzip fastqc output files so info can be grabbed from them
+for i in $template_dir/smrnaseq_pipeline_run/results/fastqc/*.zip
+do
+unzip $i -d $template_dir/smrnaseq_pipeline_run/results/fastqc_unzipped/
+done
+
 # get the number of read in the raw fastq files
-for i in `ls $fastq_files`
+for i in $fastq_dir/*
 do
 echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/raw_read_count_fastq_file.txt
 done
@@ -148,5 +174,5 @@ do
 echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_fastq_file.txt
 done
 
-# Merge all these files into a single csv file
-python merge_mapping_rates.py
+# merge all these files into a single csv file
+python ./mapping_rates/merge_mapping_rates.py
