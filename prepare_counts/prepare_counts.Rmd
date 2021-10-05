@@ -90,7 +90,9 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
 
 # convert column to rownames for downstream processing
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
-  textshape::column_to_rownames("miRNA")
+  textshape::column_to_rownames("miRNA") %>%
+    # remove S*_R1.fastq suffix from the sample/column names
+    dplyr::rename_with(~ base::sub("_1", "", .))
 
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
