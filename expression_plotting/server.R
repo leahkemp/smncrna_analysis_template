@@ -89,7 +89,7 @@ server <- function(input, output, session) {
   })
   
   # create interactive table of the users current selection of rna and rna_species that show differential expressions results ----
-  output$table_diff_expr <- shiny::renderDataTable({
+  output$table_diff_expr <- DT::renderDataTable({
     
     DT::datatable(subset_diff_expr_data() %>% dplyr::select(rna,
                                                             rna_species,
@@ -161,9 +161,7 @@ server <- function(input, output, session) {
                     y = ~counts_per_million,
                     split = ~pipeline,
                     color = ~get(main_variable()),
-                    type = "box",
-                    box = base::list(visible = T),
-                    meanline = base::list(visible = T)) %>%
+                    type = "box") %>%
       plotly::layout(yaxis = base::list(title = "Counts per million"),
                      xaxis = base::list(title = "", tickangle = 270),
                      margin = base::list(b = 200))
@@ -176,7 +174,7 @@ server <- function(input, output, session) {
     shiny::validate(need(subset_count_data()$counts_per_million, "Count per million data could not be calculated for this RNA"))
     
     subset_count_data() %>%
-      base::split(base::list(subset_count_data() %>% dplyr:: pull(!!main_variable()), subset_count_data()$rna)) %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(!!main_variable()), subset_count_data()$rna)) %>%
       base::lapply(function(x) {
         plotly::plot_ly(data = x,
                         x = x$sample,
@@ -207,9 +205,7 @@ server <- function(input, output, session) {
                     y = ~raw_counts,
                     split = ~pipeline,
                     color = ~get(main_variable()),
-                    type = "box",
-                    box = base::list(visible = T),
-                    meanline = base::list(visible = T)) %>%
+                    type = "box") %>%
       plotly::layout(yaxis = base::list(title = "Raw counts"),
                      xaxis = base::list(title = "", tickangle = 270),
                      margin = base::list(b = 200))
@@ -219,7 +215,7 @@ server <- function(input, output, session) {
   output$scatterplot_raw_by_sample <- plotly::renderPlotly({
     
     subset_count_data() %>%
-      base::split(base::list(subset_count_data() %>% dplyr:: pull(!!main_variable()), subset_count_data()$rna)) %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(!!main_variable()), subset_count_data()$rna)) %>%
       base::lapply(function(x) {
         plotly::plot_ly(data = x,
                         x = x$sample,
@@ -242,7 +238,7 @@ server <- function(input, output, session) {
   })
   
   # create interactive table of the users current selection of rna and rna_species that includes rna counts etc ----
-  output$table <- shiny::renderDataTable({
+  output$table <- DT::renderDataTable({
     
     DT::datatable(subset_count_data() %>% dplyr::select(rna,
                                                         rna_species,
