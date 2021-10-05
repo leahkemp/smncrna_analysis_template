@@ -3,7 +3,7 @@ title: "MDS"
 author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
-date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
 output:
   html_document:
     code_download: true
@@ -36,21 +36,21 @@ library(yaml)
 # read in yaml config file specifying which rna species to analyse
 config <- yaml::yaml.load_file("../config.yaml")
 
-# create a dataframe defining the rna species to analyse (that are set to TRUE) based on the yaml user configuration file
-to_analyse <- config %>%
+# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
+to_analyse <- config[c("mirna_smrnaseq",
+                       "mirna_excerpt",
+                       "pirna_excerpt",
+                       "trna_excerpt",
+                       "circrna_excerpt",
+                       "gencode_excerpt")] %>%
   base::as.data.frame() %>%
-  dplyr::select(mirna_smrnaseq,
-                mirna_excerpt,
-                pirna_excerpt,
-                trna_excerpt,
-                circrna_excerpt,
-                gencode_excerpt) %>%
   base::t() %>%
   base::as.data.frame() %>%
   tibble::rownames_to_column("rna_species") %>%
   dplyr::rename("analyse" = "V1") %>%
   tidyr::separate(rna_species, c("rna_species", "pipeline")) %>%
-  dplyr::filter(analyse == TRUE)
+  dplyr::filter(analyse == TRUE) %>%
+  dplyr::mutate(dataset_name = base::paste0(rna_species, "_", pipeline))
 
 # also create a list for downstream filtering
 to_analyse_list <- to_analyse %>%
@@ -133,10 +133,10 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
-                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
-                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
-  plotly::layout(xaxis = list(title = "Dim1"),
-                 yaxis = list(title = "Dim2"))
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
 ```
 
 ```{r, eval = config$all_rnas, out.width = "100%"}
@@ -152,21 +152,21 @@ DT::datatable(data %>%
                            "Treatment",
                            "dim1",
                            "dim2"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = base::list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                 ColReorder = TRUE,
                 buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
+                  base::list("copy",
+                             base::list(extend = "collection",
+                                        buttons = c("csv", "excel", "pdf"),
+                                        text = "Download"),
+                             I("colvis"))))
 ```
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
@@ -206,10 +206,10 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
-                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
-                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
-  plotly::layout(xaxis = list(title = "Dim1"),
-                 yaxis = list(title = "Dim2"))
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
 ```
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
@@ -225,21 +225,21 @@ DT::datatable(data %>%
                            "Treatment",
                            "dim1",
                            "dim2"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = base::list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                 ColReorder = TRUE,
                 buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
+                  base::list("copy",
+                             base::list(extend = "collection",
+                                        buttons = c("csv", "excel", "pdf"),
+                                        text = "Download"),
+                             I("colvis"))))
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -279,10 +279,10 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
-                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
-                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
-  plotly::layout(xaxis = list(title = "Dim1"),
-                 yaxis = list(title = "Dim2"))
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
 ```
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
@@ -298,21 +298,21 @@ DT::datatable(data %>%
                            "Treatment",
                            "dim1",
                            "dim2"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = base::list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                 ColReorder = TRUE,
                 buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
+                  base::list("copy",
+                             base::list(extend = "collection",
+                                        buttons = c("csv", "excel", "pdf"),
+                                        text = "Download"),
+                             I("colvis"))))
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -352,10 +352,10 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
-                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
-                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
-  plotly::layout(xaxis = list(title = "Dim1"),
-                 yaxis = list(title = "Dim2"))
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
 ```
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
@@ -371,21 +371,21 @@ DT::datatable(data %>%
                            "Treatment",
                            "dim1",
                            "dim2"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = base::list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                 ColReorder = TRUE,
                 buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
+                  base::list("copy",
+                             base::list(extend = "collection",
+                                        buttons = c("csv", "excel", "pdf"),
+                                        text = "Download"),
+                             I("colvis"))))
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -425,10 +425,10 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
-                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
-                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
-  plotly::layout(xaxis = list(title = "Dim1"),
-                 yaxis = list(title = "Dim2"))
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
 ```
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
@@ -444,21 +444,21 @@ DT::datatable(data %>%
                            "Treatment",
                            "dim1",
                            "dim2"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = base::list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                 ColReorder = TRUE,
                 buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
+                  base::list("copy",
+                             base::list(extend = "collection",
+                                        buttons = c("csv", "excel", "pdf"),
+                                        text = "Download"),
+                             I("colvis"))))
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -498,10 +498,10 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
-                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
-                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
-  plotly::layout(xaxis = list(title = "Dim1"),
-                 yaxis = list(title = "Dim2"))
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
 ```
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
@@ -517,21 +517,21 @@ DT::datatable(data %>%
                            "Treatment",
                            "dim1",
                            "dim2"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = base::list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                 ColReorder = TRUE,
                 buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
+                  base::list("copy",
+                             base::list(extend = "collection",
+                                        buttons = c("csv", "excel", "pdf"),
+                                        text = "Download"),
+                             I("colvis"))))
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -571,10 +571,10 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
-                                "</br> Dim1:", format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
-                                "</br> Dim2:", format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
-  plotly::layout(xaxis = list(title = "Dim1"),
-                 yaxis = list(title = "Dim2"))
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
 ```
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
@@ -590,26 +590,25 @@ DT::datatable(data %>%
                            "Treatment",
                            "dim1",
                            "dim2"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = base::list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                 ColReorder = TRUE,
                 buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
+                  base::list("copy",
+                             list(extend = "collection",
+                                  buttons = c("csv", "excel", "pdf"),
+                                  text = "Download"),
+                             I("colvis"))))
 ```
 
 ```{r, results = "hide"}
 # save session info
-writeLines(capture.output(R.Version()), "R_version_info.txt")
-writeLines(capture.output(sessionInfo()), "R_session_info.txt")
+base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
+base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
 ```
-
