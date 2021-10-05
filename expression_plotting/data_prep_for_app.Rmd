@@ -158,6 +158,6 @@ DBI::dbDisconnect(db)
 
 ```{r, results = "hide"}
 # save session info
-writeLines(capture.output(R.Version()), "R_version_info.txt")
-writeLines(capture.output(sessionInfo()), "R_session_info.txt")
+base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
+base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
 ```
