@@ -17,7 +17,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
 
-- **The pie charts present only the RNA's the user has chosen to analyse**
+- **The pie charts present only the RNA's the user has chosen to analyse and have been identified by the pipelines, rather than all the RNA's present in the samples**
 - *The total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group*
 - *Values have been rounded*
 
@@ -66,21 +66,21 @@ data %>%
                              "RNA species",
                              "Pipeline",
                              "Average raw count"),
-                extensions = list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = list(leftColumns=1)),
-                options = list(
+                extensions = base::list("ColReorder" = NULL,
+                                        "Buttons" = NULL,
+                                        "FixedColumns" = base::list(leftColumns=1)),
+                options = base::list(
                   dom = "BRrltpi",
                   autoWidth = TRUE,
-                  columnDefs = list(list(width = "200px", targets = 0)),
-                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  columnDefs = base::list(base::list(width = "200px", targets = 0)),
+                  lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
                   ColReorder = TRUE,
                   buttons =
-                    list("copy",
-                         list(extend = "collection",
-                              buttons = c("csv", "excel", "pdf"),
-                              text = "Download"),
-                         I("colvis"))))
+                    base::list("copy",
+                               base::list(extend = "collection",
+                                          buttons = c("csv", "excel", "pdf"),
+                                          text = "Download"),
+                               I("colvis"))))
 ```
 
 ## smrnaseq pipeline
@@ -88,11 +88,11 @@ data %>%
 ```{r}
 # filter to get only the data for the smrnaseq pipeline
 data_smrnaseq <- data %>%
-  filter(pipeline == "smrnaseq")
+  dplyr::filter(pipeline == "smrnaseq")
 
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
-colors_list <- list(
+colors_list <- base::list(
   "trna" = "#173b4e",
   "mirna" = "#D95F02",
   "pirna" = "#7570B3",
@@ -134,9 +134,9 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
                     values = ~mean_total_raw_count,
                     textposition = "inside",
                     textinfo = "label+percent",
-                    insidetextfont = list(color = "#FFFFFF"),
+                    insidetextfont = base::list(color = "#FFFFFF"),
                     hoverinfo = "text",
-                    marker = list(colors = ~my_colour),
+                    marker = base::list(colors = ~my_colour),
                     text = ~paste(" RNA species:", rna_species,
                                   "</br></br>",
                                   "Treatment:", treatment,
@@ -152,19 +152,19 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
                     width = 4) %>%
     add_pie() %>%
     plotly::layout(title = x,
-                   xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, domain = c(0.8,1))) %>%
+                   xaxis = base::list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, domain = c(0.8,1))) %>%
     
     # add bar chart
     plotly::add_trace(x = ~rna_species,
                       y = ~mean_total_raw_count,
                       type = "bar",
-                      marker = list(color = ~my_colour),
+                      marker = base::list(color = ~my_colour),
                       textposition = "none",
                       showlegend = FALSE,
-                      domain = list(x = c(0, 0.05))) %>%
+                      domain = base::list(x = c(0, 0.05))) %>%
     # get the same xaxis range for easy visual comparing between plots
-    plotly::layout(yaxis = list(title = " ", range = c(0, max_range_barplot)),
-                   xaxis = list(title = "RNA species"))
+    plotly::layout(yaxis = base::list(title = " ", range = c(0, max_range_barplot)),
+                   xaxis = base::list(title = "RNA species"))
   
 }))
 ```
@@ -174,11 +174,11 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
 ```{r}
 # filter to get only the data for the smrnaseq pipeline
 data_excerpt <- data %>%
-  filter(pipeline == "excerpt")
+  dplyr::filter(pipeline == "excerpt")
 
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
-colors_list <- list(
+colors_list <- base::list(
   "trna" = "#173b4e",
   "mirna" = "#D95F02",
   "pirna" = "#7570B3",
@@ -220,9 +220,9 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$trea
                     values = ~mean_total_raw_count,
                     textposition = "inside",
                     textinfo = "label+percent",
-                    insidetextfont = list(color = "#FFFFFF"),
+                    insidetextfont = base::list(color = "#FFFFFF"),
                     hoverinfo = "text",
-                    marker = list(colors = ~my_colour),
+                    marker = base::list(colors = ~my_colour),
                     text = ~paste(" RNA species:", rna_species,
                                   "</br></br>",
                                   "Treatment:", treatment,
@@ -238,25 +238,25 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$trea
                     width = 4) %>%
     add_pie() %>%
     plotly::layout(title = x,
-                   xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, domain = c(0.8,1))) %>%
+                   xaxis = base::list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, domain = c(0.8,1))) %>%
     
     # add bar chart
     plotly::add_trace(x = ~rna_species,
                       y = ~mean_total_raw_count,
                       type = "bar",
-                      marker = list(color = ~my_colour),
+                      marker = base::list(color = ~my_colour),
                       textposition = "none",
                       showlegend = FALSE,
-                      domain = list(x = c(0, 0.05))) %>%
+                      domain = base::list(x = c(0, 0.05))) %>%
     # get the same xaxis range for easy visual comparing between plots
-    plotly::layout(yaxis = list(title = " ", range = c(0, max_range_barplot)),
-                   xaxis = list(title = "RNA species"))
+    plotly::layout(yaxis = base::list(title = " ", range = c(0, max_range_barplot)),
+                   xaxis = base::list(title = "RNA species"))
   
 }))
 ```
 
 ```{r, results = "hide"}
 # save session info
-writeLines(capture.output(R.Version()), "R_version_info.txt")
-writeLines(capture.output(sessionInfo()), "R_session_info.txt")
+base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
+base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
 ```
