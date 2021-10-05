@@ -1,3 +1,5 @@
+##### GENERAL ######
+
 # choose the count datasets you wish to analyse
 # note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are
 # too low you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
@@ -22,6 +24,8 @@ metadata_path: "/my_project/smncrna_analysis_template/metadata.csv"
 # to be low eg. 5000000 (5 million)
 low_sequencing_read_count: 5000000
 
+##### DIFFERENTIAL EXPRESSION ANALYSIS ######
+
 # specify the contrasts/treatment groups to compare
 # in the following format:
 # "first contrast" - "second contrast"
@@ -29,8 +33,6 @@ low_sequencing_read_count: 5000000
 contrasts: 
 - "treatment1 - treatment2"
 - "treatment3 - treatment4"
-
-##### FILTERING ######
 
 # filtering settings for limma/voom analysis
 
@@ -43,3 +45,13 @@ min_count: 10
 # see info about this flag here: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
 # default is 15
 min_total_count: 15
+
+##### EXPRESSION PLOTTING APP ######
+
+# specify how you'd like to order the treatments for plotting
+# namely the expression plotting app
+treatment_order:
+- "treatment1"
+- "treatment2"
+- "treatment3"
+- "treatment4"

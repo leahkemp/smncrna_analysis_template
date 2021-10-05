@@ -33,6 +33,7 @@ renv::activate()
 # load libraries
 library(dplyr)
 library(DBI)
+library(yaml)
 
 # read in processed count data (processed in the differential expression document)
 counts <- utils::read.csv("../prepare_counts/counts.csv")
@@ -44,7 +45,7 @@ config <- yaml::yaml.load_file("../config.yaml")
 metadata <- utils::read.csv(config$metadata_path)
 
 # read in differential expression data
-diff_expr_data <- read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+diff_expr_data <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 
 # read in mapping rates data
 mapping_rates <- utils::read.csv("../mapping_rates/mapping_rates.csv")
@@ -55,16 +56,16 @@ mapping_rates <- utils::read.csv("../mapping_rates/mapping_rates.csv")
 
 # set up a flag for when the sequencing read counts for a sample is low (arbitrary line at 5 million)
 low_read_count_flag <- mapping_rates %>%
-  filter(raw_read_count_fastq_file < config$low_sequencing_read_count) %>%
-  group_by(sample) %>%
-  summarise() %>%
-  pull(sample)
+  dplyr::filter(raw_read_count_fastq_file < config$low_sequencing_read_count) %>%
+  dplyr::group_by(sample) %>%
+  dplyr::summarise() %>%
+  dplyr::pull(sample)
 
 # make a column that flags when a sample was low in read counts
-counts <- mutate(counts, low_sequencing_read_count = sample %in% low_read_count_flag)
+counts <- dplyr::mutate(counts, low_sequencing_read_count = sample %in% low_read_count_flag)
 
 # append metadata to the count data
-counts <- left_join(counts, metadata, by= "sample")
+counts <- dplyr::left_join(counts, metadata, by= "sample")
 
 ##################################################################
 ##           Prep of differential expression data               ##
@@ -72,19 +73,19 @@ counts <- left_join(counts, metadata, by= "sample")
 
 # extract a list of the significant RNAs (at three significance levels)
 sig_diff_expr_data_1 <- diff_expr_data %>%
-  filter(significance == "significant_1%") %>%
-  select(rna) %>%
-  distinct(rna)
+  dplyr::filter(significance == "significant_1%") %>%
+  dplyr::select(rna) %>%
+  dplyr::distinct(rna)
 
 sig_diff_expr_data_5 <- diff_expr_data %>%
-  filter(significance == "significant_5%") %>%
-  select(rna) %>%
-  distinct(rna)
+  dplyr::filter(significance == "significant_5%") %>%
+  dplyr::select(rna) %>%
+  dplyr::distinct(rna)
 
 sig_diff_expr_data_10 <- diff_expr_data %>%
-  filter(significance == "significant_10%") %>%
-  select(rna) %>%
-  distinct(rna)
+  dplyr::filter(significance == "significant_10%") %>%
+  dplyr::select(rna) %>%
+  dplyr::distinct(rna)
 
 ##################################################################
 ##                   Fix for CSS highlighting                   ##
@@ -96,59 +97,63 @@ sig_diff_expr_data_10 <- diff_expr_data %>%
 # also need to use gsub instead of sub to replace all occurrences instead of just the first one
 
 counts <- counts %>%
-  mutate(rna = gsub(":", "_", rna)) %>%
-  mutate(rna = gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
 
 diff_expr_data <- diff_expr_data %>%
-  mutate(rna = gsub(":", "_", rna)) %>%
-  mutate(rna = gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
 
 sig_diff_expr_data_1 <- sig_diff_expr_data_1 %>%
-  mutate(rna = gsub(":", "_", rna)) %>%
-  mutate(rna = gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
 
 sig_diff_expr_data_5 <- sig_diff_expr_data_5 %>%
-  mutate(rna = gsub(":", "_", rna)) %>%
-  mutate(rna = gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
 
 sig_diff_expr_data_10 <- sig_diff_expr_data_10 %>%
-  mutate(rna = gsub(":", "_", rna)) %>%
-  mutate(rna = gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
 
 #################################################################
 ##                        Write to file                        ##
 #################################################################
 
-# Differential expression data
-write.csv(diff_expr_data, file = "./data/master_diff_expr_data.csv", row.names = FALSE)
-write.csv(sig_diff_expr_data_1, file = "./data/master_sig_diff_expr_data_1.csv", row.names = FALSE)
-write.csv(sig_diff_expr_data_5, file = "./data/master_sig_diff_expr_data_5.csv", row.names = FALSE)
-write.csv(sig_diff_expr_data_10, file = "./data/master_sig_diff_expr_data_10.csv", row.names = FALSE)
+# differential expression data
+utils::write.csv(diff_expr_data, file = "./data/master_diff_expr_data.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_1, file = "./data/master_sig_diff_expr_data_1.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_5, file = "./data/master_sig_diff_expr_data_5.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_10, file = "./data/master_sig_diff_expr_data_10.csv", row.names = FALSE)
+
+# write the config file needed for app to file within this project directory
+# so it can be sent to shinyappsio and used
+yaml::write_yaml(config, "config.yaml")
 
 # count data
 # this data was written to an sql lite database
 # this significantly speeds up the app compared to reading a csv file of the data and filtering/subsetting the data
 
 # initialise a database
-db <- dbConnect(RSQLite::SQLite(), "./data/master-count.sqlite")
+db <- DBI::dbConnect(RSQLite::SQLite(), "./data/master-count.sqlite")
 
 # get all unique rna species
-species_choices <- data.frame(unique(as.character(counts$rna_species)))
+species_choices <- base::data.frame(base::unique(base::as.character(counts$rna_species)))
 
 # create dataframe of unique combinations of rna species and rna
-rna_choices <- data.frame(unique(counts[c("rna_species", "rna")]))
+rna_choices <- base::data.frame(base::unique(counts[c("rna_species", "rna")]))
 
 # write dataframes and count data to database tables
-dbWriteTable(db, "species", species_choices, overwrite=TRUE)
-dbWriteTable(db, "rna_choices", rna_choices, overwrite=TRUE)
-dbWriteTable(db, "counts", counts, overwrite=TRUE)
+DBI::dbWriteTable(db, "species", species_choices, overwrite=TRUE)
+DBI::dbWriteTable(db, "rna_choices", rna_choices, overwrite=TRUE)
+DBI::dbWriteTable(db, "counts", counts, overwrite=TRUE)
 
 # create indexes for common data lookups the app with do (will further speed up app, particularly index_rna)
 # note. I tried to make more indexes, but it made the database too large to deploy to shiny apps io
-dbSendQuery(db,"CREATE INDEX index_rna ON counts (rna, rna_species)")
+DBI::dbSendQuery(db,"CREATE INDEX index_rna ON counts (rna, rna_species)")
 
 # close the connection to the database
-dbDisconnect(db)
+DBI::dbDisconnect(db)
 ```
 
 ```{r, results = "hide"}

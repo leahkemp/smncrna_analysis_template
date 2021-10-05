@@ -21,6 +21,9 @@ sig_diff_expr_data_1 <- read.csv("./data/master_sig_diff_expr_data_1.csv", heade
 sig_diff_expr_data_5 <- read.csv("./data/master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
 sig_diff_expr_data_10 <- read.csv("./data/master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
 
+# read in yaml config file
+config <- yaml::yaml.load_file("config.yaml")
+
 # get list of rna_species ----
 rna_species_choices <- species %>% distinct() %>% pull()
 
@@ -54,10 +57,8 @@ server <- function(input, output, session) {
     counts %>%
       filter(rna_species==!!input$rna_species_choice & rna %in% !!input$rna_choice) %>%
       collect() %>%
-      # order the levels of the data so they plot in a sensible order on the xaxes of the plots
-      # mutate(treatment = factor(treatment, levels = c("T2D",
-      #                                                 "No_T2D"))) %>%
-      
+      # order the levels of the data so they plot in a sensible order on the xaxes of the plots, user specifies in configuration file
+      mutate(treatment = factor(treatment, levels = c(config$treatment_order))) %>%
       # also format logical variable so it renders properly
       mutate(low_sequencing_read_count = as.logical(low_sequencing_read_count))
   })
