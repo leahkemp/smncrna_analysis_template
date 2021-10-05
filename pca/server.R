@@ -282,7 +282,7 @@ server <- function(input, output, session) {
                     height = "100%",
                     hoverinfo = "text",
                     text = ~paste("</br> Sample:", sample,
-                                  "</br> Treatment:", Treatment,
+                                  "</br> Treatment:", treatment,
                                   "</br> Dim ", x_dim(), ":", base::format(x_coord, big.mark = ",", scientific = FALSE, digits = 2),
                                   "</br> Dim ", y_dim(), ":", base::format(y_coord, big.mark = ",", scientific = FALSE, digits = 2),
                                   "</br> Dim ", x_dim(), "cos2:", base::format(x_cos, big.mark = ",", scientific = FALSE, digits = 2))) %>%
