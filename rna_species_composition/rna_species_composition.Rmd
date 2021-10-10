@@ -24,9 +24,6 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FAL
 # {.tabset .tabset-fade}
 
 ```{r}
-# activate renv
-renv::activate()
-
 # load libraries
 library(dplyr)
 library(plotly)
@@ -36,8 +33,8 @@ library(DT)
 # read in pre-prepared count data
 counts <- utils::read.csv("../prepare_counts/counts.csv")
 
-# read in yaml config file specifying which rna species to analyse
-config <- yaml::yaml.load_file("../config.yaml")
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(file.path(config$metadata))
@@ -105,7 +102,7 @@ colors_list <- base::list(
   "lincRNA" = "#ff9457",
   "antisense" = "#f190c1",
   "processed_pseudogene" = "#27408b",
-  "snoRNA" = "#2b5540",
+"snoRNA" = "#2b5540",
   "snRNA" = "#a91e69",
   "rRNA" = "#ff576e"
 )
@@ -255,8 +252,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$trea
 }))
 ```
 
-```{r, results = "hide"}
-# save session info
-base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
-base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
 ```

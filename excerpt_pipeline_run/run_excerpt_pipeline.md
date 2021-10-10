@@ -7,15 +7,20 @@
 
 - [Run exceRpt pipeline](#run-excerpt-pipeline)
   - [Table of contents](#table-of-contents)
-  - [Set user parameters](#set-user-parameters)
+  - [Set user configurable options](#set-user-configurable-options)
+  - [Check pipeline parameters](#check-pipeline-parameters)
   - [Create screen to run pipeline in](#create-screen-to-run-pipeline-in)
   - [Run data through pipeline](#run-data-through-pipeline)
   - [Merge results from all samples](#merge-results-from-all-samples)
   - [Clean up](#clean-up)
 
-## Set user parameters
+## Set user configurable options
 
-Set user parameters in the [excerpt_pipeline_run_script.sh](./excerpt_pipeline_run_script.sh) script (the `##### USER PARAMETERS #####` section)
+Set the user configurable options in the `##### USER CONFIGURATION #####` section of the [excerpt_pipeline_run_script.sh](./excerpt_pipeline_run_script.sh) script
+
+## Check pipeline parameters
+
+Set pipeline parameters in the [excerpt_pipeline_run_script.sh](./excerpt_pipeline_run_script.sh) script, check the [exceRpt documentation](https://rkitchen.github.io/exceRpt/) to check the pipeline parameters are appropriate for your analysis
 
 *Note. if a nextflex adapter sequence was used in sequencing you might need to include an additional hardtrim of 4bp each side by passing `TRIM_N_BASES_5p=4 TRIM_N_BASES_3p=4` to the excerpt pipeline run script*
 
@@ -39,10 +44,11 @@ screen -S excerpt_run
 
 ## Run data through pipeline
 
-Run pipeline, for example
+Run pipeline, first make sure you're in the `smncrna_analysis_template` directory, for example:
 
 ```bash
-bash /my_project/smncrna_analysis_template/excerpt_pipeline_run/excerpt_pipeline_run_script.sh
+cd /my_project/smncrna_analysis_template/excerpt_pipeline_run/
+bash excerpt_pipeline_run_script.sh
 ```
 
 ## Merge results from all samples

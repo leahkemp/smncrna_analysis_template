@@ -11,7 +11,7 @@ import os
 ##### SCRIPT #####
 
 # parse and create a dictionary out of everything in the configuration file
-with open("config.yaml") as config:
+with open("./config/config.yaml") as config:
     config_dict = yaml.safe_load(config)
 
 # extract the template dir and metadata_path parameters from the config file
@@ -19,7 +19,7 @@ template_dir=config_dict["template_dir"]
 metadata_path=config_dict["metadata_path"]
 
 # sample names
-metadata = pd.read_csv(os.path.join(template_dir, "metadata.csv"))
+metadata = pd.read_csv(metadata_path)
 sample_names=metadata[["sample"]]
 
 # data from raw fastq

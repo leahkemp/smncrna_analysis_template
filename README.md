@@ -13,24 +13,19 @@ Analysis template for analysing, visualising and communicating the findings of [
   - [What this template can do](#what-this-template-can-do)
   - [What this template can't do](#what-this-template-cant-do)
   - [What's this template gonna do?](#whats-this-template-gonna-do)
-  - [Output files](#output-files)
-    - [Raw counts](#raw-counts)
-    - [Processed counts](#processed-counts)
-    - [QC](#qc)
-    - [Plotting/analysis](#plottinganalysis)
+  - [Testing](#testing)
   - [How to use this template](#how-to-use-this-template)
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
     - [2. Take this template to the data on your local machine](#2-take-this-template-to-the-data-on-your-local-machine)
     - [3. Format your input files](#3-format-your-input-files)
-      - [fastq naming convention](#fastq-naming-convention)
-      - [List of samples](#list-of-samples)
+      - [Fastq naming convention](#fastq-naming-convention)
       - [Metadata file](#metadata-file)
-    - [4. Configure the configuration file](#4-configure-the-configuration-file)
-    - [5. Analyse your data](#5-analyse-your-data)
-    - [6. Commit and push to your forked version of the github repo](#6-commit-and-push-to-your-forked-version-of-the-github-repo)
-    - [7. Repeat step 5 each time you re-run the analysis with different parameters](#7-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
-    - [8. Create a github page (optional)](#8-create-a-github-page-optional)
-    - [9. Contribute back!](#9-contribute-back)
+      - [Configuration file](#configuration-file)
+    - [4. Analyse your data](#4-analyse-your-data)
+    - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
+    - [6. Repeat step 5 each time you re-run the analysis with different parameters](#6-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
+    - [7. Create a github page (optional)](#7-create-a-github-page-optional)
+    - [8. Contribute back!](#8-contribute-back)
 
 ## What this template can do
 
@@ -57,41 +52,22 @@ These counts datasets output by the pipelines are analysed in [R](https://www.r-
 
 Beyond a traditional differential expression analysis, the data is prepared and presented in an interactive [RShiny](https://shiny.rstudio.com/) app that allows the user to explore RNA expression (both raw counts and counts per million).
 
-Interactive MDS and PCA plots are also created to explore clusters in the data.
+Interactive MDS and PCA plots are also created to explore clusters of RNA's/samples in the data.
 
 Lastly, the composition of the RNA species are explored.
 
-## Output files
+## Testing
 
-The main output files you'll end up with:
+This template has been validated to work on:
 
-### Raw counts
+- [nextflow 21.04.0](https://github.com/nextflow-io/nextflow/tree/v21.04.0)
+- [singularity 3.7.2](https://github.com/hpcng/singularity/tree/v3.7.2),
+- [smrnaseq version 1.0.0](https://github.com/nf-core/smrnaseq/tree/1.0.0)
+- [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2)
+- R version 4.0.5
+- CentOS Linux 7
 
-- smrnaseq read counts (smrnaseq_pipeline_run/results/mirtop/mirtop.tsv)
-- exceRpt miRNA read counts (excerpt_pipeline_run/merged/exceRpt_miRNA_read counts.txt)
-- exceRpt piRNA read counts (excerpt_pipeline_run/merged/exceRpt_piRNA_read counts.txt)
-- exceRpt tRNA read counts (excerpt_pipeline_run/merged/exceRpt_tRNA_read counts.txt)
-- exceRpt circularRNA read counts (excerpt_pipeline_run/merged/exceRpt_circularRNA_read counts.txt)
-- exceRpt gencode read counts (excerpt_pipeline_run/merged/exceRpt_gencode_read counts.txt)
-
-### Processed counts
-
-- raw, counts per million and log counts per million for all samples and RNA species (prepare_counts/counts.csv)
-
-### QC
-
-- Multiqc report - smrnaseq (smrnaseq_pipeline_run/results/MultiQC/multiqc_report.html)
-- Mirtrace report - smrnaseq (smrnaseq_pipeline_run/results/miRTrace/mirtrace/mirtrace-report.html)
-- Diagnostic plots - excerpt (excerpt_pipeline_run/merged/exceRpt_DiagnosticPlots.pdf)
-- Sequencing read QC (sequencing_read_QC/sequencing_read_QC.html)
-
-### Plotting/analysis
-
-- RNA expression plotting ()
-- MDS plots (mds/mds.html)
-- PCA plots ()
-- RNA species composition (rna_species_composition/rna_species_composition.html)
-- Differential expression (diff_expression/diff_expression.html)
+Test fastq data available in the [test_fastq directory](./test_fastq/)
 
 ## How to use this template
 
@@ -109,44 +85,46 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 
 ### 3. Format your input files
 
-#### fastq naming convention
+#### Fastq naming convention
 
 ```bash
-S*_R1.fastq.gz
+sample_S*_R1.fastq.gz
 ```
 
-#### List of samples
+- one fastq file per sample
 
-
+For example see the test fastq files [here](./test/fastq/)
 
 #### Metadata file
 
-Columns:
+Required columns:
 
 - "sample"
+  - must be titled "sample"
+  - must contain a row with a unique sample name/id for each fastq file present in the directory of fastq files to be analysed
+
 - "treatment"
+  - must be titled "treatment"
 
-### 4. Configure the configuration file
+Other notes:
 
-Set up [rna_species_config.yaml](rna_species_config.yaml)
+- you can have additional columns
+- you can't have any duplicate column names eg. two columns named "sample" and "Sample"
+- make sure every sample in the fastq directory to be analysed is included in the metadata file and is associated with a treatment group
 
-### 5. Analyse your data
+For example see the test metadata file [here](./test/metadata.csv)
 
-- [Run smrnaseq pipeline](./smrnaseq_pipeline_run/run_smrnaseq_pipeline.md)
-- [Run excerpt pipeline](./excerpt_pipeline_run/run_excerpt_pipeline.md)
-- [Summarise the read counts/mapping rates for both pipelines](./mapping_rates/calculate_mapping_metrics.md)
-- [Prepare count data](./prepare_counts/prepare_counts.Rmd)
-- [RNA species composition plotting](./rna_species_composition/rna_species_composition.Rmd)
-- [MDS plots](./mds/mds.Rmd)
-- PCA plots:
-  - [Data prep for app](./pca/data_prep_for_app.Rmd)
-  - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./pca/server.R) and [ui](./pca/ui.R) that comprise the app
-- [Differential expression analysis](./diff_expression/diff_expression.Rmd)
-- Expression plots:
-  - [Data prep for app](./expression_plotting/data_prep_for_app.Rmd)
-  - Deploy RShiny app to ESR's shinyapps IO account, see the [server](./expression_plotting/server.R) and [ui](./expression_plotting/ui.R) that comprise the app
+#### Configuration file
 
-### 6. Commit and push to your forked version of the github repo
+Set up [./config/config.yaml](config/config.yaml)
+
+For example see the test configuration file [here](./test/config.yaml)
+
+### 4. Analyse your data
+
+Run/work through the [master RMarkdown file](./master.Rmd), this will do the bulk of the analyses and generate several html file for data visualisation and csv files with processed data
+
+### 5. Commit and push to your forked version of the github repo
 
 Push all the results files you're comfortable with being online:
 
@@ -158,11 +136,11 @@ To maintain reproducibility of your analysis, commit and push:
 - All run scripts
 - All your documentation/notes
 
-### 7. Repeat step 5 each time you re-run the analysis with different parameters
+### 6. Repeat step 5 each time you re-run the analysis with different parameters
 
-### 8. Create a github page (optional)
+### 7. Create a github page (optional)
 
-### 9. Contribute back!
+### 8. Contribute back!
 
 - Raise issues in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
 - Create feature requests in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)

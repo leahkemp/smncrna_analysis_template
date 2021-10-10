@@ -18,11 +18,11 @@ output:
 ```{r setup, include=FALSE}
 # setup default chunk settings
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
+```
 
-# activate renv
-renv::activate()
-
+```{r}
 # load libraries
+library(knitr)
 library(plyr)
 library(dplyr)
 library(plotly)
@@ -33,8 +33,8 @@ library(textshape)
 library(DT)
 library(yaml)
 
-# read in yaml config file specifying which rna species to analyse
-config <- yaml::yaml.load_file("../config.yaml")
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
 
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
@@ -69,10 +69,10 @@ counts <- dplyr::left_join(counts, metadata, by = "sample")
 
 ```{bash}
 # create a directory to write data to file (if it doesn't yet exist)
-mkdir -p mds_results/mds/
+mkdir -p ./mds_results/
 ```
 
-```{r, eval = config$all_rnas, results = "asis"}
+```{r, results = "asis"}
 # pretty format the text for the header
 to_analyse_pretty <- to_analyse %>%
   base::as.data.frame() %>%
@@ -100,7 +100,7 @@ to_analyse_pretty <- base::paste0(rna_species_pretty, " ", pipeline_pretty, coll
 base::cat(base::paste0("## All RNA's analysed: ", to_analyse_pretty, " ", "{.tabset .tabset-fade}"))
 ```
 
-```{r, eval = config$all_rnas, out.width = "100%"}
+```{r, out.width = "100%"}
 # calculate MDS
 mds <- counts %>%
   dplyr::filter(pipeline == "excerpt") %>%
@@ -120,7 +120,7 @@ data <- base::cbind(mds$x, mds$y) %>%
   tibble::rownames_to_column("sample")
 
 # save data to file
-utils::write.csv(data, "mds_results/mds/mds_excerpt_all_rnas.csv", row.names = FALSE)
+utils::write.csv(data, "./mds_results/mds_excerpt_all_rnas.csv", row.names = FALSE)
 
 # bind data with metadata to get the treatment column
 data <- dplyr::left_join(data, metadata, by = "sample")
@@ -130,6 +130,7 @@ data %>%
   plotly::plot_ly(mode = "markers",
                   x = ~dim1,
                   y = ~dim2,
+                  type = "scatter",
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
@@ -139,7 +140,7 @@ data %>%
                  yaxis = base::list(title = "Dim2"))
 ```
 
-```{r, eval = config$all_rnas, out.width = "100%"}
+```{r, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
                 dplyr::select(sample,
@@ -193,7 +194,7 @@ data <- base::cbind(mds$x, mds$y) %>%
   tibble::rownames_to_column("sample")
 
 # save data to file
-utils::write.csv(data, "mds_results/mds/mds_excerpt_pirnas.csv", row.names = FALSE)
+utils::write.csv(data, "./mds_results/mds_excerpt_pirnas.csv", row.names = FALSE)
 
 # bind data with metadata to get the treatment column
 data <- dplyr::left_join(data, metadata, by = "sample")
@@ -203,6 +204,7 @@ data %>%
   plotly::plot_ly(mode = "markers",
                   x = ~dim1,
                   y = ~dim2,
+                  type = "scatter",
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
@@ -266,7 +268,7 @@ data <- base::cbind(mds$x, mds$y) %>%
   tibble::rownames_to_column("sample")
 
 # save data to file
-utils::write.csv(data, "mds_results/mds/mds_excerpt_pirnas.csv", row.names = FALSE)
+utils::write.csv(data, "./mds_results/mds_excerpt_pirnas.csv", row.names = FALSE)
 
 # bind data with metadata to get the treatment column
 data <- dplyr::left_join(data, metadata, by = "sample")
@@ -276,6 +278,7 @@ data %>%
   plotly::plot_ly(mode = "markers",
                   x = ~dim1,
                   y = ~dim2,
+                  type = "scatter",
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
@@ -339,7 +342,7 @@ data <- base::cbind(mds$x, mds$y) %>%
   tibble::rownames_to_column("sample")
 
 # save data to file
-utils::write.csv(data, "mds_results/mds/mds_excerpt_pirnas.csv", row.names = FALSE)
+utils::write.csv(data, "./mds_results/mds_excerpt_pirnas.csv", row.names = FALSE)
 
 # bind data with metadata to get the treatment column
 data <- dplyr::left_join(data, metadata, by = "sample")
@@ -349,6 +352,7 @@ data %>%
   plotly::plot_ly(mode = "markers",
                   x = ~dim1,
                   y = ~dim2,
+                  type = "scatter",
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
@@ -412,7 +416,7 @@ data <- base::cbind(mds$x, mds$y) %>%
   tibble::rownames_to_column("sample")
 
 # save data to file
-utils::write.csv(data, "mds_results/mds/mds_excerpt_trnas.csv", row.names = FALSE)
+utils::write.csv(data, "./mds_results/mds_excerpt_trnas.csv", row.names = FALSE)
 
 # bind data with metadata to get the treatment column
 data <- dplyr::left_join(data, metadata, by = "sample")
@@ -422,6 +426,7 @@ data %>%
   plotly::plot_ly(mode = "markers",
                   x = ~dim1,
                   y = ~dim2,
+                  type = "scatter",
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
@@ -485,7 +490,7 @@ data <- base::cbind(mds$x, mds$y) %>%
   tibble::rownames_to_column("sample")
 
 # save data to file
-utils::write.csv(data, "mds_results/mds/mds_excerpt_circrnas.csv", row.names = FALSE)
+utils::write.csv(data, "./mds_results/mds_excerpt_circrnas.csv", row.names = FALSE)
 
 # bind data with metadata to get the treatment column
 data <- dplyr::left_join(data, metadata, by = "sample")
@@ -495,6 +500,7 @@ data %>%
   plotly::plot_ly(mode = "markers",
                   x = ~dim1,
                   y = ~dim2,
+                  type = "scatter",
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
@@ -558,7 +564,7 @@ data <- base::cbind(mds$x, mds$y) %>%
   tibble::rownames_to_column("sample")
 
 # save data to file
-utils::write.csv(data, "mds_results/mds/mds_excerpt_gencode.csv", row.names = FALSE)
+utils::write.csv(data, "./mds_results/mds_excerpt_gencode.csv", row.names = FALSE)
 
 # bind data with metadata to get the treatment column
 data <- dplyr::left_join(data, metadata, by = "sample")
@@ -568,6 +574,7 @@ data %>%
   plotly::plot_ly(mode = "markers",
                   x = ~dim1,
                   y = ~dim2,
+                  type = "scatter",
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
@@ -607,8 +614,7 @@ DT::datatable(data %>%
                              I("colvis"))))
 ```
 
-```{r, results = "hide"}
-# save session info
-base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
-base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
 ```

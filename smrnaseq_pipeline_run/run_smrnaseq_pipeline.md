@@ -7,14 +7,14 @@
 
 - [Run smrnaseq pipeline](#run-smrnaseq-pipeline)
   - [Table of contents](#table-of-contents)
-  - [Set user parameters](#set-user-parameters)
+  - [Check pipeline parameters](#check-pipeline-parameters)
   - [Create screen to run pipeline in](#create-screen-to-run-pipeline-in)
   - [Set nextflow configuration](#set-nextflow-configuration)
   - [Run data through pipeline](#run-data-through-pipeline)
 
-## Set user parameters
+## Check pipeline parameters
 
-Set user parameters in the [smrnaseq_pipeline_run_script.sh](./smrnaseq_pipeline_run_script.sh) script (the `##### USER PARAMETERS #####` section)
+Set pipeline parameters in the [smrnaseq_pipeline_run_script.sh](./smrnaseq_pipeline_run_script.sh) script, check the [smrnaseq documentation](https://nf-co.re/smrnaseq/usage) to check the pipeline parameters are appropriate for your analysis
 
 *A note. correct trimming is VERY important for these little RNA's because it strongly influences how many RNA's you get mapping to the references, check the adapter sequence you think is in the data is actually in the data with the following few commands:*
 
@@ -38,8 +38,9 @@ See info [here](https://www.nextflow.io/docs/latest/config.html)
 
 ## Run data through pipeline
 
-Run pipeline, for example
+Run pipeline, first make sure you're in the `smncrna_analysis_template` directory, for example:
 
 ```bash
-bash /my_project/smncrna_analysis_template/smrnaseq_pipeline_run/smrnaseq_pipeline_run_script.sh
+cd /my_project/smncrna_analysis_template/smrnaseq_pipeline_run/
+bash smrnaseq_pipeline_run_script.sh
 ```

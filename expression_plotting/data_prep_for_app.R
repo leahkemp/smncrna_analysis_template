@@ -1,34 +1,6 @@
----
-title: "Data prep for app"
-author:
-  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
-  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
-date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
-output:
-  html_document:
-    code_download: true
-    code_folding: show
-  editor_options: 
-    chunk_output_type: console
----
-
-```{r setup, include=FALSE}
-# setup default chunk settings
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
-```
-
-```{bash}
-# create a directory to write data to file (if it doesn't yet exist)
-mkdir -p data/
-```
-
-```{r}
 ##################################################################
 ##                          Setup                               ##
 ##################################################################
-
-# activate renv
-renv::activate()
 
 # load libraries
 library(dplyr)
@@ -36,19 +8,19 @@ library(DBI)
 library(yaml)
 
 # read in processed count data (processed in the differential expression document)
-counts <- utils::read.csv("../prepare_counts/counts.csv")
+counts <- utils::read.csv("./prepare_counts/counts.csv")
 
 # read in yaml config file
-config <- yaml::yaml.load_file("../config.yaml")
+config <- yaml::yaml.load_file("./config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(config$metadata_path)
 
 # read in differential expression data
-diff_expr_data <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+diff_expr_data <- utils::read.table("./diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 
 # read in mapping rates data
-mapping_rates <- utils::read.csv("../mapping_rates/mapping_rates.csv")
+mapping_rates <- utils::read.csv("./mapping_rates/mapping_rates.csv")
 
 ##################################################################
 ##                   Prep of count data                         ##
@@ -121,21 +93,21 @@ sig_diff_expr_data_10 <- sig_diff_expr_data_10 %>%
 #################################################################
 
 # differential expression data
-utils::write.csv(diff_expr_data, file = "./data/master_diff_expr_data.csv", row.names = FALSE)
-utils::write.csv(sig_diff_expr_data_1, file = "./data/master_sig_diff_expr_data_1.csv", row.names = FALSE)
-utils::write.csv(sig_diff_expr_data_5, file = "./data/master_sig_diff_expr_data_5.csv", row.names = FALSE)
-utils::write.csv(sig_diff_expr_data_10, file = "./data/master_sig_diff_expr_data_10.csv", row.names = FALSE)
+utils::write.csv(diff_expr_data, file = "./expression_plotting/master_diff_expr_data.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_1, file = "./expression_plotting/master_sig_diff_expr_data_1.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_5, file = "./expression_plotting/master_sig_diff_expr_data_5.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_10, file = "./expression_plotting/master_sig_diff_expr_data_10.csv", row.names = FALSE)
 
 # write the config file needed for app to file within this project directory
 # so it can be sent to shinyappsio and used
-yaml::write_yaml(config, "config.yaml")
+yaml::write_yaml(config, "./expression_plotting/config.yaml")
 
 # count data
 # this data was written to an sql lite database
 # this significantly speeds up the app compared to reading a csv file of the data and filtering/subsetting the data
 
 # initialise a database
-db <- DBI::dbConnect(RSQLite::SQLite(), "./data/master-count.sqlite")
+db <- DBI::dbConnect(RSQLite::SQLite(), "./expression_plotting/master-count.sqlite")
 
 # get all unique rna species
 species_choices <- base::data.frame(base::unique(base::as.character(counts$rna_species)))
@@ -154,10 +126,6 @@ DBI::dbSendQuery(db,"CREATE INDEX index_rna ON counts (rna, rna_species)")
 
 # close the connection to the database
 DBI::dbDisconnect(db)
-```
 
-```{r, results = "hide"}
-# save session info
-base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
-base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
-```
+# clean up
+rm(list = ls())

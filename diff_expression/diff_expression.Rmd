@@ -43,11 +43,8 @@ library(gtools)
 library(textshape)
 library(tidyr)
 
-# activate renv
-renv::activate()
-
-# read in yaml config file specifying which rna species to analyse
-config <- yaml::yaml.load_file("../config.yaml")
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(base::file.path(config$metadata))
@@ -1563,8 +1560,7 @@ diff_expr_results %>%
   utils::write.table(file = "./diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
 ```
 
-```{r, results = "hide"}
-# save session info
-base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
-base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
 ```

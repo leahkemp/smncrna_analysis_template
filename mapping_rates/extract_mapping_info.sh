@@ -29,7 +29,7 @@ function parse_yaml {
 }
 
 # parse and create bash variables out of everything in the configuration file
-eval $(parse_yaml config.yaml)
+eval $(parse_yaml ./config/config.yaml)
 
 # remove any old outputs of this script to avoid results being written twice to a file
 rm -rf $template_dir/mapping_rates/extracted_all_samples

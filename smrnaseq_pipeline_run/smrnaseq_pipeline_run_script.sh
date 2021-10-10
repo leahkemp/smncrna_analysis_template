@@ -1,53 +1,28 @@
 #!/bin/bash
 
+#SBATCH --job-name=smrnaseq_test_data
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=leah.kemp@esr.cri.nz
+#SBATCH --output=smrnaseq_test_data_%j.log
+
 ##### INFO #####
 
 # this script downloads the input files (microRNA database) for the smrnaseq pipeline from mirbase,
 # automatically downloads the latest version of the smrnaseq pipeline and analyses the samples in
 # parallel
 
-##### USER PARAMETERS #####
-
-# set the path to the fastq files to be analysed
-fastq_files="/my_project/smncrna_analysis_template/fastq/*.fastq.gz"
-
-# set the directory to where the smrnaseq database (mirbase) will be downloaded
-smrnaseq_database_dir="/my_project/smncrna_analysis_template/publicData/mirbase"
-
-# choose if the GRCh37 or GRCh38 smrnaseq database should be used in the pipeline
-genome_version="GRCh37"
-
-# set the adapter to use in trimming
-adapter="nextflex"
-
-# set the minimum read length
-min_read_length="17"
-
 ##### SCRIPT #####
 
-# create the directory to download the exerpt database if it doesn't yet exist
-mkdir -p $smrnaseq_database_dir
-
-# download the database file
-wget ftp://mirbase.org:21/pub/mirbase/CURRENT/ -P $smrnaseq_database_dir
-
-# unzip
-for i in $smrnaseq_database_dir/mirbase.org/pub/mirbase/CURRENT/*; do
-gunzip $i
-done
-
 # run smrnaseq pipeline
-run nf-core/smrnaseq \
---reads '$fastq_files' \
---protocol $adapter \
--profile singularity \
---mature $smrnaseq_database_dir/mirbase.org/pub/mirbase/CURRENT/mature.fa \
---hairpin $smrnaseq_database_dir/mirbase.org/pub/mirbase/CURRENT/hairpin.fa \
---genome $genome_version \
+nextflow run nf-core/smrnaseq \
+--input '/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/test/fastq/*.fastq.gz' \
+--protocol nextflex \
+--genome GRCh38 \
 --mirtrace_species hsa \
---mirna_gtf $smrnaseq_database_dir/mirbase.org/pub/mirbase/CURRENT/genomes/hsa.gff3 \
---saveReference \
--resume \
---illumina \
---min_length $min_read_length
-```
+--min_length 17 \
+-profile singularity \
+--fasta /NGS/scratch/KSCBIOM/HumanGenomics/publicData/hg38/v0/Homo_sapiens_assembly38.fasta \
+--mature /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/mature.fa \
+--hairpin /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/hairpin.fa \
+--mirna_gtf /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/genomes/hsa.gff3 \
+-resume

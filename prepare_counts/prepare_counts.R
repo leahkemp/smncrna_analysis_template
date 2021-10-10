@@ -1,26 +1,3 @@
----
-title: "Prepare counts"
-author:
-  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
-  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
-date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
-output:
-  html_document:
-    code_download: true
-    code_folding: show
-  editor_options: 
-    chunk_output_type: console
----
-
-```{r setup, include=FALSE}
-# setup default chunk settings
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
-```
-
-```{r, prepare_counts}
-# activate renv
-renv::activate()
-
 # load libraries
 library(dplyr)
 library(textshape)
@@ -28,8 +5,8 @@ library(edgeR)
 library(tibble)
 library(gtools)
 
-# read in yaml config file specifying which rna species to analyse
-config <- yaml::yaml.load_file("../config.yaml")
+# read in yaml config file
+config <- yaml::yaml.load_file("./config/config.yaml")
 
 # load all the count datasets
 mirna_excerpt_data <- utils::read.table(base::file.path(config$template_dir,
@@ -91,8 +68,8 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
 # convert column to rownames for downstream processing
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
   textshape::column_to_rownames("miRNA") %>%
-    # remove S*_R1.fastq suffix from the sample/column names
-    dplyr::rename_with(~ base::sub("_1", "", .))
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub("_1", "", .))
 
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
@@ -220,11 +197,7 @@ counts <- counts %>%
     TRUE ~ rna_species))
 
 # write the data to a csv file so I can use it in other documents
-utils::write.csv(counts, "./counts.csv", row.names = FALSE)
-```
+utils::write.csv(counts, "./prepare_counts/counts.csv", row.names = FALSE)
 
-```{r, results = "hide"}
-# save session info
-base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
-base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
-```
+# clean up
+rm(list = ls())
