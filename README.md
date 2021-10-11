@@ -93,7 +93,7 @@ sample_S*_R1.fastq.gz
 
 - one fastq file per sample
 
-For example see the test fastq files [here](./test/fastq/)
+For example see the test fastq files [here](./test_fastq/)
 
 #### Metadata file
 
@@ -112,13 +112,13 @@ Other notes:
 - you can't have any duplicate column names eg. two columns named "sample" and "Sample"
 - make sure every sample in the fastq directory to be analysed is included in the metadata file and is associated with a treatment group
 
-For example see the test metadata file [here](./test/metadata.csv)
+For example see the test metadata file [here](./config/metadata.csv)
 
 #### Configuration file
 
 Set up [./config/config.yaml](config/config.yaml)
 
-For example see the test configuration file [here](./test/config.yaml)
+For example see the test configuration file [here](./config/config.yaml)
 
 ### 4. Analyse your data
 
