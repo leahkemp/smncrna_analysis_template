@@ -33,6 +33,14 @@ renv::restore()
 bash mapping_rates/extract_mapping_info.sh
 ```
 
+## Seqeuencing read QC
+
+*This will output an interactive html document exploring the raw sequencing read count and number of reads used for alignemnt (./rna_species_composition/rna_species_composition.html)*
+
+```{r}
+rmarkdown::render("./sequencing_read_QC/sequencing_read_QC.Rmd")
+```
+
 ## Prepare count data
 
 *This will output a csv file with raw, counts per million and log counts per million for all samples and RNA species (./prepare_counts/counts.csv)*
