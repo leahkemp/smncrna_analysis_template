@@ -2,7 +2,7 @@
 
 ---
 
-Analysis template for analysing, visualising and communicating the findings of [Illumina Small RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing/small-rna-seq.html) data with a focus on small non-coding RNA's that are sometimes forgotten (ie. looking at and beyond miRNA's). This is set up to analyse human data, but can be adapted to other species with some tweaks to the code, namely the pipeline inputs. This template uses the count data and other QC from both the [smrnaseq](https://github.com/nf-core/smrnaseq/) and [exceRpt](https://github.com/rkitchen/exceRpt/) pipelines, so I'm assuming you've run these pipelines on your data before using this template.
+Analysis template for analysing, visualising and communicating the findings of [Illumina Small RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing/small-rna-seq.html) data with a focus on small non-coding RNA's that are sometimes forgotten (ie. looking at and beyond miRNA's). This is set up to analyse human data, but can be adapted to other species with some tweaks to the code, namely the pipeline inputs. This template uses the count data and other QC from both the [smrnaseq](https://github.com/nf-core/smrnaseq/) and [exceRpt](https://github.com/rkitchen/exceRpt/) pipelines, so I'm assuming you've run these pipelines on your data before using this template. See a live example github page [here](https://leahkemp.github.io/smncrna_analysis_template/).
 
 ---
 
@@ -26,7 +26,7 @@ Analysis template for analysing, visualising and communicating the findings of [
     - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
     - [6. Repeat step 5 each time you re-run the analysis with different parameters](#6-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
     - [7. Create a github page (optional)](#7-create-a-github-page-optional)
-    - [10. Contribute back!](#10-contribute-back)
+    - [8. Contribute back!](#8-contribute-back)
 
 ## What this template can do
 
@@ -129,9 +129,9 @@ To maintain reproducibility of your analysis, commit and push:
 
 ### 7. Create a github page (optional)
 
-Push html files
+Push all the all the html/Rmd/txt files that you'd like to be rendered into a github page to github. Then create a [github page](https://guides.github.com/features/pages/). See this example [live page](https://leahkemp.github.io/smncrna_analysis_template/) and the underlying [index.md file](https://raw.githubusercontent.com/leahkemp/smncrna_analysis_template/example/index.md) that links all the html/Rmd/txt files included in the github page based on the files produced by this template.
 
-### 10. Contribute back!
+### 8. Contribute back!
 
 - Raise issues in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
 - Create feature requests in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
