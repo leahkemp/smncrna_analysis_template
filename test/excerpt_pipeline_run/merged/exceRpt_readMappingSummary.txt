@@ -1,0 +1,13 @@
+	input	successfully_clipped	failed_quality_filter	failed_homopolymer_filter	calibrator	UniVec_contaminants	rRNA	reads_used_for_alignment	genome	miRNA_sense	miRNA_antisense	miRNAprecursor_sense	miRNAprecursor_antisense	tRNA_sense	tRNA_antisense	piRNA_sense	piRNA_antisense	gencode_sense	gencode_antisense	circularRNA_sense	circularRNA_antisense	not_mapped_to_genome_or_libs	repetitiveElements	endogenous_gapped	input_to_exogenous_miRNA	exogenous_miRNA	input_to_exogenous_rRNA	exogenous_rRNA	input_to_exogenous_genomes	exogenous_genomes
+sample01_S1_R1.fastq	10000	6556	47	692	0	45	347	5425	1779	865	0	0	0	180	0	24	2	439	20	0	0	3646	0	0	0	0	0	0	0	0
+sample02_S1_R1.fastq	10000	9600	35	620	0	20	544	8381	3946	1646	0	4	0	913	0	34	0	947	37	0	0	4435	0	0	0	0	0	0	0	0
+sample03_S1_R1.fastq	10000	9639	64	544	0	26	625	8380	3649	1850	0	7	0	741	0	64	0	649	42	0	0	4731	0	0	0	0	0	0	0	0
+sample04_S1_R1.fastq	10000	8681	48	552	0	40	520	7521	3282	1602	0	3	0	541	0	29	0	692	35	0	0	4239	0	0	0	0	0	0	0	0
+sample05_S1_R1.fastq	10000	9077	45	380	0	19	646	7987	3057	1296	0	4	0	663	0	84	0	582	48	0	0	4930	0	0	0	0	0	0	0	0
+sample06_S1_R1.fastq	10000	8633	43	332	0	35	581	7642	3586	1478	0	3	0	858	0	136	0	770	37	0	0	4056	0	0	0	0	0	0	0	0
+sample07_S1_R1.fastq	10000	8910	49	347	0	31	464	8019	5177	3129	0	8	0	1204	0	46	0	569	20	0	0	2842	0	0	0	0	0	0	0	0
+sample08_S1_R1.fastq	10000	9180	35	419	0	16	469	8241	3753	2282	0	10	1	632	0	39	0	448	32	0	0	4488	0	0	0	0	0	0	0	0
+sample09_S1_R1.fastq	10000	9046	57	490	0	20	548	7931	3581	1881	0	13	0	695	0	51	0	582	25	0	0	4350	0	0	0	0	0	0	0	0
+sample10_S1_R1.fastq	10000	8922	55	560	0	41	447	7819	2328	1172	0	6	0	227	0	17	0	403	38	0	0	5491	0	0	0	0	0	0	0	0
+sample11_S1_R1.fastq	10000	9003	54	317	0	24	550	8058	3890	1963	0	19	0	850	0	84	0	619	26	0	0	4168	0	0	0	0	0	0	0	0
+sample12_S1_R1.fastq	10000	7040	38	244	0	31	388	6339	2304	1072	0	5	0	358	0	73	0	386	41	0	0	4035	0	0	0	0	0	0	0	0

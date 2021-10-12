@@ -10,16 +10,16 @@ library(dbplyr)
 library(DT)
 
 # load database data ----
-db <- DBI::dbConnect(RSQLite::SQLite(), "./data/master-count.sqlite")
+db <- DBI::dbConnect(RSQLite::SQLite(), "./master-count.sqlite")
 counts <- dplyr::tbl(db, "counts")
 species <- dplyr::tbl(db, "species")
 rna_species_pairs <- dplyr::tbl(db, "rna_choices")
 
 # load differential expression data ----
-diff_expr_data <- utils::read.csv("./data/master_diff_expr_data.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_1 <- utils::read.csv("./data/master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_5 <- utils::read.csv("./data/master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_10 <- utils::read.csv("./data/master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
+diff_expr_data <- utils::read.csv("./master_diff_expr_data.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_1 <- utils::read.csv("./master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_5 <- utils::read.csv("./master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_10 <- utils::read.csv("./master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # read in yaml config file
 config <- yaml::yaml.load_file("config.yaml")

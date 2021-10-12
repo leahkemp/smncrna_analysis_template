@@ -50,67 +50,65 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 metadata <- utils::read.csv(base::file.path(config$metadata))
 
 # load all the count datasets
-mirna_excerpt_data <- utils::read.table(base::file.path(config$template_dir,
-                                                        "excerpt_pipeline_run/merged/exceRpt_miRNA_ReadCounts.txt"),
+mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                        "exceRpt_miRNA_ReadCounts.txt"),
                                         header = TRUE,
                                         stringsAsFactors = FALSE,
                                         check.names = FALSE) %>%
   # remove S*_R1.fastq suffix from the sample/column names
   dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 
-pirna_excerpt_data <- utils::read.table(base::file.path(config$template_dir,
-                                                        "excerpt_pipeline_run/merged/exceRpt_piRNA_ReadCounts.txt"),
+pirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                        "exceRpt_piRNA_ReadCounts.txt"),
                                         header = TRUE,
                                         stringsAsFactors = FALSE,
                                         check.names = FALSE) %>%
   # remove S*_R1.fastq suffix from the sample/column names
   dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 
-trna_excerpt_data <- utils::read.table(base::file.path(config$template_dir,
-                                                       "excerpt_pipeline_run/merged/exceRpt_tRNA_ReadCounts.txt"),
+trna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                       "exceRpt_tRNA_ReadCounts.txt"),
                                        header = TRUE,
                                        stringsAsFactors = FALSE,
                                        check.names = FALSE) %>%
   # remove S*_R1.fastq suffix from the sample/column names
   dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 
-circrna_excerpt_data <- utils::read.table(base::file.path(config$template_dir,
-                                                          "excerpt_pipeline_run/merged/exceRpt_circularRNA_ReadCounts.txt"),
+circrna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                          "exceRpt_circularRNA_ReadCounts.txt"),
                                           header = TRUE,
                                           stringsAsFactors = FALSE,
                                           comment.char = "") %>%
   # remove S*_R1.fastq suffix from the sample/column names
   dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 
-gencode_excerpt_data <- utils::read.table(base::file.path(config$template_dir,
-                                                          "excerpt_pipeline_run/merged/exceRpt_gencode_ReadCounts.txt"),
+gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                          "exceRpt_gencode_ReadCounts.txt"),
                                           header = TRUE,
                                           stringsAsFactors = FALSE,
                                           check.names = FALSE) %>%
   # remove S*_R1.fastq suffix from the sample/column names
   dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
 
-mirna_smrnaseq_data <- utils::read.table(base::file.path(config$template_dir,
-                                                         "smrnaseq_pipeline_run/results/mirtop/mirtop.tsv"),
+mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
+                                                         "/edgeR/miRBase_mature/mature_counts.csv"),
                                          header = TRUE,
-                                         stringsAsFactors = TRUE) %>%
+                                         stringsAsFactors = TRUE,
+                                         sep = ",") %>%
+  # formatting
+  base::t() %>%
+  base::as.data.frame() %>%
+  janitor::row_to_names(row_number = 1) %>%
   # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1", "", .))
+  dplyr::rename_with(~ base::sub("[_][S]\\d+[.]mature", "", .))
 
-# get only the count data (for the raw count data from the smrnaseq pipeline) and remove the unnecessary columns
+# formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
-  dplyr::select(-c("UID", "Read", "Variant", dplyr::starts_with("iso_")))
+  # make all count data numeric
+  dplyr::mutate_all(as.numeric)
 
-# "squash" out the isoform info
-mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
-  dplyr::group_by(miRNA) %>%
-  dplyr::summarise(dplyr::across(tidyr::everything(), list(base::sum)))
-
-# convert column to rownames for downstream processing
-mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
-  textshape::column_to_rownames("miRNA") %>%
-    # remove S*_R1.fastq suffix from the sample/column names
-    dplyr::rename_with(~ base::sub("_1", "", .))
+  # replace "." with "-" so RNA names are the same
+base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
 
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",

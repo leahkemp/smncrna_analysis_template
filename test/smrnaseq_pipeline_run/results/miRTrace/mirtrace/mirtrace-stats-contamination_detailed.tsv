@@ -1,0 +1,6 @@
+CLADE	FAMILY_ID	MIRBASE_IDS	SEQ	sample02_S1	sample05_S1	sample08_S1	sample01_S1	sample10_S1	sample07_S1	sample11_S1	sample03_S1	sample09_S1	sample06_S1	sample04_S1	sample12_S1
+insects	14	aae-miR-14,aga-miR-14,ame-miR-14,api-miR-14,bmo-miR-14,cqu-miR-14,dan-miR-14,der-miR-14,dgr-miR-14,dme-miR-14,dmo-miR-14,dpe-miR-14,dps-miR-14,dse-miR-14,dsi-miR-14,dvi-miR-14,dwi-miR-14,dya-miR-14,hme-miR-14,mse-miR-14,ngi-miR-14,nvi-miR-14,tca-miR-14	TCAGTCTTTTTCTCTCTCCT	0	0	0	0	0	0	2	0	0	0	0	0
+primates	576	hsa-miR-576,mml-miR-576,ppy-miR-576,ptr-miR-576	AAGATGTGGAAAAATTGGAA	0	1	0	0	0	0	0	0	0	0	0	0
+primates	642	hsa-miR-642a	AGACACATTTGGAGAGGGAA	0	0	0	0	0	0	0	1	0	0	0	0
+primates	550	hsa-miR-550a,mml-miR-550,ptr-miR-550	AGTGCCTGAGGGAGTAAGAG	0	0	0	4	0	5	0	0	0	0	0	0
+primates	584	ggo-miR-584,hsa-miR-584,mml-miR-584,ppy-miR-584,ptr-miR-584	TTATGGTTTGCCTGGGACTG	9	1	4	5	0	3	2	4	1	2	3	0

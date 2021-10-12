@@ -113,6 +113,13 @@
       "Source": "Bioconductor",
       "Hash": "21b3bc3dfb55cb9501c5f3413b35388c"
     },
+    "KernSmooth": {
+      "Package": "KernSmooth",
+      "Version": "2.23-20",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "8dcfa99b14c296bc9f1fd64d52fd3ce7"
+    },
     "MASS": {
       "Package": "MASS",
       "Version": "7.3-54",
@@ -344,6 +351,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "56ae7e1987b340186a8a5a157c2ec358"
+    },
+    "caTools": {
+      "Package": "caTools",
+      "Version": "1.18.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "34d90fa5845004236b9eacafc51d07b2"
     },
     "cachem": {
       "Package": "cachem",
@@ -671,6 +685,13 @@
       "Repository": "CRAN",
       "Hash": "6efd734b14c6471cfe443345f3e35e29"
     },
+    "gplots": {
+      "Package": "gplots",
+      "Version": "3.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "e65e5d5dea4cbb9ba822dcd782b2ee1f"
+    },
     "gridExtra": {
       "Package": "gridExtra",
       "Version": "2.3",
@@ -971,6 +992,13 @@
       "Repository": "CRAN",
       "Hash": "f1b1ca1254ccb485dccc9c0dc65a2c36"
     },
+    "packrat": {
+      "Package": "packrat",
+      "Version": "0.7.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "95e8c3825efcaad09411799da92c0af9"
+    },
     "pbkrtest": {
       "Package": "pbkrtest",
       "Version": "0.5.1",
@@ -1138,6 +1166,20 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "320017b52d05a943981272b295750388"
+    },
+    "rsconnect": {
+      "Package": "rsconnect",
+      "Version": "0.8.24",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5e21fd77eb844fa1ff1d23cb04e1d753"
+    },
+    "rstudioapi": {
+      "Package": "rstudioapi",
+      "Version": "0.13",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "06c85365a03fdaf699966cc1d3cf53ea"
     },
     "sass": {
       "Package": "sass",

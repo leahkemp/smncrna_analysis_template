@@ -2,29 +2,39 @@
 #####                GENERAL               ######
 #################################################
 
-# choose the count datasets you wish to analyse
-# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are
-# too low you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
-# set the offending datasets to false here so the analysis can continue without these datasets
-mirna_smrnaseq: true
-mirna_excerpt: true
-pirna_excerpt: true
-trna_excerpt: true
-circrna_excerpt: false
-gencode_excerpt: false
-
 # set the path to the directory containing the input fastq files
-fastq_dir: "/my_project/smncrna_analysis_template/test_fastq"
+fastq_dir: "/my_project/smncrna_analysis_template/test/fastq/"
 
 # set the path to your smncrna_analysis_template directory
-template_dir: "/my_project/smncrna_analysis_template"
+template_dir: "/my_project/smncrna_analysis_template/"
 
 # set the path to your metadata file
 metadata_path: "/my_project/smncrna_analysis_template/config/metadata.csv"
 
+# set the path to your smrnaseq pipeline run results directory
+smrnaseq_results_dir: "/my_project/smncrna_analysis_template/test/smrnaseq_pipeline_run/results/"
+
+# set the path to your excerpt pipeline run results directory
+excerpt_results_dir: "/my_project/smncrna_analysis_template/test/excerpt_pipeline_run/exceRpt_output/"
+
+# set the path to your merged excerpt pipeline run results directory (sample merged output)
+excerpt_merged_results_dir: "/my_project/smncrna_analysis_template/test/excerpt_pipeline_run/merged/"
+
 # set the low sequencing read count flag, the number of reads at which you consider the sequencing read count
 # to be low eg. 5000000 (5 million)
 low_sequencing_read_count: 5000000
+
+# choose the count datasets you wish to analyse
+# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are
+# too low you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
+# or "Need at least two genes to fit a mean-variance trend"
+# set the offending datasets to false here so the analysis can continue without these datasets
+mirna_smrnaseq: true
+mirna_excerpt: true
+pirna_excerpt: false
+trna_excerpt: true
+circrna_excerpt: false
+gencode_excerpt: false
 
 #################################################
 #####   DIFFERENTIAL EXPRESSION ANALYSIS   ######

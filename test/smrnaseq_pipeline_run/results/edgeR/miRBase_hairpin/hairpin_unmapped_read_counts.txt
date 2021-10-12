@@ -1,0 +1,2 @@
+sample01_S1.hairpin	sample03_S1.hairpin	sample04_S1.hairpin	sample11_S1.hairpin	sample02_S1.hairpin	sample05_S1.hairpin	sample06_S1.hairpin	sample07_S1.hairpin	sample10_S1.hairpin	sample12_S1.hairpin	sample08_S1.hairpin	sample09_S1.hairpin
+*	2167	3826	3488	4042	4368	4511	4033	3302	3715	3447	3780	3369

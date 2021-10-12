@@ -1,0 +1,1 @@
+	sample01_S1_R1.fastq	sample02_S1_R1.fastq	sample03_S1_R1.fastq	sample04_S1_R1.fastq	sample05_S1_R1.fastq	sample06_S1_R1.fastq	sample07_S1_R1.fastq	sample08_S1_R1.fastq	sample09_S1_R1.fastq	sample10_S1_R1.fastq	sample11_S1_R1.fastq	sample12_S1_R1.fastq

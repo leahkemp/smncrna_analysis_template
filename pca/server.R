@@ -15,31 +15,31 @@ library(gtools)
 # load data ----
 
 # scree plot data 
-scree <- utils::read.csv("./data/scree.csv", header = TRUE, stringsAsFactors = FALSE)
+scree <- utils::read.csv("./scree.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # individuals (RNA's)
-individuals_1_2 <- utils::read.csv("./data/individuals_1_2.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_1_3 <- utils::read.csv("./data/individuals_1_3.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_1_4 <- utils::read.csv("./data/individuals_1_4.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_1_5 <- utils::read.csv("./data/individuals_1_5.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_2_3 <- utils::read.csv("./data/individuals_2_3.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_2_4 <- utils::read.csv("./data/individuals_2_4.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_2_5 <- utils::read.csv("./data/individuals_2_5.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_3_4 <- utils::read.csv("./data/individuals_3_4.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_3_5 <- utils::read.csv("./data/individuals_3_5.csv", header = TRUE, stringsAsFactors = FALSE)
-individuals_4_5 <- utils::read.csv("./data/individuals_4_5.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_1_2 <- utils::read.csv("./individuals_1_2.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_1_3 <- utils::read.csv("./individuals_1_3.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_1_4 <- utils::read.csv("./individuals_1_4.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_1_5 <- utils::read.csv("./individuals_1_5.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_2_3 <- utils::read.csv("./individuals_2_3.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_2_4 <- utils::read.csv("./individuals_2_4.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_2_5 <- utils::read.csv("./individuals_2_5.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_3_4 <- utils::read.csv("./individuals_3_4.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_3_5 <- utils::read.csv("./individuals_3_5.csv", header = TRUE, stringsAsFactors = FALSE)
+individuals_4_5 <- utils::read.csv("./individuals_4_5.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # variables (samples)
-variables_1_2 <- utils::read.csv("./data/variables_1_2.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_1_3 <- utils::read.csv("./data/variables_1_3.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_1_4 <- utils::read.csv("./data/variables_1_4.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_1_5 <- utils::read.csv("./data/variables_1_5.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_2_3 <- utils::read.csv("./data/variables_2_3.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_2_4 <- utils::read.csv("./data/variables_2_4.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_2_5 <- utils::read.csv("./data/variables_2_5.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_3_4 <- utils::read.csv("./data/variables_3_4.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_3_5 <- utils::read.csv("./data/variables_3_5.csv", header = TRUE, stringsAsFactors = FALSE)
-variables_4_5 <- utils::read.csv("./data/variables_4_5.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_1_2 <- utils::read.csv("./variables_1_2.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_1_3 <- utils::read.csv("./variables_1_3.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_1_4 <- utils::read.csv("./variables_1_4.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_1_5 <- utils::read.csv("./variables_1_5.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_2_3 <- utils::read.csv("./variables_2_3.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_2_4 <- utils::read.csv("./variables_2_4.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_2_5 <- utils::read.csv("./variables_2_5.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_3_4 <- utils::read.csv("./variables_3_4.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_3_5 <- utils::read.csv("./variables_3_5.csv", header = TRUE, stringsAsFactors = FALSE)
+variables_4_5 <- utils::read.csv("./variables_4_5.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # make sure the dimensions are read as a character
 scree$component <- base::as.character(scree$component)
@@ -154,6 +154,7 @@ server <- function(input, output, session) {
                     type = "bar",
                     x = ~component,
                     y = ~percentage.of.variance,
+                    textposition = "none",
                     height = "100%",
                     hoverinfo = "text",
                     text = ~paste("</br> Percentage of variance:", base::format(percentage.of.variance, big.mark = ",", scientific = FALSE, digits = 2), "%",

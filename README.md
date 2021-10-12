@@ -2,7 +2,7 @@
 
 ---
 
-Analysis template for analysing, visualising and communicating the findings of [Illumina Small RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing/small-rna-seq.html) data with a focus on small non-coding RNA's that are sometimes forgotten (ie. looking at and beyond miRNA's). This is set up to analyse human data, but can be adapted to other species with some tweaks to the code, namely the pipeline inputs. Think of this as a collection of scripts that will require some familiarity with UNIX/R rather than a fully automated workflow.
+Analysis template for analysing, visualising and communicating the findings of [Illumina Small RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing/small-rna-seq.html) data with a focus on small non-coding RNA's that are sometimes forgotten (ie. looking at and beyond miRNA's). This is set up to analyse human data, but can be adapted to other species with some tweaks to the code, namely the pipeline inputs. This template uses the count data and other QC from both the [smrnaseq](https://github.com/nf-core/smrnaseq/) and [exceRpt](https://github.com/rkitchen/exceRpt/) pipelines, so I'm assuming you've run these pipelines on your data before using this template.
 
 ---
 
@@ -13,6 +13,7 @@ Analysis template for analysing, visualising and communicating the findings of [
   - [What this template can do](#what-this-template-can-do)
   - [What this template can't do](#what-this-template-cant-do)
   - [What's this template gonna do?](#whats-this-template-gonna-do)
+  - [Prerequisite software](#prerequisite-software)
   - [Testing](#testing)
   - [How to use this template](#how-to-use-this-template)
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
@@ -21,11 +22,11 @@ Analysis template for analysing, visualising and communicating the findings of [
       - [Fastq naming convention](#fastq-naming-convention)
       - [Metadata file](#metadata-file)
       - [Configuration file](#configuration-file)
-    - [4. Analyse your data](#4-analyse-your-data)
+    - [4. Run the template](#4-run-the-template)
     - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
     - [6. Repeat step 5 each time you re-run the analysis with different parameters](#6-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
     - [7. Create a github page (optional)](#7-create-a-github-page-optional)
-    - [8. Contribute back!](#8-contribute-back)
+    - [10. Contribute back!](#10-contribute-back)
 
 ## What this template can do
 
@@ -34,17 +35,9 @@ This template uses open source tools and includes several scripts for researcher
 ## What this template can't do
 
 - Tell you what analysis tools and parameters are appropriate for your data or research question, the assumption is that the tools this template uses are tools you've intentionally chosen to use and that you will actively adapt this template for your use-case
-- Account for different operating systems and compute infrastructures - this means there likely be some UNIX experience required to run the pipelines/scripts on your operating system or job scheduler. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
-- The whole analysis isn't automated because it probably shouldn't be
+- Account for different operating systems and compute infrastructures - this means some UNIX experience may be required to run the pipelines/scripts on your operating system or job scheduler. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
 
 ## What's this template gonna do?
-
-This template will guide you through processing the data through two pipelines:
-
-- [smrnaseq](https://github.com/nf-core/smrnaseq)
-- [exceRpt](https://github.com/rkitchen/exceRpt)
-
-Both these pipelines undertake preprocessing, filtering, alignment, and reporting. These pipelines output counts of miRNA's (in the case of the first pipeline - [smrnaseq](https://github.com/nf-core/smrnaseq)) and other RNA's such as miRNA's, tRNA's, piRNA's, circRNA's etc. (in the case of the second pipeline - [exceRpt](https://github.com/rkitchen/exceRpt)).
 
 Beyond the QC the pipelines undertake, additional QC is undertaken to summarise the read counts and mapping rates of the data.
 
@@ -54,7 +47,11 @@ Beyond a traditional differential expression analysis, the data is prepared and 
 
 Interactive MDS and PCA plots are also created to explore clusters of RNA's/samples in the data.
 
-Lastly, the composition of the RNA species are explored.
+Lastly, the composition of the RNA species that are identified in each treatment group are compared.
+
+## Prerequisite software
+
+[python 3](https://www.python.org/), [cut](https://www.man7.org/linux/man-pages/man1/cut.1.html), [zgrep](https://linux.die.net/man/1/zgrep), [GNU cat](https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html), [GNU bc](https://www.gnu.org/software/bc/), [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [GNU ls](https://www.gnu.org/software/coreutils/manual/html_node/ls-invocation.html)
 
 ## Testing
 
@@ -62,18 +59,16 @@ This template has been validated to work on:
 
 - [nextflow 21.04.0](https://github.com/nextflow-io/nextflow/tree/v21.04.0)
 - [singularity 3.7.2](https://github.com/hpcng/singularity/tree/v3.7.2),
-- [smrnaseq version 1.0.0](https://github.com/nf-core/smrnaseq/tree/1.0.0)
+- [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0)
 - [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2)
 - R version 4.0.5
 - CentOS Linux 7
 
-Test fastq data available in the [test_fastq directory](./test_fastq/)
+Test data available in the [test directory](./test/), including [fastq data](./test/fastq/), associated [metadata](./test/metadata.csv), [smrnaseq pipeline outputs](./test/smrnaseq_pipeline_run/) and [excerpt pipeline outputs](./test/excerpt_pipeline_run/) run on this test fastq data
 
 ## How to use this template
 
 ### 1. Fork the template repo to a personal or lab account
-
-See [here](https://help.github.com/en/github/getting-started-with-github/fork-a-repo#fork-an-example-repository) for help
 
 ### 2. Take this template to the data on your local machine
 
@@ -118,17 +113,11 @@ For example see the test metadata file [here](./config/metadata.csv)
 
 Set up [./config/config.yaml](config/config.yaml)
 
-For example see the test configuration file [here](./config/config.yaml)
-
-### 4. Analyse your data
+### 4. Run the template
 
 Run/work through the [master RMarkdown file](./master.Rmd), this will do the bulk of the analyses and generate several html file for data visualisation and csv files with processed data
 
 ### 5. Commit and push to your forked version of the github repo
-
-Push all the results files you're comfortable with being online:
-
-- 
 
 To maintain reproducibility of your analysis, commit and push:
 
@@ -140,7 +129,9 @@ To maintain reproducibility of your analysis, commit and push:
 
 ### 7. Create a github page (optional)
 
-### 8. Contribute back!
+Push html files
+
+### 10. Contribute back!
 
 - Raise issues in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
 - Create feature requests in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)

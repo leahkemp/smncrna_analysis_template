@@ -73,41 +73,29 @@ with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnas
     data=file.read().split('\n')
     df12=pd.DataFrame(data,columns=['smrnaseq_qc_passed_rna_type_unknown_read_count_fastq_file'])
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_ref_bowtie_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df13=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_ref_bowtie_stats_file'])
-
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_ref_bowtie_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df14=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_ref_bowtie_stats_file'])
-
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_ref_summary_file.txt")) as file:
-    data=file.read().split('\n')
-    df15=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_ref_summary_file'])
-
 with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_mature_bowtie_stats_file.txt")) as file:
     data=file.read().split('\n')
-    df16=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_mature_bowtie_stats_file'])
+    df13=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_mature_bowtie_stats_file'])
 
 with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_mature_bowtie_stats_file.txt")) as file:
     data=file.read().split('\n')
-    df17=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_mature_bowtie_stats_file'])
+    df14=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_mature_bowtie_stats_file'])
 
 with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file.txt")) as file:
     data=file.read().split('\n')
-    df18=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file'])
+    df15=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file'])
 
 with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file.txt")) as file:
     data=file.read().split('\n')
-    df19=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file'])
+    df16=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file'])
 
 with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_fastq_file.txt")) as file:
     data=file.read().split('\n')
-    df20=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_fastq_file'])
+    df17=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_fastq_file'])
 
 # merge all the dataframes into a single dataframe
 # "axis=1" tells it to merge as columns
-merged_df = pd.concat([sample_names, df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11, df12, df13, df14, df15, df16, df17, df18, df19, df20], axis=1)
+merged_df = pd.concat([sample_names, df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11, df12, df13, df14, df15, df16, df17], axis=1)
 
 # write dataframe to file
 merged_df.to_csv((os.path.join(template_dir, "mapping_rates/mapping_rates.csv")), index = False)
