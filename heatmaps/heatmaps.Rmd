@@ -163,12 +163,12 @@ fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$circrna_excerpt)
 fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$gencode_excerpt)/6
 
 # needed to set the figure height to NOT ZERO when there are no rows of data so rmarkdown doesn't error out on knitting
-fig_height_mirna_smrnaseq < base::ifelse((length(fig_height_mirna_smrnaseq) == 0), 1, fig_height_mirna_smrnaseq)
-fig_height_mirna_excerpt <- base::ifelse((length(fig_height_mirna_excerpt) == 0), 1, fig_height_mirna_excerpt)
-fig_height_pirna_excerpt <- base::ifelse((length(fig_height_pirna_excerpt) == 0), 1, fig_height_pirna_excerpt)
-fig_height_trna_excerpt < base::ifelse((length(fig_height_trna_excerpt) == 0), 1, fig_height_trna_excerpt)
-fig_height_circrna_excerpt <- base::ifelse((length(fig_height_circrna_excerpt) == 0), 1, fig_height_circrna_excerpt)
-fig_height_gencode_excerpt <- base::ifelse((length(fig_height_gencode_excerpt) == 0), 1, fig_height_gencode_excerpt)
+fig_height_mirna_smrnaseq < base::ifelse(length(fig_height_mirna_smrnaseq) < 1 | length(fig_height_mirna_smrnaseq == 0), 1, fig_height_mirna_smrnaseq)
+fig_height_mirna_excerpt <- base::ifelse(length(fig_height_mirna_excerpt) < 1 | length(fig_height_mirna_excerpt == 0), 1, fig_height_mirna_excerpt)
+fig_height_pirna_excerpt <- base::ifelse(length(fig_height_pirna_excerpt) < 1 | length(fig_height_pirna_excerpt == 0), 1, fig_height_pirna_excerpt)
+fig_height_trna_excerpt < base::ifelse(length(fig_height_trna_excerpt) < 1 | length(fig_height_trna_excerpt == 0), 1, fig_height_trna_excerpt)
+fig_height_circrna_excerpt <- base::ifelse(length(fig_height_circrna_excerpt) < 1 | length(fig_height_circrna_excerpt == 0), 1, fig_height_circrna_excerpt)
+fig_height_gencode_excerpt <- base::ifelse(length(fig_height_gencode_excerpt) < 1 | length(fig_height_gencode_excerpt == 0), 1, fig_height_gencode_excerpt)
 ```
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
