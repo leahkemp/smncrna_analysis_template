@@ -348,7 +348,7 @@ base::cat("#### gencodes (excerpt)")
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-gencodes_excerpt_limmavoom_v <- limma::voom(dge_gencode_excerpt_filtered,  model_matrix$gencodes_excerpt, plot=TRUE)
+gencode_excerpt_limmavoom_v <- limma::voom(dge_gencode_excerpt_filtered,  model_matrix$gencodes_excerpt, plot=TRUE)
 ```
 
 ### Residual variances {.tabset .tabset-fade}
