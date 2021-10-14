@@ -85,6 +85,14 @@ Run the RShiny app locally or deploy to a shinyapps IO account (which will allow
 rmarkdown::render("./diff_expression/diff_expression.Rmd")
 ```
 
+## Heatmaps
+
+*This will output an interactive html document with heatmaps (./heatmaps/heatmaps.html)*
+
+```{r}
+rmarkdown::render("./heatmaps/heatmaps.Rmd")
+```
+
 ## Expression plots
 
 Data prep for app
