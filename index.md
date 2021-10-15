@@ -35,6 +35,10 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 - [Heatmaps](./example_webpage/heatmaps.html)
 
+## Presence/absence
+
+- [Presence/absence](./example_webpage/presence_absence.html)
+
 ## Raw count data
 
 - [smrnaseq miRNA](./test/smrnaseq_pipeline_run/results/edgeR/miRBase_mature/mature_counts.csv)

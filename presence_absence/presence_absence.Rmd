@@ -1,0 +1,1799 @@
+---
+title: "Presence/absence analysis"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+  editor_options: 
+    chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{bash}
+# create a directory to write data to file (if it doesn't yet exist)
+mkdir -p presence_absence_results/
+```
+
+```{r}
+# load libraries
+library(dplyr)
+library(plotly)
+library(gtools)
+library(DT)
+
+# read in pre-prepared count data
+counts <- utils::read.csv("../prepare_counts/counts.csv")
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
+
+# make a little true/false vector that defines whether or not to evaluate rmarkdown chunks based on the number of treatments in the metadata file (up to 6 treatments)
+treatments_eval <- rep(TRUE, length(unique(metadata$treatment)))
+treatments_eval <- append(treatments_eval, rep(FALSE, 6))
+treatments_eval <- treatments_eval[1:6]
+
+# filter so looking at the data from one pipeline (excerpt)
+counts_excerpt <- counts %>%
+  dplyr::filter(pipeline == "smrnaseq")
+
+# join counts with metadata
+counts_w_meta <- dplyr::full_join(counts_excerpt, metadata, by = "sample")
+
+# separate the dataset by each treatment group
+data_list <- counts_w_meta %>%
+  dplyr::group_split(treatment, .keep = TRUE)
+
+# format and get only the columns we're interested in
+data_list <- base::lapply(data_list, function(x)
+  x %>%
+    base::as.data.frame() %>%
+    select(rna, sample, raw_counts, treatment)
+)
+
+# get the rna's that are present in ALL samples (for each treatment group)
+rnas_in_all_samples <- base::lapply(data_list, function(x)
+ 
+    x %>%
+      # filter out samples that had a count of zero (the rna WASN'T present in that sample)
+      dplyr::filter(raw_counts != 0) %>%
+      dplyr::group_by(rna) %>%
+      dplyr::summarise(num_samples_present_in = n()) %>%
+      # then get the rna's that were present in all samples (num_samples_present_in is the same number of sample's in that treatment group)
+      dplyr::filter(num_samples_present_in == length(unique(x$sample)))
+
+)
+
+# get the rna's that are present in the MAJORITY (75%) of samples (for each treatment group)
+rnas_in_majority_samples <- base::lapply(data_list, function(x)
+ 
+    x %>%
+      # filter out samples that had a count of zero (the rna WASN'T present in that sample)
+      dplyr::filter(raw_counts != 0) %>%
+      dplyr::group_by(rna) %>%
+      dplyr::summarise(num_samples_present_in = n()) %>%
+      # then get the rna's that were present in the majority of samples
+      dplyr::filter(num_samples_present_in >= length(unique(x$sample)) * 0.75)
+
+)
+
+# get the rna's that are present in AT LEAST ONE sample (for each treatment group)
+rnas_in_at_least_one_sample <- base::lapply(data_list, function(x)
+ 
+    x %>%
+      # filter out samples that had a count of zero (the rna WASN'T present in that sample)
+      dplyr::filter(raw_counts != 0) %>%
+      dplyr::group_by(rna) %>%
+      dplyr::summarise(num_samples_present_in = n()) %>%
+      # then get the rna's that were present in at least one sample (num_samples_present_in is at least one)
+      dplyr::filter(num_samples_present_in >= 1)
+
+)
+```
+
+## Exclusive to a treatment group {.tabset .tabset-fade}
+
+RNA's present in EVERY sample in one treatment group that was NOT found in AT LEAST ONE sample in another treatment group
+
+```{r, eval = treatments_eval[2], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[2]}
+anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[2], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[2]}
+anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+## More common in one treatment group {.tabset .tabset-fade}
+
+RNA's present in the MAJORITY (75%) of samples in one treatment group but NOT in the MAJORITY (75%) of samples in another treatment group
+
+```{r, eval = treatments_eval[2], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[2]}
+anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[1]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[6]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[6]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[6], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[6]] %>% dplyr::distinct(treatment), " and ", data_list[[5]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[6]}
+anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[5]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[5], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[5]] %>% dplyr::distinct(treatment), " and ", data_list[[4]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[5]}
+anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[4]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[4], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[4]] %>% dplyr::distinct(treatment), " and ", data_list[[3]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[4]}
+anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[3]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[3], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[3]] %>% dplyr::distinct(treatment), " and ", data_list[[2]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[3]}
+anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[2]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = treatments_eval[2], results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("### ", data_list[[2]] %>% dplyr::distinct(treatment), " and ", data_list[[1]] %>% dplyr::distinct(treatment)))
+```
+
+```{r, eval = treatments_eval[2]}
+anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[1]], by = "rna") %>%
+  dplyr::select(rna) %>%
+  DT::datatable(filter = "top",
+                rownames = FALSE,
+                colnames = c("RNA"),
+                extensions = list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  columnDefs = list(list(width = "200px", targets = 0)),
+                  lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                  ColReorder = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```

@@ -79,7 +79,7 @@ Run the RShiny app locally or deploy to a shinyapps IO account (which will allow
 
 ## Differential expression analysis
 
-*This will output an interactive html document exploring the differential expression analysis of the RNA's (./diff_expression/diff_expression.html) as well as csv files with raw mds data (./diff_expression/diff_expr_results/diff_expr_results.tsv)*
+*This will output an interactive html document exploring the differential expression analysis of the RNA's (./diff_expression/diff_expression.html) as well as csv files with raw differential expression results data (./diff_expression/diff_expr_results/diff_expr_results.tsv)*
 
 ```{r}
 rmarkdown::render("./diff_expression/diff_expression.Rmd")
@@ -91,6 +91,14 @@ rmarkdown::render("./diff_expression/diff_expression.Rmd")
 
 ```{r}
 rmarkdown::render("./heatmaps/heatmaps.Rmd")
+```
+
+## Presence/absence
+
+*This will output an interactive html document exploring the presence/absence of the RNA's between treatment groups (./presence_absence/presence_absence.html)*
+
+```{r}
+rmarkdown::render("./presence_absence/presence_absence.Rmd")
 ```
 
 ## Expression plots
