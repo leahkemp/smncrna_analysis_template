@@ -86,7 +86,7 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 sample_S*_R1.fastq.gz
 ```
 
-- one fastq file per sample
+- one fastq file per sample (pooled fastq files)
 
 For example see the test fastq files [here](./test_fastq/)
 
