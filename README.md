@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/408315805.svg)](https://zenodo.org/badge/latestdoi/408315805)
+
 # smncRNA analysis template
 
 ---
