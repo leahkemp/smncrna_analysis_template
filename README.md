@@ -131,7 +131,7 @@ To maintain reproducibility of your analysis, commit and push:
 
 ### 7. Create a github page (optional)
 
-Push all the all the html/Rmd/txt files that you'd like to be rendered into a github page to github. Then create a [github page](https://guides.github.com/features/pages/). See this example [live page](https://leahkemp.github.io/smncrna_analysis_template/) and the underlying [index.md file](https://raw.githubusercontent.com/leahkemp/smncrna_analysis_template/example_webpage/index.md) that links all the html/Rmd/txt files included in the github page based on the files produced by this template.
+Push all the all the html/Rmd/txt files that you'd like to be rendered into a github page to github. Then create a [github page](https://guides.github.com/features/pages/). See this example [live page](https://leahkemp.github.io/smncrna_analysis_template/) and the underlying [index.md file](index.md) that links all the html/Rmd/txt files included in the github page based on the files produced by this template.
 
 ### 8. Contribute back!
 
