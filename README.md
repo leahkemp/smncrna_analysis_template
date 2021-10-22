@@ -137,6 +137,7 @@ Push all the all the html/Rmd/txt files that you'd like to be rendered into a gi
 
 - Raise issues in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
 - Create feature requests in [the issues page](https://github.com/leahkemp/smncrna_analysis_template/issues)
+- Ask questions or start general discussion about this repo in [the discussions page](https://github.com/leahkemp/smncrna_analysis_template/discussions)
 - Contribute your code! Create your own branch from the [development branch](https://github.com/leahkemp/smncrna_analysis_template/tree/dev) and create a pull request to the [development branch](https://github.com/leahkemp/smncrna_analysis_template/tree/dev) once the code is on point!
 
 Contributions and feedback are always welcome! :blush:
