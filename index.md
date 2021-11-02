@@ -17,7 +17,7 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 ### excerpt
 
-- [Diagnostic plots - excerpt](./test/excerpt_pipeline_run/merged/exceRpt_DiagnosticPlots.pdf)
+- [Diagnostic plots](./test/excerpt_pipeline_run/merged/exceRpt_DiagnosticPlots.pdf)
 
 ### smrnaseq
 
