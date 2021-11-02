@@ -17,11 +17,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
 
+## Info
+
 - **The pie charts present only the RNA's the user has chosen to analyse and have been identified by the pipelines, rather than all the RNA's present in the samples**
 - *The total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group*
 - *Values have been rounded*
-
-# {.tabset .tabset-fade}
 
 ```{r}
 # load libraries
@@ -35,7 +35,23 @@ counts <- utils::read.csv("../prepare_counts/counts.csv")
 
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
+```
 
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
+                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
+                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
+                       " - trna excerpt: ", config$trna_excerpt, "\n",
+                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
+                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+## RNA species composition {.tabset .tabset-fade}
+
+```{r}
 # read in metadata
 metadata <- utils::read.csv(file.path(config$metadata))
 
@@ -80,7 +96,7 @@ data %>%
                                I("colvis"))))
 ```
 
-## smrnaseq pipeline
+### smrnaseq pipeline
 
 ```{r}
 # filter to get only the data for the smrnaseq pipeline
@@ -166,7 +182,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
 }))
 ```
 
-## excerpt pipeline
+### excerpt pipeline
 
 ```{r}
 # filter to get only the data for the smrnaseq pipeline

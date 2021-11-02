@@ -17,9 +17,10 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
 
-- *Colour ranges are relative within each RNA species*
+## Info
 
-# {.tabset .tabset-fade}
+- *Colour ranges are relative within each RNA species*
+- *Only the top 100 RNA's (in terms of highest log counts per million) are plotted here*
 
 ```{r, fig.height = 90, out.width = "100%", results = FALSE}
 # load libraries
@@ -149,6 +150,12 @@ log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
     base::as.matrix()
 )
 
+# get the top 100 RNA's (in terms of highest log counts per million) for plotting purposes (otherwise the document is to massive)
+log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
+  
+  head(x, 100)
+)
+
 # setup a string that scales the widths of the subplots for each heatmap based on the number of treatment groups
 num_treatments <- base::length(base::unique(metadata$treatment))
 widths <- 1/num_treatments
@@ -162,18 +169,40 @@ fig_height_trna_excerpt <- base::nrow(log_counts_per_million$trna_excerpt)/6
 fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$circrna_excerpt)/6
 fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$gencode_excerpt)/6
 
-# needed to set the figure height to NOT ZERO when there are no rows of data so rmarkdown doesn't error out on knitting
-fig_height_mirna_smrnaseq < base::ifelse(length(fig_height_mirna_smrnaseq) < 1 | length(fig_height_mirna_smrnaseq == 0), 1, fig_height_mirna_smrnaseq)
-fig_height_mirna_excerpt <- base::ifelse(length(fig_height_mirna_excerpt) < 1 | length(fig_height_mirna_excerpt == 0), 1, fig_height_mirna_excerpt)
-fig_height_pirna_excerpt <- base::ifelse(length(fig_height_pirna_excerpt) < 1 | length(fig_height_pirna_excerpt == 0), 1, fig_height_pirna_excerpt)
-fig_height_trna_excerpt < base::ifelse(length(fig_height_trna_excerpt) < 1 | length(fig_height_trna_excerpt == 0), 1, fig_height_trna_excerpt)
-fig_height_circrna_excerpt <- base::ifelse(length(fig_height_circrna_excerpt) < 1 | length(fig_height_circrna_excerpt == 0), 1, fig_height_circrna_excerpt)
-fig_height_gencode_excerpt <- base::ifelse(length(fig_height_gencode_excerpt) < 1 | length(fig_height_gencode_excerpt == 0), 1, fig_height_gencode_excerpt)
+# need to set the figure height to NOT ZERO when the figure height ends up being less than 1 so rmarkdown doesn't error out on knitting
+fig_height_mirna_smrnaseq[fig_height_mirna_smrnaseq<1]<-1
+fig_height_mirna_excerpt[fig_height_mirna_excerpt<1]<-1
+fig_height_pirna_excerpt[fig_height_pirna_excerpt<1]<-1
+fig_height_trna_excerpt[fig_height_trna_excerpt<1]<-1
+fig_height_circrna_excerpt[fig_height_circrna_excerpt<1]<-1
+fig_height_gencode_excerpt[fig_height_gencode_excerpt<1]<-1
+
+# also need to set the figure height to NOT ZERO when there are no rows of data so rmarkdown doesn't error out on knitting
+fig_height_mirna_smrnaseq[is.na(fig_height_mirna_smrnaseq[1])] <- 1
+fig_height_mirna_excerpt[is.na(fig_height_mirna_excerpt[1])] <- 1
+fig_height_pirna_excerpt[is.na(fig_height_pirna_excerpt[1])] <- 1
+fig_height_trna_excerpt[is.na(fig_height_trna_excerpt[1])] <- 1
+fig_height_circrna_excerpt[is.na(fig_height_circrna_excerpt[1])] <- 1
+fig_height_gencode_excerpt[is.na(fig_height_gencode_excerpt[1])] <- 1
 ```
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
+                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
+                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
+                       " - trna excerpt: ", config$trna_excerpt, "\n",
+                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
+                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+## Heatmap {.tabset .tabset-fade}
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## miRNA's (smrnaseq)")
+base::cat("### miRNA's (smrnaseq)")
 ```
 
 ```{r, eval = config$mirna_smrnaseq, fig.height = fig_height_mirna_smrnaseq, out.width = "100%"}
@@ -264,7 +293,7 @@ plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRU
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## miRNA's (excerpt)")
+base::cat("### miRNA's (excerpt)")
 ```
 
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt, out.width = "100%"}
@@ -355,7 +384,7 @@ plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRU
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## piRNA's (excerpt)")
+base::cat("### piRNA's (excerpt)")
 ```
 
 ```{r, eval = config$pirna_excerpt, fig.height = fig_height_pirna_excerpt, out.width = "100%"}
@@ -446,7 +475,7 @@ plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRU
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## tRNA's (excerpt)")
+base::cat("### tRNA's (excerpt)")
 ```
 
 ```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt, out.width = "100%"}
@@ -537,7 +566,7 @@ plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRU
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## circRNA's (excerpt)")
+base::cat("### circRNA's (excerpt)")
 ```
 
 ```{r, eval = config$circrna_excerpt, fig.height = fig_height_circrna_excerpt, out.width = "100%"}
@@ -628,7 +657,7 @@ plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRU
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## gencode's (excerpt)")
+base::cat("### gencode's (excerpt)")
 ```
 
 ```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt, out.width = "100%"}

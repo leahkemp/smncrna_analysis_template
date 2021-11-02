@@ -21,6 +21,8 @@ output:
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
 
+## Info
+
 **Note. this document is based on raw count data from the excerpt pipeline only**
 
 ```{r}
@@ -100,6 +102,18 @@ rnas_in_at_least_one_sample <- base::lapply(data_list, function(x)
       dplyr::filter(num_samples_present_in >= 1)
 
 )
+```
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
+                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
+                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
+                       " - trna excerpt: ", config$trna_excerpt, "\n",
+                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
+                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
 ```
 
 ## Exclusive to a treatment group {.tabset .tabset-fade}
