@@ -190,7 +190,6 @@ server <- function(input, output, session) {
                                       "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
                                       "</br> Low sequencing read count:", low_sequencing_read_count)) %>%
-          plotly::layout(showlegend = FALSE) %>%
           plotly::layout(yaxis = base::list(title = "Counts per million"),
                          xaxis = base::list(title = "", tickangle = 270, type = "category"))
       }) %>% plotly::subplot(shareY = TRUE)
@@ -231,7 +230,6 @@ server <- function(input, output, session) {
                                       "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
                                       "</br> Low sequencing read count:", low_sequencing_read_count)) %>%
-          plotly::layout(showlegend = FALSE) %>%
           plotly::layout(yaxis = base::list(title = "Raw counts"),
                          xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
       plotly::subplot(shareY = TRUE)
