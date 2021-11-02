@@ -11,6 +11,4 @@ renv/local/*
 prepare_counts/counts.csv
 
 expression_plotting/master-count.sqlite
-
-expression_plotting/master-count.sqlite
 expression_plotting/master_diff_expr_data.csv
