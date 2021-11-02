@@ -83,21 +83,21 @@ mapping_rates_data %>%
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$raw_read_count_fastq_file),
                        yend = base::mean(mapping_rates_data$raw_read_count_fastq_file),
-                       name = "Reads aligned to \n mature RNA's",
+                       name = "Average raw \n sequencing read count",
                        color = I("#1f77b4")) %>%
   # add line that show you the average number of reads aligned to mature RNA's
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_mature_bowtie_stats_file),
                        yend = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_mature_bowtie_stats_file),
-                       name = "Reads aligned to \n mature RNA's",
+                       name = "Average reads aligned to \n mature RNA's",
                        color = I("#ff7f0e")) %>%
   # add line that show you the average number of reads aligned to hairpin RNA's
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file),
                        yend = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file),
-                       name = "Reads aligned to \n hairpin RNA's",
+                       name = "Average reads aligned to \n hairpin RNA's",
                        color = I("#2ca02c")) %>%
   plotly::layout(xaxis = xform) %>%
   plotly::layout(xaxis = list(title = "Sample"),
