@@ -85,10 +85,11 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 #### Fastq naming convention
 
 ```bash
-sample_S*_R1.fastq.gz
+sample.fastq.gz
 ```
 
 - one fastq file per sample
+- sample name matching the sample names in the metadata file and ".fastq.gz" extension
 
 For example see the test fastq files [here](./test/fastq/)
 
