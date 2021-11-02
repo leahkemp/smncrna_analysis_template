@@ -11,8 +11,18 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 ## Quality control reports
 
+### Both pipelines
+
 - [Sequencing read QC](./example_webpage/sequencing_read_QC.html)
+
+### excerpt
+
 - [Diagnostic plots - excerpt](./test/excerpt_pipeline_run/merged/exceRpt_DiagnosticPlots.pdf)
+
+### smrnaseq
+
+- [Mirtrace report](./test/excerpt_pipeline_run/results/miRTrace/mirtrace/mirtrace-report.html)
+- [MultiQC report](./test/excerpt_pipeline_run/results/MultiQC/multiqc_report.html)
 
 ## RNA counts/expression
 
