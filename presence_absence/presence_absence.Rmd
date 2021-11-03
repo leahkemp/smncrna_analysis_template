@@ -1873,7 +1873,7 @@ anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[1]], by = "rn
                          I("colvis"))))
 ```
 
-### RNA's present in the MAJORITY (75% or more) of samples in one treatment group but NOT in SEVERAL (25% or more) of samples in another treatment group {.tabset .tabset-fade}
+### RNA's present in the MAJORITY (75% or more) of samples in one treatment group but NOT in SEVERAL (25% or more) samples in another treatment group {.tabset .tabset-fade}
 
 ```{r, eval = treatments_eval[2], results = "asis"}
 # print the treatment group comparisons the user has chosen to analyse
@@ -6989,7 +6989,7 @@ anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[1]], by = "rna"
                          I("colvis"))))
 ```
 
-### RNA's present in the MAJORITY (75% or more) of samples in one treatment group but NOT in SEVERAL (25% or more) of samples in another treatment group {.tabset .tabset-fade}
+### RNA's present in the MAJORITY (75% or more) of samples in one treatment group but NOT in SEVERAL (25% or more) samples in another treatment group {.tabset .tabset-fade}
 
 ```{r, eval = treatments_eval[2], results = "asis"}
 # print the treatment group comparisons the user has chosen to analyse
