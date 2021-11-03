@@ -1079,6 +1079,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_1 <- base::lapply(efit, function(x) {
   
   x %>%
+    limma::treat(lfc=1) %>%
     limma::topTreat(coef=1, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1116,6 +1117,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_2 <- base::lapply(efit, function(x) {
   
   x %>%
+    limma::treat(lfc=1) %>%
     limma::topTreat(coef=2, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1153,6 +1155,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_3 <- base::lapply(efit, function(x) {
   
   x %>%
+    limma::treat(lfc=1) %>%
     limma::topTreat(coef=3, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1190,6 +1193,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_4 <- base::lapply(efit, function(x) {
   
   x %>%
+    limma::treat(lfc=1) %>%
     limma::topTreat(coef=4, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1227,6 +1231,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_5 <- base::lapply(efit, function(x) {
   
   x %>%
+    limma::treat(lfc=1) %>%
     limma::topTreat(coef=5, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1264,6 +1269,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_6 <- base::lapply(efit, function(x) {
   
   x %>%
+    limma::treat(lfc=1) %>%
     limma::topTreat(coef=6, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1527,7 +1533,7 @@ diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5, b
 diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
 ```
 
-*Note. only RNA's that were found to be significantly differentially expressed or have a p-value smaller than 0.1 are included in this table. Significane was determined from the adjusted p-values."
+*Note. only RNA's that were found to be significantly differentially expressed or have a p-value smaller than 0.1 are included in this table. Significance is based on adjusted p-values*
 
 ```{r, all contrasts}
 # make a list of all the differential expression results objects in the global environment
