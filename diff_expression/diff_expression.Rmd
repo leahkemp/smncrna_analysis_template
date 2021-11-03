@@ -1527,6 +1527,8 @@ diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5, b
 diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
 ```
 
+*Note. only RNA's that were found to be significantly differentially expressed or have a p-value smaller than 0.1 are included in this table. Significane was determined from the adjusted p-values."
+
 ```{r, all contrasts}
 # make a list of all the differential expression results objects in the global environment
 diff_expr_results <- base::do.call("list", base::mget(base::grep("diff_expr_results_", base::names(.GlobalEnv), value=TRUE)))
@@ -1553,14 +1555,14 @@ diff_expr_results <- diff_expr_results %>%
 
 # get only the significant RNA's
 sig_diff_expr_results <- diff_expr_results %>%
-  dplyr::filter(significance != "not_significant")
+  dplyr::filter(significance != "not_significant" | p_value <= 0.10)
 
 # add NA when empty cell (and still allow filtering on number ranges)
 # options(htmlwidgets.TOJSON_ARGS = list(na = "string"))
 # currently can't use because it causes and error in my downstream heatmap (see https://github.com/ropensci/plotly/issues/1853)
 
 # create datatable to explore the data
-datatable(diff_expr_results %>%
+datatable(sig_diff_expr_results %>%
             dplyr::mutate_if(is.numeric, signif, digits = 4) %>%
             dplyr::select(rna,
                           rna_species,
