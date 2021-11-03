@@ -124,10 +124,10 @@ counts_smrnaseq <- counts %>%
   dplyr::filter(pipeline == "smrnaseq")
 
 # join counts with metadata
-counts_w_meta <- dplyr::full_join(counts_smrnaseq, metadata, by = "sample")
+counts_smrnaseq_w_meta <- dplyr::full_join(counts_smrnaseq, metadata, by = "sample")
 
 # separate the dataset by each treatment group
-data_list <- counts_w_meta %>%
+data_list <- counts_smrnaseq_w_meta %>%
   dplyr::group_split(treatment, .keep = TRUE)
 
 # format and get only the columns we're interested in
@@ -137,6 +137,9 @@ data_list <- base::lapply(data_list, function(x)
     select(rna, sample, raw_counts, treatment)
 )
 
+# get number of samples
+num_samples <- length(unique(metadata$sample))
+
 # get the rna's that are present in ALL samples (for each treatment group)
 rnas_in_all_samples <- base::lapply(data_list, function(x)
  
@@ -145,8 +148,8 @@ rnas_in_all_samples <- base::lapply(data_list, function(x)
       dplyr::filter(raw_counts != 0) %>%
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
-      # then get the rna's that were present in all samples (num_samples_present_in is the same number of sample's in that treatment group)
-      dplyr::filter(num_samples_present_in == length(unique(x$sample)))
+      # then get the rna's that were present in all samples (num_samples_present_in is the same as the number of sample's in that treatment group)
+      dplyr::filter(num_samples_present_in == num_samples)
 
 )
 
@@ -159,7 +162,7 @@ rnas_in_majority_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in the majority of samples
-      dplyr::filter(num_samples_present_in >= length(unique(x$sample)) * 0.75)
+      dplyr::filter(num_samples_present_in >= num_samples * 0.75)
 
 )
 
@@ -1873,10 +1876,10 @@ counts_excerpt <- counts %>%
   dplyr::filter(pipeline == "excerpt")
 
 # join counts with metadata
-counts_w_meta <- dplyr::full_join(counts_excerpt, metadata, by = "sample")
+counts_excerpt_w_meta <- dplyr::full_join(counts_excerpt, metadata, by = "sample")
 
 # separate the dataset by each treatment group
-data_list <- counts_w_meta %>%
+data_list <- counts_excerpt_w_meta %>%
   dplyr::group_split(treatment, .keep = TRUE)
 
 # format and get only the columns we're interested in
@@ -1885,6 +1888,9 @@ data_list <- base::lapply(data_list, function(x)
     base::as.data.frame() %>%
     select(rna, sample, raw_counts, treatment)
 )
+
+# get number of samples
+num_samples <- length(unique(metadata$sample))
 
 # get the rna's that are present in ALL samples (for each treatment group)
 rnas_in_all_samples <- base::lapply(data_list, function(x)
@@ -1895,7 +1901,7 @@ rnas_in_all_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in all samples (num_samples_present_in is the same number of sample's in that treatment group)
-      dplyr::filter(num_samples_present_in == length(unique(x$sample)))
+      dplyr::filter(num_samples_present_in == num_samples)
 
 )
 
@@ -1908,7 +1914,7 @@ rnas_in_majority_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in the majority of samples
-      dplyr::filter(num_samples_present_in >= length(unique(x$sample)) * 0.75)
+      dplyr::filter(num_samples_present_in >= num_samples * 0.75)
 
 )
 
