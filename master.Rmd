@@ -35,7 +35,7 @@ bash mapping_rates/extract_mapping_info.sh
 
 ## Seqeuencing read QC
 
-*This will output an interactive html document exploring the raw sequencing read count and number of reads used for alignemnt (./rna_species_composition/rna_species_composition.html)*
+*This will output an interactive html document exploring the raw sequencing read count and number of reads used for alignment (./sequencing_read_QC/sequencing_read_QC.html)*
 
 ```{r}
 rmarkdown::render("./sequencing_read_QC/sequencing_read_QC.Rmd")
@@ -115,7 +115,7 @@ Run the RShiny app locally or deploy to a shinyapps IO account (which will allow
 
 ## Save session info
 
-*This will record the R version and packages you're using for reproducability purposes (./R_version_info.txt and ./R_session_info.txt)*
+*This will record the R version and packages you're using for reproducibility purposes (./R_version_info.txt and ./R_session_info.txt)*
 
 ```{r, results = "hide"}
 # save session info
