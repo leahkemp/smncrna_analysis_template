@@ -39,63 +39,6 @@ metadata <- utils::read.csv(file.path(config$metadata))
 treatments_eval <- rep(TRUE, length(unique(metadata$treatment)))
 treatments_eval <- append(treatments_eval, rep(FALSE, 6))
 treatments_eval <- treatments_eval[1:6]
-
-# filter so looking at the data from one pipeline (excerpt)
-counts_excerpt <- counts %>%
-  dplyr::filter(pipeline == "excerpt")
-
-# join counts with metadata
-counts_w_meta <- dplyr::full_join(counts_excerpt, metadata, by = "sample")
-
-# separate the dataset by each treatment group
-data_list <- counts_w_meta %>%
-  dplyr::group_split(treatment, .keep = TRUE)
-
-# format and get only the columns we're interested in
-data_list <- base::lapply(data_list, function(x)
-  x %>%
-    base::as.data.frame() %>%
-    select(rna, sample, raw_counts, treatment)
-)
-
-# get the rna's that are present in ALL samples (for each treatment group)
-rnas_in_all_samples <- base::lapply(data_list, function(x)
- 
-    x %>%
-      # filter out samples that had a count of zero (the rna WASN'T present in that sample)
-      dplyr::filter(raw_counts != 0) %>%
-      dplyr::group_by(rna) %>%
-      dplyr::summarise(num_samples_present_in = n()) %>%
-      # then get the rna's that were present in all samples (num_samples_present_in is the same number of sample's in that treatment group)
-      dplyr::filter(num_samples_present_in == length(unique(x$sample)))
-
-)
-
-# get the rna's that are present in the MAJORITY (75%) of samples (for each treatment group)
-rnas_in_majority_samples <- base::lapply(data_list, function(x)
- 
-    x %>%
-      # filter out samples that had a count of zero (the rna WASN'T present in that sample)
-      dplyr::filter(raw_counts != 0) %>%
-      dplyr::group_by(rna) %>%
-      dplyr::summarise(num_samples_present_in = n()) %>%
-      # then get the rna's that were present in the majority of samples
-      dplyr::filter(num_samples_present_in >= length(unique(x$sample)) * 0.75)
-
-)
-
-# get the rna's that are present in AT LEAST ONE sample (for each treatment group)
-rnas_in_at_least_one_sample <- base::lapply(data_list, function(x)
- 
-    x %>%
-      # filter out samples that had a count of zero (the rna WASN'T present in that sample)
-      dplyr::filter(raw_counts != 0) %>%
-      dplyr::group_by(rna) %>%
-      dplyr::summarise(num_samples_present_in = n()) %>%
-      # then get the rna's that were present in at least one sample (num_samples_present_in is at least one)
-      dplyr::filter(num_samples_present_in >= 1)
-
-)
 ```
 
 Datasets analysed:
@@ -136,6 +79,11 @@ data_list <- base::lapply(data_list, function(x)
 # get number of samples
 num_samples <- length(unique(metadata$sample))
 
+# create a dataframe pairing all the rnas with their RNA species
+rna_species_pairs <- counts %>%
+  select(rna, rna_species) %>%
+  dplyr::distinct(rna, .keep_all = TRUE)
+
 # get the rna's that are present in ALL samples (for each treatment group)
 rnas_in_all_samples <- base::lapply(data_list, function(x)
  
@@ -145,7 +93,9 @@ rnas_in_all_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in all samples (num_samples_present_in is the same as the number of sample's in that treatment group)
-      dplyr::filter(num_samples_present_in == num_samples)
+      dplyr::filter(num_samples_present_in == num_samples) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 
@@ -158,7 +108,9 @@ rnas_in_majority_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in the majority of samples
-      dplyr::filter(num_samples_present_in >= num_samples * 0.75)
+      dplyr::filter(num_samples_present_in >= num_samples * 0.75) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 
@@ -171,7 +123,9 @@ rnas_in_several_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in several samples
-      dplyr::filter(num_samples_present_in >= num_samples * 0.25)
+      dplyr::filter(num_samples_present_in >= num_samples * 0.25) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 
@@ -184,7 +138,9 @@ rnas_in_at_least_one_sample <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in at least one sample (num_samples_present_in is at least one)
-      dplyr::filter(num_samples_present_in >= 1)
+      dplyr::filter(num_samples_present_in >= 1) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 ```
@@ -198,10 +154,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -226,10 +182,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -254,10 +210,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -282,10 +238,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -310,10 +266,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -338,10 +294,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -366,10 +322,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -394,10 +350,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -422,10 +378,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -450,10 +406,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -478,10 +434,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -506,10 +462,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -534,10 +490,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -562,10 +518,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -590,10 +546,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -618,10 +574,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -646,10 +602,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -674,10 +630,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -702,10 +658,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -730,10 +686,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -758,10 +714,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -786,10 +742,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -814,10 +770,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -842,10 +798,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -870,10 +826,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -898,10 +854,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -926,10 +882,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -954,10 +910,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -982,10 +938,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1010,10 +966,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1040,10 +996,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1068,10 +1024,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1096,10 +1052,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1124,10 +1080,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1152,10 +1108,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1180,10 +1136,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1208,10 +1164,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1236,10 +1192,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1264,10 +1220,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1292,10 +1248,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1320,10 +1276,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1348,10 +1304,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1376,10 +1332,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1404,10 +1360,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1432,10 +1388,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1460,10 +1416,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1488,10 +1444,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1516,10 +1472,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1544,10 +1500,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1572,10 +1528,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1600,10 +1556,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1628,10 +1584,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1656,10 +1612,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1684,10 +1640,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1712,10 +1668,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1740,10 +1696,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1768,10 +1724,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1796,10 +1752,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1824,10 +1780,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1852,10 +1808,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1882,10 +1838,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1910,10 +1866,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1938,10 +1894,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1966,10 +1922,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -1994,10 +1950,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2022,10 +1978,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2050,10 +2006,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2078,10 +2034,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2106,10 +2062,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2134,10 +2090,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2162,10 +2118,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2190,10 +2146,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2218,10 +2174,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2246,10 +2202,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2274,10 +2230,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2302,10 +2258,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2330,10 +2286,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2358,10 +2314,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2386,10 +2342,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2414,10 +2370,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2442,10 +2398,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2470,10 +2426,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2498,10 +2454,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2526,10 +2482,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2554,10 +2510,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2582,10 +2538,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2610,10 +2566,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2638,10 +2594,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2666,10 +2622,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2694,10 +2650,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2724,10 +2680,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2752,10 +2708,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2780,10 +2736,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2808,10 +2764,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2836,10 +2792,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2864,10 +2820,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2892,10 +2848,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2920,10 +2876,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2948,10 +2904,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -2976,10 +2932,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3004,10 +2960,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3032,10 +2988,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3060,10 +3016,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3088,10 +3044,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3116,10 +3072,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3144,10 +3100,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3172,10 +3128,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3200,10 +3156,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3228,10 +3184,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3256,10 +3212,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3284,10 +3240,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3312,10 +3268,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3340,10 +3296,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3368,10 +3324,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3396,10 +3352,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3424,10 +3380,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3452,10 +3408,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3480,10 +3436,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3508,10 +3464,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3536,10 +3492,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3566,10 +3522,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3594,10 +3550,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3622,10 +3578,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3650,10 +3606,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3678,10 +3634,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3706,10 +3662,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3734,10 +3690,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3762,10 +3718,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3790,10 +3746,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3818,10 +3774,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3846,10 +3802,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3874,10 +3830,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3902,10 +3858,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3930,10 +3886,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3958,10 +3914,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -3986,10 +3942,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4014,10 +3970,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4042,10 +3998,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4070,10 +4026,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4098,10 +4054,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4126,10 +4082,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4154,10 +4110,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4182,10 +4138,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4210,10 +4166,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4238,10 +4194,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4266,10 +4222,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4294,10 +4250,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4322,10 +4278,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4350,10 +4306,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4378,10 +4334,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4423,6 +4379,11 @@ data_list <- base::lapply(data_list, function(x)
 # get number of samples
 num_samples <- length(unique(metadata$sample))
 
+# create a dataframe pairing all the rnas with their RNA species
+rna_species_pairs <- counts %>%
+  select(rna, rna_species) %>%
+  dplyr::distinct(rna, .keep_all = TRUE)
+
 # get the rna's that are present in ALL samples (for each treatment group)
 rnas_in_all_samples <- base::lapply(data_list, function(x)
  
@@ -4432,7 +4393,9 @@ rnas_in_all_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in all samples (num_samples_present_in is the same as the number of sample's in that treatment group)
-      dplyr::filter(num_samples_present_in == num_samples)
+      dplyr::filter(num_samples_present_in == num_samples) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 
@@ -4445,7 +4408,9 @@ rnas_in_majority_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in the majority of samples
-      dplyr::filter(num_samples_present_in >= num_samples * 0.75)
+      dplyr::filter(num_samples_present_in >= num_samples * 0.75) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 
@@ -4458,7 +4423,9 @@ rnas_in_several_samples <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in several samples
-      dplyr::filter(num_samples_present_in >= num_samples * 0.25)
+      dplyr::filter(num_samples_present_in >= num_samples * 0.25) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 
@@ -4471,7 +4438,9 @@ rnas_in_at_least_one_sample <- base::lapply(data_list, function(x)
       dplyr::group_by(rna) %>%
       dplyr::summarise(num_samples_present_in = n()) %>%
       # then get the rna's that were present in at least one sample (num_samples_present_in is at least one)
-      dplyr::filter(num_samples_present_in >= 1)
+      dplyr::filter(num_samples_present_in >= 1) %>%
+      # add back rna species column
+      dplyr::left_join(rna_species_pairs, by = "rna")
 
 )
 ```
@@ -4485,10 +4454,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4513,10 +4482,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4541,10 +4510,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4569,10 +4538,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4597,10 +4566,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[1]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4625,10 +4594,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4653,10 +4622,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4681,10 +4650,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4709,10 +4678,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4737,10 +4706,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4765,10 +4734,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4793,10 +4762,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4821,10 +4790,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4849,10 +4818,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4877,10 +4846,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4905,10 +4874,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4933,10 +4902,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4961,10 +4930,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -4989,10 +4958,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5017,10 +4986,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_all_samples[[6]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5045,10 +5014,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5073,10 +5042,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5101,10 +5070,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5129,10 +5098,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_all_samples[[5]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5157,10 +5126,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5185,10 +5154,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5213,10 +5182,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_all_samples[[4]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5241,10 +5210,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5269,10 +5238,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_all_samples[[3]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5297,10 +5266,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_all_samples[[2]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5327,10 +5296,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5355,10 +5324,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5383,10 +5352,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5411,10 +5380,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5439,10 +5408,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5467,10 +5436,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5495,10 +5464,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5523,10 +5492,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5551,10 +5520,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5579,10 +5548,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5607,10 +5576,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5635,10 +5604,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5663,10 +5632,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5691,10 +5660,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5719,10 +5688,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5747,10 +5716,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5775,10 +5744,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5803,10 +5772,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5831,10 +5800,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5859,10 +5828,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_majority_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5887,10 +5856,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5915,10 +5884,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5943,10 +5912,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5971,10 +5940,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_majority_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -5999,10 +5968,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6027,10 +5996,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6055,10 +6024,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_majority_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6083,10 +6052,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6111,10 +6080,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_majority_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6139,10 +6108,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_majority_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6169,10 +6138,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6197,10 +6166,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6225,10 +6194,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6253,10 +6222,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6281,10 +6250,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[1]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6309,10 +6278,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6337,10 +6306,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6365,10 +6334,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6393,10 +6362,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6421,10 +6390,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6449,10 +6418,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6477,10 +6446,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6505,10 +6474,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6533,10 +6502,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6561,10 +6530,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6589,10 +6558,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6617,10 +6586,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6645,10 +6614,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6673,10 +6642,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6701,10 +6670,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_majority_samples[[6]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6729,10 +6698,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6757,10 +6726,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6785,10 +6754,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6813,10 +6782,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_majority_samples[[5]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6841,10 +6810,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6869,10 +6838,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6897,10 +6866,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_majority_samples[[4]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6925,10 +6894,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6953,10 +6922,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_majority_samples[[3]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -6981,10 +6950,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_majority_samples[[2]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7011,10 +6980,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7039,10 +7008,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7067,10 +7036,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7095,10 +7064,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7123,10 +7092,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[1]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7151,10 +7120,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7179,10 +7148,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7207,10 +7176,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7235,10 +7204,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7263,10 +7232,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7291,10 +7260,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7319,10 +7288,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7347,10 +7316,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7375,10 +7344,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7403,10 +7372,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7431,10 +7400,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7459,10 +7428,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7487,10 +7456,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7515,10 +7484,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7543,10 +7512,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_several_samples[[6]], rnas_in_several_samples[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7571,10 +7540,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7599,10 +7568,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7627,10 +7596,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7655,10 +7624,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_several_samples[[5]], rnas_in_several_samples[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7683,10 +7652,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7711,10 +7680,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7739,10 +7708,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_several_samples[[4]], rnas_in_several_samples[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7767,10 +7736,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7795,10 +7764,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_several_samples[[3]], rnas_in_several_samples[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7823,10 +7792,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_several_samples[[2]], rnas_in_several_samples[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7853,10 +7822,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7881,10 +7850,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7909,10 +7878,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7937,10 +7906,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7965,10 +7934,10 @@ base::cat(base::paste0("#### ", data_list[[1]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[1]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -7993,10 +7962,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8021,10 +7990,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8049,10 +8018,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8077,10 +8046,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8105,10 +8074,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8133,10 +8102,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8161,10 +8130,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8189,10 +8158,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8217,10 +8186,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8245,10 +8214,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[6]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8273,10 +8242,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8301,10 +8270,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8329,10 +8298,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8357,10 +8326,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8385,10 +8354,10 @@ base::cat(base::paste0("#### ", data_list[[6]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[6]}
 anti_join(rnas_in_at_least_one_sample[[6]], rnas_in_at_least_one_sample[[5]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8413,10 +8382,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8441,10 +8410,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8469,10 +8438,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8497,10 +8466,10 @@ base::cat(base::paste0("#### ", data_list[[5]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[5]}
 anti_join(rnas_in_at_least_one_sample[[5]], rnas_in_at_least_one_sample[[4]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8525,10 +8494,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8553,10 +8522,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8581,10 +8550,10 @@ base::cat(base::paste0("#### ", data_list[[4]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[4]}
 anti_join(rnas_in_at_least_one_sample[[4]], rnas_in_at_least_one_sample[[3]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8609,10 +8578,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8637,10 +8606,10 @@ base::cat(base::paste0("#### ", data_list[[3]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[3]}
 anti_join(rnas_in_at_least_one_sample[[3]], rnas_in_at_least_one_sample[[2]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
@@ -8665,10 +8634,10 @@ base::cat(base::paste0("#### ", data_list[[2]] %>% dplyr::distinct(treatment), "
 
 ```{r, eval = treatments_eval[2]}
 anti_join(rnas_in_at_least_one_sample[[2]], rnas_in_at_least_one_sample[[1]], by = "rna") %>%
-  dplyr::select(rna) %>%
+  dplyr::select(rna, rna_species) %>%
   DT::datatable(filter = "top",
                 rownames = FALSE,
-                colnames = c("RNA"),
+                colnames = c("RNA", "RNA species"),
                 extensions = list("ColReorder" = NULL,
                                   "Buttons" = NULL,
                                   "FixedColumns" = list(leftColumns=1)),
