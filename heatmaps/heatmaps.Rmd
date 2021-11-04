@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FAL
 ## Info
 
 - *Colour ranges are relative within each RNA species*
-- *Only the top 100 RNA's (in terms of highest log counts per million) are plotted here*
+- *Only the RNA's that were found to be significantly differentially expressed by at least one differential expression method are plotted here*
 
 ```{r, fig.height = 90, out.width = "100%", results = FALSE}
 # load libraries
@@ -30,6 +30,7 @@ library(gtools)
 library(DT)
 library(heatmaply)
 library(edgeR)
+library(textshape)
 
 # read in pre-prepared count data
 counts <- utils::read.csv("../prepare_counts/counts.csv")
@@ -39,6 +40,10 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(file.path(config$metadata))
+
+# read in differential expression results
+diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv",
+                                       header = TRUE)
 
 # load all the count datasets
 mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
@@ -129,6 +134,11 @@ count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
 # filter all possible datasets by the datasets the user has specified to analyse
 count_datasets <- count_datasets[to_analyse]
 
+# get a list of RNA's that were found to be significantly differentially expressed by at least one differential expression method
+sig_rnas <- diff_expr_results %>%
+  dplyr::filter(significance != "not_significant") %>%
+  dplyr::pull(unique(rna))
+
 # stop scientific notation
 options(scipen=999)
 
@@ -141,19 +151,24 @@ log_counts_per_million <- base::lapply(count_datasets, function(x)
 
 )
 
-# sort rows so the RNA's with the highest log count per million across all samples are on top
+# get the significantly differentially expressed RNA's
 log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
   
   x %>%
     base::as.data.frame() %>%
-    dplyr::arrange(desc(rowSums(x))) %>%
-    base::as.matrix()
+    tibble::rownames_to_column("rna") %>%
+    dplyr::filter(rna %in% sig_rnas) %>%
+    textshape::column_to_rownames("rna")
+  
 )
 
-# get the top 100 RNA's (in terms of highest log counts per million) for plotting purposes (otherwise the document is to massive)
+# sort rows so the RNA's with the highest log count per million across all samples are on top
 log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
   
-  head(x, 100)
+  x %>%
+    dplyr::arrange(desc(rowSums(x))) %>%
+    base::as.matrix()
+  
 )
 
 # setup a string that scales the widths of the subplots for each heatmap based on the number of treatment groups
@@ -162,20 +177,20 @@ widths <- 1/num_treatments
 all_widths <- base::rep(widths, num_treatments)
 
 # set heatmap figure heights to automatically scale to how many rows are present in the data
-fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$mirna_smrnaseq)/6
-fig_height_mirna_excerpt <- base::nrow(log_counts_per_million$mirna_excerpt)/6
-fig_height_pirna_excerpt <- base::nrow(log_counts_per_million$pirna_excerpt)/6
-fig_height_trna_excerpt <- base::nrow(log_counts_per_million$trna_excerpt)/6
-fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$circrna_excerpt)/6
-fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$gencode_excerpt)/6
+fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$mirna_smrnaseq) / 2
+fig_height_mirna_excerpt <- base::nrow(log_counts_per_million$mirna_excerpt) / 2
+fig_height_pirna_excerpt <- base::nrow(log_counts_per_million$pirna_excerpt) / 2
+fig_height_trna_excerpt <- base::nrow(log_counts_per_million$trna_excerpt) / 2
+fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$circrna_excerpt) / 2
+fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$gencode_excerpt) / 2
 
 # need to set the figure height to NOT ZERO when the figure height ends up being less than 1 so rmarkdown doesn't error out on knitting
-fig_height_mirna_smrnaseq[fig_height_mirna_smrnaseq<1]<-1
-fig_height_mirna_excerpt[fig_height_mirna_excerpt<1]<-1
-fig_height_pirna_excerpt[fig_height_pirna_excerpt<1]<-1
-fig_height_trna_excerpt[fig_height_trna_excerpt<1]<-1
-fig_height_circrna_excerpt[fig_height_circrna_excerpt<1]<-1
-fig_height_gencode_excerpt[fig_height_gencode_excerpt<1]<-1
+fig_height_mirna_smrnaseq[fig_height_mirna_smrnaseq <1 ] <- 1
+fig_height_mirna_excerpt[fig_height_mirna_excerpt <1 ] <- 1
+fig_height_pirna_excerpt[fig_height_pirna_excerpt <1 ] <- 1
+fig_height_trna_excerpt[fig_height_trna_excerpt <1 ] <- 1
+fig_height_circrna_excerpt[fig_height_circrna_excerpt <1 ] <- 1
+fig_height_gencode_excerpt[fig_height_gencode_excerpt <1 ] <- 1
 
 # also need to set the figure height to NOT ZERO when there are no rows of data so rmarkdown doesn't error out on knitting
 fig_height_mirna_smrnaseq[is.na(fig_height_mirna_smrnaseq[1])] <- 1
@@ -239,56 +254,65 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
-# loop plotting over all treatment levels
-for (i in 1:N) {
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
+# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there AREN'T significantly differentially expressed RNA's, print a message saying so
+if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE) {
   
-  # make a variable that defines the current treatment/level we're dealing with in the for loop
-  current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_mirna_smrnaseq %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: smrnaseq"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("RNA", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE) %>%
+      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
+                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+    
+    plot_list[[i]] = p
+    
+  }
   
-  # get the samples in each treatment
-  data_subset_list[[i]] <- metadata %>%
-    filter(treatment == current_treatment) %>%
-    select(sample)
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-  # set up the data
-  # populate the list of dataframes with data
-  data_list[[i]] <- lcpm_mirna_smrnaseq %>%
-    base::as.data.frame() %>%
-    # select the samples from each treatment group based on "data_subset_list"
-    dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
-    # prepare data for plotting with matrix
-    base::as.matrix()
-  
-  # create custom text that will be appended to the tooltip
-  custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                             "\nPipeline: smrnaseq"
-  ),
-  # make it the same dimensions as the current dataset (required for this to work)
-  nrow = base::nrow(data_list[[i]]),
-  ncol = base::ncol(data_list[[i]]))
-  
-  # plot a heatmap for each treatment
-  p <- data_list[[i]] %>%
-    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
-                         xlab = paste(current_treatment),
-                         dendrogram = c("none"),
-                         key.title = "Log counts \n per million",
-                         label_names = c("RNA", "Sample", "Log counts per million"),
-                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
-                         custom_hovertext = custom_tooltip,
-                         showticklabels = c(FALSE, TRUE),
-                         titleX = FALSE,
-                         srtCol = 45,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
-  
-  plot_list[[i]] = p
-  
+} else {
+   cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
 }
-
-# plot all together
-plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -330,56 +354,65 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
-# loop plotting over all treatment levels
-for (i in 1:N) {
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
+# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there AREN'T significantly differentially expressed RNA's, print a message saying so
+if (all(is.na(lcpm_mirna_excerpt)) == FALSE) {
   
-  # make a variable that defines the current treatment/level we're dealing with in the for loop
-  current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_mirna_excerpt %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: smrnaseq"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("RNA", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE) %>%
+      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
+                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+    
+    plot_list[[i]] = p
+    
+  }
   
-  # get the samples in each treatment
-  data_subset_list[[i]] <- metadata %>%
-    filter(treatment == current_treatment) %>%
-    select(sample)
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-  # set up the data
-  # populate the list of dataframes with data
-  data_list[[i]] <- lcpm_mirna_excerpt %>%
-    base::as.data.frame() %>%
-    # select the samples from each treatment group based on "data_subset_list"
-    dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
-    # prepare data for plotting with matrix
-    base::as.matrix()
-  
-  # create custom text that will be appended to the tooltip
-  custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                             "\nPipeline: excerpt"
-  ),
-  # make it the same dimensions as the current dataset (required for this to work)
-  nrow = base::nrow(data_list[[i]]),
-  ncol = base::ncol(data_list[[i]]))
-  
-  # plot a heatmap for each treatment
-  p <- data_list[[i]] %>%
-    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
-                         xlab = paste(current_treatment),
-                         dendrogram = c("none"),
-                         key.title = "Log counts \n per million",
-                         label_names = c("RNA", "Sample", "Log counts per million"),
-                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
-                         custom_hovertext = custom_tooltip,
-                         showticklabels = c(FALSE, TRUE),
-                         titleX = FALSE,
-                         srtCol = 45,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
-  
-  plot_list[[i]] = p
-  
+} else {
+   cat(paste("No significantly differentially expressed miRNA's (excerpt)"))
 }
-
-# plot all together
-plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -421,56 +454,65 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
-# loop plotting over all treatment levels
-for (i in 1:N) {
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
+# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there AREN'T significantly differentially expressed RNA's, print a message saying so
+if (all(is.na(lcpm_pirna_excerpt)) == FALSE) {
   
-  # make a variable that defines the current treatment/level we're dealing with in the for loop
-  current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_pirna_excerpt %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: smrnaseq"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("RNA", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE) %>%
+      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
+                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+    
+    plot_list[[i]] = p
+    
+  }
   
-  # get the samples in each treatment
-  data_subset_list[[i]] <- metadata %>%
-    filter(treatment == current_treatment) %>%
-    select(sample)
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-  # set up the data
-  # populate the list of dataframes with data
-  data_list[[i]] <- lcpm_pirna_excerpt %>%
-    base::as.data.frame() %>%
-    # select the samples from each treatment group based on "data_subset_list"
-    dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
-    # prepare data for plotting with matrix
-    base::as.matrix()
-  
-  # create custom text that will be appended to the tooltip
-  custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                             "\nPipeline: excerpt"
-  ),
-  # make it the same dimensions as the current dataset (required for this to work)
-  nrow = base::nrow(data_list[[i]]),
-  ncol = base::ncol(data_list[[i]]))
-  
-  # plot a heatmap for each treatment
-  p <- data_list[[i]] %>%
-    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
-                         xlab = paste(current_treatment),
-                         dendrogram = c("none"),
-                         key.title = "Log counts \n per million",
-                         label_names = c("RNA", "Sample", "Log counts per million"),
-                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
-                         custom_hovertext = custom_tooltip,
-                         showticklabels = c(FALSE, TRUE),
-                         titleX = FALSE,
-                         srtCol = 45,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
-  
-  plot_list[[i]] = p
-  
+} else {
+   cat(paste("No significantly differentially expressed piRNA's (excerpt)"))
 }
-
-# plot all together
-plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -512,56 +554,65 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
-# loop plotting over all treatment levels
-for (i in 1:N) {
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
+# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there AREN'T significantly differentially expressed RNA's, print a message saying so
+if (all(is.na(lcpm_trna_excerpt)) == FALSE) {
   
-  # make a variable that defines the current treatment/level we're dealing with in the for loop
-  current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_trna_excerpt %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: smrnaseq"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("RNA", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE) %>%
+      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
+                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+    
+    plot_list[[i]] = p
+    
+  }
   
-  # get the samples in each treatment
-  data_subset_list[[i]] <- metadata %>%
-    filter(treatment == current_treatment) %>%
-    select(sample)
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-  # set up the data
-  # populate the list of dataframes with data
-  data_list[[i]] <- lcpm_trna_excerpt %>%
-    base::as.data.frame() %>%
-    # select the samples from each treatment group based on "data_subset_list"
-    dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
-    # prepare data for plotting with matrix
-    base::as.matrix()
-  
-  # create custom text that will be appended to the tooltip
-  custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                             "\nPipeline: excerpt"
-  ),
-  # make it the same dimensions as the current dataset (required for this to work)
-  nrow = base::nrow(data_list[[i]]),
-  ncol = base::ncol(data_list[[i]]))
-  
-  # plot a heatmap for each treatment
-  p <- data_list[[i]] %>%
-    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
-                         xlab = paste(current_treatment),
-                         dendrogram = c("none"),
-                         key.title = "Log counts \n per million",
-                         label_names = c("RNA", "Sample", "Log counts per million"),
-                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
-                         custom_hovertext = custom_tooltip,
-                         showticklabels = c(FALSE, TRUE),
-                         titleX = FALSE,
-                         srtCol = 45,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
-  
-  plot_list[[i]] = p
-  
+} else {
+   cat(paste("No significantly differentially expressed tRNA's (excerpt)"))
 }
-
-# plot all together
-plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -603,56 +654,65 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
-# loop plotting over all treatment levels
-for (i in 1:N) {
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
+# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there AREN'T significantly differentially expressed RNA's, print a message saying so
+if (all(is.na(lcpm_circrna_excerpt)) == FALSE) {
   
-  # make a variable that defines the current treatment/level we're dealing with in the for loop
-  current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_circrna_excerpt %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: smrnaseq"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("RNA", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE) %>%
+      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
+                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+    
+    plot_list[[i]] = p
+    
+  }
   
-  # get the samples in each treatment
-  data_subset_list[[i]] <- metadata %>%
-    filter(treatment == current_treatment) %>%
-    select(sample)
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-  # set up the data
-  # populate the list of dataframes with data
-  data_list[[i]] <- lcpm_circrna_excerpt %>%
-    base::as.data.frame() %>%
-    # select the samples from each treatment group based on "data_subset_list"
-    dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
-    # prepare data for plotting with matrix
-    base::as.matrix()
-  
-  # create custom text that will be appended to the tooltip
-  custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                             "\nPipeline: excerpt"
-  ),
-  # make it the same dimensions as the current dataset (required for this to work)
-  nrow = base::nrow(data_list[[i]]),
-  ncol = base::ncol(data_list[[i]]))
-  
-  # plot a heatmap for each treatment
-  p <- data_list[[i]] %>%
-    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
-                         xlab = paste(current_treatment),
-                         dendrogram = c("none"),
-                         key.title = "Log counts \n per million",
-                         label_names = c("RNA", "Sample", "Log counts per million"),
-                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
-                         custom_hovertext = custom_tooltip,
-                         showticklabels = c(FALSE, TRUE),
-                         titleX = FALSE,
-                         srtCol = 45,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
-  
-  plot_list[[i]] = p
-  
+} else {
+   cat(paste("No significantly differentially expressed circRNA's (excerpt)"))
 }
-
-# plot all together
-plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -694,56 +754,65 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
-# loop plotting over all treatment levels
-for (i in 1:N) {
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
+# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there AREN'T significantly differentially expressed RNA's, print a message saying so
+if (all(is.na(lcpm_gencode_excerpt)) == FALSE) {
   
-  # make a variable that defines the current treatment/level we're dealing with in the for loop
-  current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_gencode_excerpt %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: smrnaseq"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("RNA", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE) %>%
+      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
+                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+    
+    plot_list[[i]] = p
+    
+  }
   
-  # get the samples in each treatment
-  data_subset_list[[i]] <- metadata %>%
-    filter(treatment == current_treatment) %>%
-    select(sample)
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-  # set up the data
-  # populate the list of dataframes with data
-  data_list[[i]] <- lcpm_gencode_excerpt %>%
-    base::as.data.frame() %>%
-    # select the samples from each treatment group based on "data_subset_list"
-    dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
-    # prepare data for plotting with matrix
-    base::as.matrix()
-  
-  # create custom text that will be appended to the tooltip
-  custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                             "\nPipeline: excerpt"
-  ),
-  # make it the same dimensions as the current dataset (required for this to work)
-  nrow = base::nrow(data_list[[i]]),
-  ncol = base::ncol(data_list[[i]]))
-  
-  # plot a heatmap for each treatment
-  p <- data_list[[i]] %>%
-    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
-                         xlab = paste(current_treatment),
-                         dendrogram = c("none"),
-                         key.title = "Log counts \n per million",
-                         label_names = c("RNA", "Sample", "Log counts per million"),
-                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
-                         custom_hovertext = custom_tooltip,
-                         showticklabels = c(FALSE, TRUE),
-                         titleX = FALSE,
-                         srtCol = 45,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
-  
-  plot_list[[i]] = p
-  
+} else {
+   cat(paste("No significantly differentially expressed gencode's (excerpt)"))
 }
-
-# plot all together
-plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
 ```
 
 ```{r, cleanup, results = "hide"}
