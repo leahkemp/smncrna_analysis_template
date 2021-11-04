@@ -1079,7 +1079,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_1 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=1) %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
     limma::topTreat(coef=1, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1117,7 +1117,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_2 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=1) %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
     limma::topTreat(coef=2, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1155,7 +1155,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_3 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=1) %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
     limma::topTreat(coef=3, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1193,7 +1193,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_4 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=1) %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
     limma::topTreat(coef=4, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1231,7 +1231,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_5 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=1) %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
     limma::topTreat(coef=5, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1269,7 +1269,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_6 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=1) %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
     limma::topTreat(coef=6, n=Inf) %>%
     tibble::rownames_to_column("rna")
   

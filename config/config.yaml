@@ -60,6 +60,12 @@ min_count: 10
 # default is 15
 min_total_count: 15
 
+# the minimum log2-fold-change that is considered scientifically meaningful
+# limits the false discovery rate
+# see more info about this function/flag here: https://rdrr.io/bioc/limma/man/ebayes.html
+# typical values for lfc are log2(1.1), log2(1.2) or log2(1.5)
+min_lfc: "log2(1.1)"
+
 #################################################
 #####       EXPRESSION PLOTTING APP        ######
 #################################################
