@@ -1,13 +1,13 @@
 Sample	Reads passing filters
-sample01_S1_R1	10000.0
-sample02_S1_R1	10000.0
-sample03_S1_R1	10000.0
-sample04_S1_R1	10000.0
-sample05_S1_R1	10000.0
-sample06_S1_R1	10000.0
-sample07_S1_R1	10000.0
-sample08_S1_R1	10000.0
-sample09_S1_R1	10000.0
-sample10_S1_R1	10000.0
-sample11_S1_R1	10000.0
-sample12_S1_R1	10000.0
+sample01	10000.0
+sample02	10000.0
+sample03	10000.0
+sample04	10000.0
+sample05	10000.0
+sample06	10000.0
+sample07	10000.0
+sample08	10000.0
+sample09	10000.0
+sample10	10000.0
+sample11	10000.0
+sample12	10000.0

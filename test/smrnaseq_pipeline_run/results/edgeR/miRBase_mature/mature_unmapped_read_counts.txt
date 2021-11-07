@@ -1,2 +1,2 @@
-sample10_S1.mature	sample05_S1.mature	sample04_S1.mature	sample07_S1.mature	sample08_S1.mature	sample09_S1.mature	sample03_S1.mature	sample02_S1.mature	sample01_S1.mature	sample12_S1.mature	sample06_S1.mature	sample11_S1.mature
-*	3931	4739	3857	3713	4080	3668	4282	4708	2353	3696	4288	4468
+sample01.mature	sample07.mature	sample06.mature	sample08.mature	sample12.mature	sample03.mature	sample04.mature	sample05.mature	sample02.mature	sample10.mature	sample11.mature	sample09.mature
+*	2353	3713	4288	4080	3696	4282	3857	4739	4708	3931	4468	3668
