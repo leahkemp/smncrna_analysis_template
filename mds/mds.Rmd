@@ -7,7 +7,6 @@ date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
 output:
   html_document:
     code_download: true
-    code_folding: hide
     toc: false
   editor_options: 
     chunk_output_type: console
@@ -15,7 +14,7 @@ output:
 
 ```{r setup, include=FALSE}
 # setup default chunk settings
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
 ```
 
 ```{r}

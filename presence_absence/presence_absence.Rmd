@@ -7,7 +7,6 @@ date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
 output:
   html_document:
     code_download: true
-    code_folding: hide
     toc: false
   editor_options: 
     chunk_output_type: console
