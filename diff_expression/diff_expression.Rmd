@@ -42,6 +42,7 @@ library(heatmaply)
 library(gtools)
 library(textshape)
 library(tidyr)
+library(Glimma)
 
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
@@ -368,7 +369,7 @@ base::cat("#### miRNA's (smrnaseq)")
 mirna_smrnaseq_limmavoom_vfit <- limma::lmFit(mirna_smrnaseq_limmavoom_v, model_matrix$mirna_smrnaseq)
 
 # estimate contrast for each miRNA
-mirna_smrnaseq_limmavoom_vfit <- limma::contrasts.fit(mirna_smrnaseq_limmavoom_vfit, coefficients = 1)
+mirna_smrnaseq_limmavoom_vfit <- limma::contrasts.fit(mirna_smrnaseq_limmavoom_vfit, contr_matrix$mirna_smrnaseq)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 mirna_smrnaseq_limmavoom_efit <- limma::eBayes(mirna_smrnaseq_limmavoom_vfit)
@@ -441,7 +442,7 @@ base::cat("#### miRNA's (excerpt)")
 mirna_excerpt_limmavoom_vfit <- limma::lmFit(mirna_excerpt_limmavoom_v, model_matrix$mirna_excerpt)
 
 # estimate contrast for each miRNA
-mirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(mirna_excerpt_limmavoom_vfit, coefficients = 1)
+mirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(mirna_excerpt_limmavoom_vfit, contr_matrix$mirna_excerpt)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 mirna_excerpt_limmavoom_efit <- limma::eBayes(mirna_excerpt_limmavoom_vfit)
@@ -514,7 +515,7 @@ base::cat("#### piRNA's (excerpt)")
 pirna_excerpt_limmavoom_vfit <- limma::lmFit(pirna_excerpt_limmavoom_v, model_matrix$pirna_excerpt)
 
 # estimate contrast for each miRNA
-pirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(pirna_excerpt_limmavoom_vfit, coefficients = 1)
+pirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(pirna_excerpt_limmavoom_vfit, contr_matrix$pirna_excerpt)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 pirna_excerpt_limmavoom_efit <- limma::eBayes(pirna_excerpt_limmavoom_vfit)
@@ -587,7 +588,7 @@ base::cat("#### tRNA's (excerpt)")
 trna_excerpt_limmavoom_vfit <- limma::lmFit(trna_excerpt_limmavoom_v, model_matrix$trna_excerpt)
 
 # estimate contrast for each miRNA
-trna_excerpt_limmavoom_vfit <- limma::contrasts.fit(trna_excerpt_limmavoom_vfit, coefficients = 1)
+trna_excerpt_limmavoom_vfit <- limma::contrasts.fit(trna_excerpt_limmavoom_vfit, contr_matrix$trna_excerpt)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 trna_excerpt_limmavoom_efit <- limma::eBayes(trna_excerpt_limmavoom_vfit)
@@ -660,7 +661,7 @@ base::cat("#### circRNA's (excerpt)")
 circrna_excerpt_limmavoom_vfit <- limma::lmFit(circrna_excerpt_limmavoom_v, model_matrix$circrna_excerpt)
 
 # estimate contrast for each miRNA
-circrna_excerpt_limmavoom_vfit <- limma::contrasts.fit(circrna_excerpt_limmavoom_vfit, coefficients = 1)
+circrna_excerpt_limmavoom_vfit <- limma::contrasts.fit(circrna_excerpt_limmavoom_vfit, contr_matrix$circrna_excerpt)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 circrna_excerpt_limmavoom_efit <- limma::eBayes(circrna_excerpt_limmavoom_vfit)
@@ -733,7 +734,7 @@ base::cat("#### gencodes (excerpt)")
 gencode_excerpt_limmavoom_vfit <- limma::lmFit(gencode_excerpt_limmavoom_v, model_matrix$gencode_excerpt)
 
 # estimate contrast for each miRNA
-gencode_excerpt_limmavoom_vfit <- limma::contrasts.fit(gencode_excerpt_limmavoom_vfit, coefficients = 1)
+gencode_excerpt_limmavoom_vfit <- limma::contrasts.fit(gencode_excerpt_limmavoom_vfit, contr_matrix$gencode_excerpt)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 gencode_excerpt_limmavoom_efit <- limma::eBayes(gencode_excerpt_limmavoom_vfit)
@@ -794,6 +795,300 @@ data %>%
   plotly::layout(shapes = base::list(hline(h))) %>%
   plotly::layout(xaxis = base::list(title = "Average log expression"),
                  yaxis = base::list(title = "sqrt(sigma)"))
+```
+
+### Summary results {.tabset .tabset-fade}
+
+```{r, eval = config$mirna_smrnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (smrnaseq)")
+```
+
+```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
+summary(decideTests(mirna_smrnaseq_limmavoom_efit)) %>%
+  base::as.data.frame() %>%
+  dplyr::select(Var1, Var2, Freq) %>%
+  DT::datatable(
+          filter = "top",
+          rownames = FALSE,
+          colnames = c("",
+                       "Comparison",
+                       "Number of RNA's"),
+          extensions = base::list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = base::list(leftColumns=1)),
+          options = base::list(
+            dom = "BRrltpi",
+            autoWidth = FALSE,
+            columnDefs = base::list(base::list(width = "150px", targets = 1)),
+            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
+            ColReorder = TRUE,
+            fixedColumns = TRUE,
+            buttons =
+              base::list("copy",
+                         base::list(extend = "collection",
+                                    buttons = c("csv", "excel", "pdf"),
+                                    text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = config$mirna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = config$mirna_excerpt, out.width = "100%"}
+summary(decideTests(mirna_excerpt_limmavoom_efit)) %>%
+  base::as.data.frame() %>%
+  dplyr::select(Var1, Var2, Freq) %>%
+  DT::datatable(
+          filter = "top",
+          rownames = FALSE,
+          colnames = c("",
+                       "Comparison",
+                       "Number of RNA's"),
+          extensions = base::list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = base::list(leftColumns=1)),
+          options = base::list(
+            dom = "BRrltpi",
+            autoWidth = FALSE,
+            columnDefs = base::list(base::list(width = "150px", targets = 1)),
+            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
+            ColReorder = TRUE,
+            fixedColumns = TRUE,
+            buttons =
+              base::list("copy",
+                         base::list(extend = "collection",
+                                    buttons = c("csv", "excel", "pdf"),
+                                    text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = config$pirna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### piRNA's (excerpt)")
+```
+
+```{r, eval = config$pirna_excerpt, out.width = "100%"}
+summary(decideTests(pirna_excerpt_limmavoom_efit)) %>%
+  base::as.data.frame() %>%
+  dplyr::select(Var1, Var2, Freq) %>%
+  DT::datatable(
+          filter = "top",
+          rownames = FALSE,
+          colnames = c("",
+                       "Comparison",
+                       "Number of RNA's"),
+          extensions = base::list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = base::list(leftColumns=1)),
+          options = base::list(
+            dom = "BRrltpi",
+            autoWidth = FALSE,
+            columnDefs = base::list(base::list(width = "150px", targets = 1)),
+            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
+            ColReorder = TRUE,
+            fixedColumns = TRUE,
+            buttons =
+              base::list("copy",
+                         base::list(extend = "collection",
+                                    buttons = c("csv", "excel", "pdf"),
+                                    text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = config$trna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = config$trna_excerpt, out.width = "100%"}
+summary(decideTests(trna_excerpt_limmavoom_efit)) %>%
+  base::as.data.frame() %>%
+  dplyr::select(Var1, Var2, Freq) %>%
+  DT::datatable(
+          filter = "top",
+          rownames = FALSE,
+          colnames = c("",
+                       "Comparison",
+                       "Number of RNA's"),
+          extensions = base::list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = base::list(leftColumns=1)),
+          options = base::list(
+            dom = "BRrltpi",
+            autoWidth = FALSE,
+            columnDefs = base::list(base::list(width = "150px", targets = 1)),
+            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
+            ColReorder = TRUE,
+            fixedColumns = TRUE,
+            buttons =
+              base::list("copy",
+                         base::list(extend = "collection",
+                                    buttons = c("csv", "excel", "pdf"),
+                                    text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = config$circrna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### circRNA's (excerpt)")
+```
+
+```{r, eval = config$circrna_excerpt, out.width = "100%"}
+summary(decideTests(circrna_excerpt_limmavoom_efit)) %>%
+  base::as.data.frame() %>%
+  dplyr::select(Var1, Var2, Freq) %>%
+  DT::datatable(
+          filter = "top",
+          rownames = FALSE,
+          colnames = c("",
+                       "Comparison",
+                       "Number of RNA's"),
+          extensions = base::list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = base::list(leftColumns=1)),
+          options = base::list(
+            dom = "BRrltpi",
+            autoWidth = FALSE,
+            columnDefs = base::list(base::list(width = "150px", targets = 1)),
+            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
+            ColReorder = TRUE,
+            fixedColumns = TRUE,
+            buttons =
+              base::list("copy",
+                         base::list(extend = "collection",
+                                    buttons = c("csv", "excel", "pdf"),
+                                    text = "Download"),
+                         I("colvis"))))
+```
+
+```{r, eval = config$gencode_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gencode's (excerpt)")
+```
+
+```{r, eval = config$gencode_excerpt, out.width = "100%"}
+summary(decideTests(gencode_excerpt_limmavoom_efit)) %>%
+  base::as.data.frame() %>%
+  dplyr::select(Var1, Var2, Freq) %>%
+  DT::datatable(
+          filter = "top",
+          rownames = FALSE,
+          colnames = c("",
+                       "Comparison",
+                       "Number of RNA's"),
+          extensions = base::list("ColReorder" = NULL,
+                                  "Buttons" = NULL,
+                                  "FixedColumns" = base::list(leftColumns=1)),
+          options = base::list(
+            dom = "BRrltpi",
+            autoWidth = FALSE,
+            columnDefs = base::list(base::list(width = "150px", targets = 1)),
+            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
+            ColReorder = TRUE,
+            fixedColumns = TRUE,
+            buttons =
+              base::list("copy",
+                         base::list(extend = "collection",
+                                    buttons = c("csv", "excel", "pdf"),
+                                    text = "Download"),
+                         I("colvis"))))
+```
+
+### Venn diagram {.tabset .tabset-fade}
+
+Overlap of differentially expressed RNA's between comparisons
+
+```{r, eval = config$mirna_smrnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (smrnaseq)")
+```
+
+```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
+mirna_smrnaseq_limmavoom_results <- decideTests(mirna_smrnaseq_limmavoom_efit)
+mfrow.old <- par()$mfrow
+vennDiagram(mirna_smrnaseq_limmavoom_results, 
+    include=c("up", "down"),
+    counts.col=c("red", "blue"),
+    circle.col = c("red", "blue", "green3"),
+    cex = 1)
+```
+
+```{r, eval = config$mirna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = config$mirna_excerpt, out.width = "100%"}
+mirna_excerpt_limmavoom_results <- decideTests(mirna_excerpt_limmavoom_efit)
+mfrow.old <- par()$mfrow
+vennDiagram(mirna_excerpt_limmavoom_results, 
+    include=c("up", "down"),
+    counts.col=c("red", "blue"),
+    circle.col = c("red", "blue", "green3"),
+    cex = 1)
+```
+
+```{r, eval = config$pirna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### piRNA's (excerpt)")
+```
+
+```{r, eval = config$pirna_excerpt, out.width = "100%"}
+pirna_excerpt_limmavoom_results <- decideTests(pirna_excerpt_limmavoom_efit)
+mfrow.old <- par()$mfrow
+vennDiagram(pirna_excerpt_limmavoom_results, 
+    include=c("up", "down"),
+    counts.col=c("red", "blue"),
+    circle.col = c("red", "blue", "green3"),
+    cex = 1)
+```
+
+```{r, eval = config$trna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = config$trna_excerpt, out.width = "100%"}
+trna_excerpt_limmavoom_results <- decideTests(trna_excerpt_limmavoom_efit)
+mfrow.old <- par()$mfrow
+vennDiagram(trna_excerpt_limmavoom_results, 
+    include=c("up", "down"),
+    counts.col=c("red", "blue"),
+    circle.col = c("red", "blue", "green3"),
+    cex = 1)
+```
+
+```{r, eval = config$circrna_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### circRNA's (excerpt)")
+```
+
+```{r, eval = config$circrna_excerpt, out.width = "100%"}
+circrna_excerpt_limmavoom_results <- decideTests(circrna_excerpt_limmavoom_efit)
+mfrow.old <- par()$mfrow
+vennDiagram(circrna_excerpt_limmavoom_results, 
+    include=c("up", "down"),
+    counts.col=c("red", "blue"),
+    circle.col = c("red", "blue", "green3"),
+    cex = 1)
+```
+
+```{r, eval = config$gencode_excerpt, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gencode's (excerpt)")
+```
+
+```{r, eval = config$gencode_excerpt, out.width = "100%"}
+gencode_excerpt_limmavoom_results <- decideTests(gencode_excerpt_limmavoom_efit)
+mfrow.old <- par()$mfrow
+vennDiagram(gencode_excerpt_limmavoom_results, 
+    include=c("up", "down"),
+    counts.col=c("red", "blue"),
+    circle.col = c("red", "blue", "green3"),
+    cex = 1)
 ```
 
 ## DESeq2
@@ -1069,11 +1364,9 @@ base::cat("#### gencodes (excerpt)")
 DESeq2::plotMA(deseq_results_1$gencode_excerpt)
 ```
 
-## Differential expression results
+## All differential expression results
 
-```{r, contrast1, eval = contrasts[1]}
-##### limma/voom #####
-
+```{r, eval = contrasts[1]}
 # make a list of all the efit objects in the global environment
 efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
 
@@ -1081,6 +1374,7 @@ efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.Global
 limma_voom_results_1 <- base::lapply(efit, function(x) {
   
   x %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
     limma::topTreat(coef=1, n=Inf) %>%
     tibble::rownames_to_column("rna")
   
@@ -1099,13 +1393,208 @@ limma_voom_results_1 <- limma_voom_results_1 %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-limma_voom_results_1 <- limma_voom_results_1 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_limma_voom"))
+# select only some columns we're interested in
+limma_voom_results_1 <- limma_voom_results_1 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
 
-##### deseq #####
+# rename adjusted p-value column before join
+limma_voom_results_1 <- limma_voom_results_1 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+```
 
+```{r, eval = contrasts[2]}
+# make a list of all the efit objects in the global environment
+efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
+
+# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+limma_voom_results_2 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
+    limma::topTreat(coef=2, n=Inf) %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_2 <- base::do.call(rbind, limma_voom_results_2)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_2 <- limma_voom_results_2 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[2]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_2 <- limma_voom_results_2 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_2 <- limma_voom_results_2 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+```
+
+```{r, eval = contrasts[3]}
+# make a list of all the efit objects in the global environment
+efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
+
+# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+limma_voom_results_3 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
+    limma::topTreat(coef=3, n=Inf) %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_3 <- base::do.call(rbind, limma_voom_results_3)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_3 <- limma_voom_results_3 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[3]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_3 <- limma_voom_results_3 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_3 <- limma_voom_results_3 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+```
+
+```{r, eval = contrasts[4]}
+# make a list of all the efit objects in the global environment
+efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
+
+# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+limma_voom_results_4 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
+    limma::topTreat(coef=4, n=Inf) %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_4 <- base::do.call(rbind, limma_voom_results_4)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_4 <- limma_voom_results_4 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_4 <- limma_voom_results_4 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_4 <- limma_voom_results_4 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+```
+
+```{r, eval = contrasts[5]}
+# make a list of all the efit objects in the global environment
+efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
+
+# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+limma_voom_results_5 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
+    limma::topTreat(coef=5, n=Inf) %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_5 <- base::do.call(rbind, limma_voom_results_5)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_5 <- limma_voom_results_5 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[5]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_5 <- limma_voom_results_5 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_5 <- limma_voom_results_5 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+```
+
+```{r, eval = contrasts[6]}
+# make a list of all the efit objects in the global environment
+efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
+
+# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+limma_voom_results_6 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
+    limma::topTreat(coef=6, n=Inf) %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_6 <- base::do.call(rbind, limma_voom_results_6)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_6 <- limma_voom_results_6 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[6]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_6 <- limma_voom_results_6 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_6 <- limma_voom_results_6 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+```
+
+```{r, eval = contrasts[1]}
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
 deseq_results_1 <- base::lapply(deseq_results_1, function(x) {
   
@@ -1128,52 +1617,18 @@ deseq_results_1 <- deseq_results_1 %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-deseq_results_1 <- deseq_results_1 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_deseq2"))
+# select only some columns we're interested in
+deseq_results_1 <- deseq_results_1 %>%
+  dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-##### both limma/voom and deseq #####
-
-# collapse results from deseq and limma/voom differential expression analysis together
-diff_expr_results_1 <- dplyr::full_join(limma_voom_results_1, deseq_results_1)
+# rename adjusted p-value column before join
+deseq_results_1 <- deseq_results_1 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
 ```
 
-```{r, contrast2, eval = contrasts[2]}
-##### limma/voom #####
-
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
-limma_voom_results_2 <- base::lapply(efit, function(x) {
-  
-  x %>%
-    limma::topTreat(coef=1, n=Inf) %>%
-    tibble::rownames_to_column("rna")
-  
-})
-
-# collapse the list of dataframes into one
-limma_voom_results_2 <- base::do.call(rbind, limma_voom_results_2)
-
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-limma_voom_results_2 <- limma_voom_results_2 %>%
-  tibble::rownames_to_column("source") %>%
-  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[2]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
-  select(-source)
-
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-limma_voom_results_2 <- limma_voom_results_2 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_limma_voom"))
-
-##### deseq #####
-
+```{r, eval = contrasts[2]}
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
 deseq_results_2 <- base::lapply(deseq_results_2, function(x) {
   
@@ -1196,52 +1651,18 @@ deseq_results_2 <- deseq_results_2 %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-deseq_results_2 <- deseq_results_2 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_deseq2"))
+# select only some columns we're interested in
+deseq_results_2 <- deseq_results_2 %>%
+  dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-##### both limma/voom and deseq #####
-
-# collapse results from deseq and limma/voom differential expression analysis together
-diff_expr_results_2 <- dplyr::full_join(limma_voom_results_2, deseq_results_2)
+# rename adjusted p-value column before join
+deseq_results_2 <- deseq_results_2 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
 ```
 
-```{r, contrast3, eval = contrasts[3]}
-##### limma/voom #####
-
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
-limma_voom_results_3 <- base::lapply(efit, function(x) {
-  
-  x %>%
-    limma::topTreat(coef=1, n=Inf) %>%
-    tibble::rownames_to_column("rna")
-  
-})
-
-# collapse the list of dataframes into one
-limma_voom_results_3 <- base::do.call(rbind, limma_voom_results_3)
-
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-limma_voom_results_3 <- limma_voom_results_3 %>%
-  tibble::rownames_to_column("source") %>%
-  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[3]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
-  select(-source)
-
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-limma_voom_results_3 <- limma_voom_results_3 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_limma_voom"))
-
-##### deseq #####
-
+```{r, eval = contrasts[3]}
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
 deseq_results_3 <- base::lapply(deseq_results_3, function(x) {
   
@@ -1264,52 +1685,18 @@ deseq_results_3 <- deseq_results_3 %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-deseq_results_3 <- deseq_results_3 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_deseq2"))
+# select only some columns we're interested in
+deseq_results_3 <- deseq_results_3 %>%
+  dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-##### both limma/voom and deseq #####
-
-# collapse results from deseq and limma/voom differential expression analysis together
-diff_expr_results_3 <- dplyr::full_join(limma_voom_results_3, deseq_results_3)
+# rename adjusted p-value column before join
+deseq_results_3 <- deseq_results_3 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
 ```
 
-```{r, contrast4, eval = contrasts[4]}
-##### limma/voom #####
-
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
-limma_voom_results_4 <- base::lapply(efit, function(x) {
-  
-  x %>%
-    limma::topTreat(coef=1, n=Inf) %>%
-    tibble::rownames_to_column("rna")
-  
-})
-
-# collapse the list of dataframes into one
-limma_voom_results_4 <- base::do.call(rbind, limma_voom_results_4)
-
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-limma_voom_results_4 <- limma_voom_results_4 %>%
-  tibble::rownames_to_column("source") %>%
-  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
-  select(-source)
-
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-limma_voom_results_4 <- limma_voom_results_4 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_limma_voom"))
-
-##### deseq #####
-
+```{r, eval = contrasts[4]}
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
 deseq_results_4 <- base::lapply(deseq_results_4, function(x) {
   
@@ -1332,52 +1719,18 @@ deseq_results_4 <- deseq_results_4 %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-deseq_results_4 <- deseq_results_4 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_deseq2"))
+# select only some columns we're interested in
+deseq_results_4 <- deseq_results_4 %>%
+  dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-##### both limma/voom and deseq #####
-
-# collapse results from deseq and limma/voom differential expression analysis together
-diff_expr_results_4 <- dplyr::full_join(limma_voom_results_4, deseq_results_4)
+# rename adjusted p-value column before join
+deseq_results_4 <- deseq_results_4 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
 ```
 
-```{r, contrast5, eval = contrasts[5]}
-##### limma/voom #####
-
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
-limma_voom_results_5 <- base::lapply(efit, function(x) {
-  
-  x %>%
-    limma::topTreat(coef=1, n=Inf) %>%
-    tibble::rownames_to_column("rna")
-  
-})
-
-# collapse the list of dataframes into one
-limma_voom_results_5 <- base::do.call(rbind, limma_voom_results_5)
-
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-limma_voom_results_5 <- limma_voom_results_5 %>%
-  tibble::rownames_to_column("source") %>%
-  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[5]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
-  select(-source)
-
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-limma_voom_results_5 <- limma_voom_results_5 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_limma_voom"))
-
-##### deseq #####
-
+```{r, eval = contrasts[5]}
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
 deseq_results_5 <- base::lapply(deseq_results_5, function(x) {
   
@@ -1400,52 +1753,18 @@ deseq_results_5 <- deseq_results_5 %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-deseq_results_5 <- deseq_results_5 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_deseq2"))
+# select only some columns we're interested in
+deseq_results_5 <- deseq_results_5 %>%
+  dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-##### both limma/voom and deseq #####
-
-# collapse results from deseq and limma/voom differential expression analysis together
-diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5)
+# rename adjusted p-value column before join
+deseq_results_5 <- deseq_results_5 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
 ```
 
-```{r, contrast6, eval = contrasts[6]}
-##### limma/voom #####
-
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
-limma_voom_results_6 <- base::lapply(efit, function(x) {
-  
-  x %>%
-    limma::topTreat(coef=1, n=Inf) %>%
-    tibble::rownames_to_column("rna")
-  
-})
-
-# collapse the list of dataframes into one
-limma_voom_results_6 <- base::do.call(rbind, limma_voom_results_6)
-
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-limma_voom_results_6 <- limma_voom_results_6 %>%
-  tibble::rownames_to_column("source") %>%
-  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[6]) %>%
-  dplyr::mutate(diff_expr_method = "limma/voom") %>%
-  select(-source)
-
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-limma_voom_results_6 <- limma_voom_results_6 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_limma_voom"))
-
-##### deseq #####
-
+```{r, eval = contrasts[6]}
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
 deseq_results_6 <- base::lapply(deseq_results_6, function(x) {
   
@@ -1468,16 +1787,48 @@ deseq_results_6 <- deseq_results_6 %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
-# define the source of the statistics (column names) before join
-# (eg. that padj was from a deseq2 analysis and adj.P.Val was from a limma voom analysis)
-deseq_results_6 <- deseq_results_6 %>% 
-  dplyr::rename_at(vars(-c(rna, rna_species, pipeline, diff_expr_method, comparison)), function(x) base::paste0(x, "_deseq2"))
+# select only some columns we're interested in
+deseq_results_6 <- deseq_results_6 %>%
+  dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-##### both limma/voom and deseq #####
-
-# collapse results from deseq and limma/voom differential expression analysis together
-diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6)
+# rename adjusted p-value column before join
+deseq_results_6 <- deseq_results_6 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
 ```
+
+```{r, eval = contrasts[1]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_1 <- dplyr::full_join(limma_voom_results_1, deseq_results_1, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[2]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_2 <- dplyr::full_join(limma_voom_results_2, deseq_results_2, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[3]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_3 <- dplyr::full_join(limma_voom_results_3, deseq_results_3, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[4]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_4 <- dplyr::full_join(limma_voom_results_4, deseq_results_4, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[5]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[6]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+*Note. only RNA's that were found to be significantly differentially expressed or have a p-value smaller than 0.1 are included in this table. Significance is based on adjusted p-values*
 
 ```{r, all contrasts}
 # make a list of all the differential expression results objects in the global environment
@@ -1494,27 +1845,25 @@ diff_expr_results  <- base::do.call(rbind, diff_expr_results)
 # This data will be used as a "flag" (using highlighting) in the downstream app to indicate a possibly
 # significantly differentiated RNA the user of the app might want to investigate
 diff_expr_results <- diff_expr_results %>%
-  dplyr::mutate(significance = dplyr::case_when((adj.P.Val_limma_voom > 0.10) | (padj_deseq2 > 0.10) ~ "not_significant",
-                                  ((adj.P.Val_limma_voom > 0.05) & (adj.P.Val_limma_voom <= 0.10)) | ((padj_deseq2 > 0.05) & (padj_deseq2 <= 0.10)) ~ "significant_10%",
-                                  ((adj.P.Val_limma_voom > 0.01) & (adj.P.Val_limma_voom <= 0.05)) | ((padj_deseq2 > 0.01) & (padj_deseq2 <= 0.05)) ~ "significant_5%",
-                                  (adj.P.Val_limma_voom < 0.01) | (padj_deseq2 < 0.01) ~ "significant_1%"))
+  dplyr::mutate(significance = dplyr::case_when(adj_p_value > 0.10 ~ "not_significant",
+                                  (adj_p_value > 0.05) & (adj_p_value <= 0.10) ~ "significant_10%",
+                                  (adj_p_value > 0.01) & (adj_p_value <= 0.05) ~ "significant_5%",
+                                  (adj_p_value <= 0.01) ~ "significant_1%"))
 
 # then replace any NA's with "not_significant"
 diff_expr_results <- diff_expr_results %>%
   dplyr::mutate_at(vars(significance), ~replace(., is.na(.), "not_significant"))
 
-# since there is a row for each differential expresion method (for each RNA and pipeline)...
-# make one column for log fold change and adjusted p-value
-diff_expr_results <- diff_expr_results %>% 
-  tidyr::unite(log_fc, c("logFC_limma_voom", "log2FoldChange_deseq2"), na.rm = TRUE) %>% 
-  tidyr::unite(adj_p_value, c("adj.P.Val_limma_voom", "padj_deseq2"), na.rm = TRUE)
+# get only the significant RNA's
+sig_diff_expr_results <- diff_expr_results %>%
+  dplyr::filter(significance != "not_significant" | p_value <= 0.10)
 
 # add NA when empty cell (and still allow filtering on number ranges)
 # options(htmlwidgets.TOJSON_ARGS = list(na = "string"))
 # currently can't use because it causes and error in my downstream heatmap (see https://github.com/ropensci/plotly/issues/1853)
 
 # create datatable to explore the data
-datatable(diff_expr_results %>%
+datatable(sig_diff_expr_results %>%
             dplyr::mutate_if(is.numeric, signif, digits = 4) %>%
             dplyr::select(rna,
                           rna_species,
@@ -1522,6 +1871,7 @@ datatable(diff_expr_results %>%
                           diff_expr_method,
                           comparison,
                           log_fc,
+                          p_value,
                           adj_p_value,
                           significance),
           filter = "top",
@@ -1532,6 +1882,7 @@ datatable(diff_expr_results %>%
                        "Differential expression method",
                        "Comparison",
                        "Log fold change",
+                       "p-value",
                        "Adjusted p-value",
                        "Significance"),
           extensions = base::list("ColReorder" = NULL,

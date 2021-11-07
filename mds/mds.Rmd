@@ -7,17 +7,14 @@ date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
 output:
   html_document:
     code_download: true
-    code_folding: hide
     toc: false
   editor_options: 
     chunk_output_type: console
 ---
 
-# {.tabset .tabset-fade}
-
 ```{r setup, include=FALSE}
 # setup default chunk settings
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
 ```
 
 ```{r}
@@ -72,6 +69,22 @@ counts <- dplyr::left_join(counts, metadata, by = "sample")
 mkdir -p ./mds_results/
 ```
 
+## Info
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
+                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
+                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
+                       " - trna excerpt: ", config$trna_excerpt, "\n",
+                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
+                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+## MDS {.tabset .tabset-fade}
+
 ```{r, results = "asis"}
 # pretty format the text for the header
 to_analyse_pretty <- to_analyse %>%
@@ -97,7 +110,7 @@ pipeline_pretty <- to_analyse_pretty %>%
 to_analyse_pretty <- base::paste0(rna_species_pretty, " ", pipeline_pretty, collapse = " ")
 
 # dynamically build up a header based on the rna species being analysed
-base::cat(base::paste0("## All RNA's analysed: ", to_analyse_pretty, " ", "{.tabset .tabset-fade}"))
+base::cat(base::paste0("### All RNA's analysed: ", to_analyse_pretty, " ", "{.tabset .tabset-fade}"))
 ```
 
 ```{r, out.width = "100%"}
@@ -172,7 +185,7 @@ DT::datatable(data %>%
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## miRNA's (smrnaseq)")
+base::cat("### miRNA's (smrnaseq)")
 ```
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
@@ -246,7 +259,7 @@ DT::datatable(data %>%
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## miRNA's (excerpt)")
+base::cat("### miRNA's (excerpt)")
 ```
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
@@ -320,7 +333,7 @@ DT::datatable(data %>%
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## piRNA's (excerpt)")
+base::cat("### piRNA's (excerpt)")
 ```
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
@@ -394,7 +407,7 @@ DT::datatable(data %>%
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## tRNA's (excerpt)")
+base::cat("### tRNA's (excerpt)")
 ```
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
@@ -468,7 +481,7 @@ DT::datatable(data %>%
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## circRNA's (excerpt)")
+base::cat("### circRNA's (excerpt)")
 ```
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
@@ -542,7 +555,7 @@ DT::datatable(data %>%
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("## gencode's (excerpt)")
+base::cat("### gencode's (excerpt)")
 ```
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}

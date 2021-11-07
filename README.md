@@ -21,9 +21,9 @@ Analysis template for analysing, visualising and communicating the findings of [
     - [1. Fork the template repo to a personal or lab account](#1-fork-the-template-repo-to-a-personal-or-lab-account)
     - [2. Take this template to the data on your local machine](#2-take-this-template-to-the-data-on-your-local-machine)
     - [3. Format your input files](#3-format-your-input-files)
-      - [Fastq naming convention](#fastq-naming-convention)
-      - [Metadata file](#metadata-file)
-      - [Configuration file](#configuration-file)
+      - [3.1 Fastq naming convention](#31-fastq-naming-convention)
+      - [3.2 Metadata file](#32-metadata-file)
+      - [3.3 Configuration file](#33-configuration-file)
     - [4. Run the template](#4-run-the-template)
     - [5. Commit and push to your forked version of the github repo](#5-commit-and-push-to-your-forked-version-of-the-github-repo)
     - [6. Repeat step 5 each time you re-run the analysis with different parameters](#6-repeat-step-5-each-time-you-re-run-the-analysis-with-different-parameters)
@@ -53,14 +53,14 @@ Lastly, the composition of the RNA species that are identified in each treatment
 
 ## Prerequisite software
 
-[python 3](https://www.python.org/), [cut](https://www.man7.org/linux/man-pages/man1/cut.1.html), [zgrep](https://linux.die.net/man/1/zgrep), [GNU cat](https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html), [GNU bc](https://www.gnu.org/software/bc/), [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [GNU ls](https://www.gnu.org/software/coreutils/manual/html_node/ls-invocation.html)
+[python 3](https://www.python.org/), [cut](https://www.man7.org/linux/man-pages/man1/cut.1.html), [zgrep](https://linux.die.net/man/1/zgrep), [GNU cat](https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html), [GNU bc](https://www.gnu.org/software/bc/), [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [GNU ls](https://www.gnu.org/software/coreutils/manual/html_node/ls-invocation.html), [pandas](https://pypi.org/project/pandas/), [PyYAML](https://pypi.org/project/PyYAML/)
 
 ## Testing
 
 This template has been validated to work on:
 
 - [nextflow 21.04.0](https://github.com/nextflow-io/nextflow/tree/v21.04.0)
-- [singularity 3.7.2](https://github.com/hpcng/singularity/tree/v3.7.2),
+- [singularity 3.7.2](https://github.com/hpcng/singularity/tree/v3.7.2)
 - [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0)
 - [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2)
 - R version 4.0.5
@@ -82,17 +82,19 @@ git clone https://github.com/leahkemp/smncrna_analysis_template.git
 
 ### 3. Format your input files
 
-#### Fastq naming convention
+#### 3.1 Fastq naming convention
 
 ```bash
-sample_S*_R1.fastq.gz
+sample.fastq.gz
 ```
 
 - one fastq file per sample
+- sample name matching the sample names in the metadata file
+- ".fastq.gz" extension
 
 For example see the test fastq files [here](./test/fastq/)
 
-#### Metadata file
+#### 3.2 Metadata file
 
 Required columns:
 
@@ -111,7 +113,7 @@ Other notes:
 
 For example see the test metadata file [here](./config/metadata.csv)
 
-#### Configuration file
+#### 3.3 Configuration file
 
 Set up [./config/config.yaml](config/config.yaml)
 
