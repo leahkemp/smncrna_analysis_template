@@ -107,6 +107,7 @@ mapping_rates_data %>%
 # create datatable to explore the RNA's that are found in the media
 DT::datatable(mapping_rates_data %>%
                 dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
+                dplyr::mutate(across(c("sample", "treatment", "low_fastq_read_count"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               raw_read_count_fastq_file,
@@ -181,6 +182,7 @@ mapping_rates_data %>%
 # create datatable to explore the RNA's that are found in the media
 DT::datatable(mapping_rates_data %>%
                 dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
+                dplyr::mutate(across(c("sample", "treatment", "low_fastq_read_count"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               raw_read_count_fastq_file,

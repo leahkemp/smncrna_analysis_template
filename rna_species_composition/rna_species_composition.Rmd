@@ -73,6 +73,8 @@ data <- data %>%
 # create datatable of data
 data %>%
   dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
+  base::as.data.frame() %>%
+  dplyr::mutate(across(c("treatment", "rna_species", "pipeline"), as.factor)) %>%
   DT::datatable(selection = "single",
                 filter = "top",
                 rownames = FALSE,
@@ -283,7 +285,9 @@ data <- dplyr::left_join(data, metadata, by = "sample")
 # create datatable of data
 data %>%
   dplyr::select(treatment, sample, rna_species, pipeline, total_raw_count) %>%
+  base::as.data.frame() %>%
   dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
+  dplyr::mutate(across(c(treatment, sample, rna_species, pipeline), as.factor)) %>%
   DT::datatable(selection = "single",
                 filter = "top",
                 rownames = FALSE,

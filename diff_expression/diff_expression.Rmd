@@ -42,7 +42,6 @@ library(heatmaply)
 library(gtools)
 library(textshape)
 library(tidyr)
-library(Glimma)
 
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
@@ -1873,7 +1872,8 @@ datatable(sig_diff_expr_results %>%
                           log_fc,
                           p_value,
                           adj_p_value,
-                          significance),
+                          significance) %>%
+            dplyr::mutate(across(c(rna_species, pipeline, diff_expr_method, comparison, significance), as.factor)),
           filter = "top",
           rownames = FALSE,
           colnames = c("RNA",
