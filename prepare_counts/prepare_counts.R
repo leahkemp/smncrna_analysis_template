@@ -51,16 +51,15 @@ gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_
   dplyr::rename_with(~ base::sub(".fastq", "", .))
 
 mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
-                                                         "/edgeR/miRBase_mature/mature_counts.csv"),
-                                         header = TRUE,
-                                         stringsAsFactors = TRUE,
-                                         sep = ",") %>%
-  # formatting
-  base::t() %>%
-  base::as.data.frame() %>%
-  janitor::row_to_names(row_number = 1) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub(".mature", "", .))
+                                                         "/mirtop/mirtop.tsv"),
+                                                         header = TRUE) %>%
+  # get only the count data
+  dplyr::select(-c("UID", "Read", "Variant", "iso_5p", "iso_3p", "iso_add3p", "iso_snp", "iso_5p_nt", "iso_3p_nt", "iso_add3p_nt", "iso_snp_nt")) %>%
+  # "squash" out the isoform info (of the mirtop from smrnaseq pipeline)
+  dplyr::group_by(miRNA) %>%
+  dplyr::summarise_each(sum) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::column_to_rownames(var="miRNA")
 
 # formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
