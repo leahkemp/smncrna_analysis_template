@@ -77,6 +77,18 @@ mapping_rates_data %>%
                     text = ~base::paste("</br> Reads aligned to hairpin RNA's:", base::format(smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
+  plotly::add_trace(y = ~smrnaseq_reads_unmapped_to_mature_bowtie_stats_file,
+                    name = "Reads unaligned to mature RNA's",
+                    hoverinfo = "text",
+                    text = ~base::paste("</br> Reads unaligned to mature RNA's:", base::format(smrnaseq_reads_unmapped_to_mature_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
+                                        "</br> Sample:", sample,
+                                        "</br> Treatment:", treatment)) %>%
+  plotly::add_trace(y = ~smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file,
+                    name = "Reads unaligned to hairpin RNA's",
+                    hoverinfo = "text",
+                    text = ~base::paste("</br> Reads unaligned to hairpin RNA's:", base::format(smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
+                                        "</br> Sample:", sample,
+                                        "</br> Treatment:", treatment)) %>%
   # add line that show you the average raw read count across all samples
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
@@ -98,6 +110,20 @@ mapping_rates_data %>%
                        yend = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file),
                        name = "Average reads aligned to \n hairpin RNA's",
                        color = I("#2ca02c")) %>%
+  # add line that show you the average number of reads unmapped to mature RNA's
+  plotly::add_segments(x = dplyr::first(sample_list),
+                       xend = dplyr::last(sample_list),
+                       y = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_mature_bowtie_stats_file),
+                       yend = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_mature_bowtie_stats_file),
+                       name = "Average reads unaligned to \n mature RNA's",
+                       color = I("#d62728")) %>%
+  # add line that show you the average number of reads unmapped to hairpin RNA's
+  plotly::add_segments(x = dplyr::first(sample_list),
+                       xend = dplyr::last(sample_list),
+                       y = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file),
+                       yend = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file),
+                       name = "Average reads unaligned to \n hairpin RNA's",
+                       color = I("#9467bd")) %>%
   plotly::layout(xaxis = xform) %>%
   plotly::layout(xaxis = list(title = "Sample"),
                  yaxis = list(title = "Read count"))
@@ -113,6 +139,8 @@ DT::datatable(mapping_rates_data %>%
                               raw_read_count_fastq_file,
                               smrnaseq_reads_mapped_to_mature_bowtie_stats_file,
                               smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file,
+                              smrnaseq_reads_unmapped_to_mature_bowtie_stats_file,
+                              smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file,
                               low_fastq_read_count),
               filter = "top",
               rownames = FALSE,
@@ -121,6 +149,8 @@ DT::datatable(mapping_rates_data %>%
                            "Raw sequencing read count",
                            "Reads aligned to mature RNA's",
                            "Reads aligned to hairpin RNA's",
+                           "Reads unaligned to mature RNA's",
+                           "Reads unaligned to hairpin RNA's",
                            "Low raw sequencing read count"),
               extensions = list("ColReorder" = NULL,
                                 "Buttons" = NULL,
@@ -159,6 +189,12 @@ mapping_rates_data %>%
                     text = ~base::paste("</br> Reads used for alignment:", base::format(excerpt_reads_used_for_alignment_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
+  plotly::add_trace(y = ~excerpt_not_mapped_to_genome_or_libs_stats_file,
+                    name = "Not mapped to \n genome or libs",
+                    hoverinfo = "text",
+                    text = ~base::paste("</br> Not mapped to \n genome or libs:", base::format(excerpt_not_mapped_to_genome_or_libs_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
+                                        "</br> Sample:", sample,
+                                        "</br> Treatment:", treatment)) %>%
   # add line that show you the average raw read count across all samples
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
@@ -175,6 +211,16 @@ mapping_rates_data %>%
                        color = I("#ff7f0e")) %>%
   plotly::layout(xaxis = xform) %>%
   plotly::layout(xaxis = list(title = "Sample"),
+                 yaxis = list(title = "Read count")) %>%
+  # add line that show you the average number of reads not mapped to genome or libs
+  plotly::add_segments(x = dplyr::first(sample_list),
+                       xend = dplyr::last(sample_list),
+                       y = base::mean(mapping_rates_data$excerpt_not_mapped_to_genome_or_libs_stats_file),
+                       yend = base::mean(mapping_rates_data$excerpt_not_mapped_to_genome_or_libs_stats_file),
+                       name = "Average reads not \n mapped to genome or libs",
+                       color = I("#2ca02c")) %>%
+  plotly::layout(xaxis = xform) %>%
+  plotly::layout(xaxis = list(title = "Sample"),
                  yaxis = list(title = "Read count"))
 ```
 
@@ -187,6 +233,7 @@ DT::datatable(mapping_rates_data %>%
                               treatment,
                               raw_read_count_fastq_file,
                               excerpt_reads_used_for_alignment_stats_file,
+                              excerpt_not_mapped_to_genome_or_libs_stats_file,
                               low_fastq_read_count),
               filter = "top",
               rownames = FALSE,
@@ -194,6 +241,7 @@ DT::datatable(mapping_rates_data %>%
                            "Treatment",
                            "Raw sequencing read count",
                            "Reads used for alignment",
+                           "Not mapped to genome or libs",
                            "Low raw sequencing read count"),
               extensions = list("ColReorder" = NULL,
                                 "Buttons" = NULL,
