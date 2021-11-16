@@ -320,9 +320,7 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -424,9 +422,7 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -528,9 +524,7 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -632,9 +626,7 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -736,9 +728,7 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) 
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -840,9 +830,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) 
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -880,6 +868,13 @@ maximum_rna_count <- base::max(c(lcpm_mirna_smrnaseq))
 # get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_mirna_smrnaseq))
 
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_mirna_smrnaseq)),
+                                           "\nPipeline: smrnaseq"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_mirna_smrnaseq)) %>%
+  t()
+
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
   low = "blue",
@@ -897,15 +892,17 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
   lcpm_mirna_smrnaseq %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
                          seriate = "OLO",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
 } else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) < 3) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
@@ -923,7 +920,7 @@ base::cat("#### miRNA's (excerpt)")
 
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt, out.width = "100%"}
 # extract datasets
-lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_excerpt
+lcpm_mirna_excerpt <- log_counts_per_million$mirna_excerpt
 
 # shorten miRNA names for plotting sakes
 base::rownames(lcpm_mirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_mirna_excerpt))
@@ -933,6 +930,13 @@ maximum_rna_count <- base::max(c(lcpm_mirna_excerpt))
 
 # get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_mirna_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_mirna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_mirna_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -951,15 +955,17 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
   lcpm_mirna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
                          seriate = "OLO",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
 } else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) < 3) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
@@ -979,14 +985,21 @@ base::cat("#### piRNA's (excerpt)")
 # extract datasets
 lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten piRNA names for plotting sakes
 base::rownames(lcpm_pirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_pirna_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all pirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_pirna_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all pirnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_pirna_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_pirna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_pirna_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -1005,15 +1018,17 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
   lcpm_pirna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
                          seriate = "OLO",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
 } else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) < 3) {
   cat(paste("Too few significantly differentially expressed piRNA's to cluster in a PCA"))
@@ -1033,14 +1048,21 @@ base::cat("#### tRNA's (excerpt)")
 # extract datasets
 lcpm_trna_excerpt <- log_counts_per_million$trna_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten tRNA names for plotting sakes
 base::rownames(lcpm_trna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_trna_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all trnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_trna_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all trnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_trna_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_trna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_trna_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -1059,15 +1081,17 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
   lcpm_trna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
                          seriate = "OLO",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
 } else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) < 3) {
   cat(paste("Too few significantly differentially expressed tRNA's to cluster in a PCA"))
@@ -1087,14 +1111,21 @@ base::cat("#### circRNA's (excerpt)")
 # extract datasets
 lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten circrna names for plotting sakes
 base::rownames(lcpm_circrna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_circrna_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all circrnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_circrna_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all circrnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_circrna_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_circrna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_circrna_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -1113,15 +1144,17 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) 
   lcpm_circrna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
                          seriate = "OLO",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
 } else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) < 3) {
   cat(paste("Too few significantly differentially expressed circRNA's to cluster in a PCA"))
@@ -1141,14 +1174,21 @@ base::cat("#### gencode's (excerpt)")
 # extract datasets
 lcpm_gencode_excerpt <- log_counts_per_million$gencode_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten gencode names for plotting sakes
 base::rownames(lcpm_gencode_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_gencode_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all gencodes) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_gencode_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all gencodes) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_gencode_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_gencode_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_gencode_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -1167,22 +1207,24 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) 
   lcpm_gencode_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
                          seriate = "OLO",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
 } else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) < 3) {
-  cat(paste("Too few significantly differentially expressed gencodes to cluster in a PCA"))
+  cat(paste("Too few significantly differentially expressed gencode's to cluster in a PCA"))
 } else if (all(is.na(lcpm_gencode_excerpt)) == TRUE) {
-  cat(paste("No significantly differentially expressed gencodes"))
+  cat(paste("No significantly differentially expressed gencode's"))
 } else {
-  cat(paste("No significantly differentially expressed gencodes)"))
+  cat(paste("No significantly differentially expressed gencode's)"))
 }
 ```
 
