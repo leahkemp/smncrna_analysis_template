@@ -33,7 +33,7 @@ renv::restore()
 bash mapping_rates/extract_mapping_info.sh
 ```
 
-## Seqeuencing read QC
+## Sequencing read QC
 
 *This will output an interactive html document exploring the raw sequencing read count and number of reads used for alignment (./sequencing_read_QC/sequencing_read_QC.html)*
 
