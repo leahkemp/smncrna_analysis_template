@@ -163,6 +163,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -238,6 +239,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -313,6 +315,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -388,6 +391,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -463,6 +467,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -538,6 +543,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -613,6 +619,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
