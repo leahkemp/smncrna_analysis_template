@@ -142,7 +142,23 @@ colors_list <- base::list(
   "processed_pseudogene" = "#27408b",
   "snoRNA" = "#2b5540",
   "snRNA" = "#a91e69",
-  "rRNA" = "#ff576e"
+  "rRNA" = "#ff576e",
+  "unprocessed_pseudogene" = "#27408b",
+  "processed_transcript" = "#FAEBD7",
+  "Mt_tRNA" = "#A52A2A",
+  "TEC" = "#EE6A50",
+  "transcribed_processed_pseudogene" = "#FFF8DC",
+  "unitary_pseudogene" = "#8B8878",
+  "polymorphic_pseudogene" = "#FF6A6A",
+  "transcribed_unprocessed_pseudogene" = "#BA55D3",
+  "macro_lncRNA" = "#FFE4E1",
+  "non_coding" = "#8B7D7B",
+  "sense_overlapping" = "#DB7093",
+  "sense_intronic" = "#6C7B8B",
+  "scaRNA" = "#FFFF00",
+  "ribozyme" = "#EED2EE",
+  "non_stop_decay" = "#00FF7F",
+  "TR_J_gene" = "#FA8072"
 )
 
 data_smrnaseq$my_colour <- dplyr::recode(data_smrnaseq$rna_species, !!!colors_list)
@@ -233,24 +249,6 @@ data_excerpt <- data %>%
 
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
-colors_list <- base::list(
-  "trna" = "#173b4e",
-  "mirna" = "#D95F02",
-  "pirna" = "#7570B3",
-  "protein_coding" = "#b17eb1",
-  "Mt_rRNA" = "#66A61E",
-  "misc_RNA" = "#27408b",
-  "retained_intron" = "#ffec8b",
-  "processed_transcript" = "#88d4c3",
-  "nonsense_mediated_decay" = "#1B9E77",
-  "lincRNA" = "#ff9457",
-  "antisense" = "#f190c1",
-  "processed_pseudogene" = "#27408b",
-  "snoRNA" = "#2b5540",
-  "snRNA" = "#a91e69",
-  "rRNA" = "#ff576e"
-)
-
 data_excerpt$my_colour <- dplyr::recode(data_excerpt$rna_species, !!!colors_list)
 
 # get maximum RNA count to scale bar plots to
@@ -381,24 +379,6 @@ data_smrnaseq <- data %>%
 
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
-colors_list <- base::list(
-  "trna" = "#173b4e",
-  "mirna" = "#D95F02",
-  "pirna" = "#7570B3",
-  "protein_coding" = "#b17eb1",
-  "Mt_rRNA" = "#66A61E",
-  "misc_RNA" = "#27408b",
-  "retained_intron" = "#ffec8b",
-  "processed_transcript" = "#88d4c3",
-  "nonsense_mediated_decay" = "#1B9E77",
-  "lincRNA" = "#ff9457",
-  "antisense" = "#f190c1",
-  "processed_pseudogene" = "#27408b",
-  "snoRNA" = "#2b5540",
-  "snRNA" = "#a91e69",
-  "rRNA" = "#ff576e"
-)
-
 data_smrnaseq$my_colour <- dplyr::recode(data_smrnaseq$rna_species, !!!colors_list)
 
 # get maximum RNA count to scale bar plots to
@@ -482,24 +462,6 @@ data_excerpt <- data %>%
 
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
-colors_list <- base::list(
-  "trna" = "#173b4e",
-  "mirna" = "#D95F02",
-  "pirna" = "#7570B3",
-  "protein_coding" = "#b17eb1",
-  "Mt_rRNA" = "#66A61E",
-  "misc_RNA" = "#27408b",
-  "retained_intron" = "#ffec8b",
-  "processed_transcript" = "#88d4c3",
-  "nonsense_mediated_decay" = "#1B9E77",
-  "lincRNA" = "#ff9457",
-  "antisense" = "#f190c1",
-  "processed_pseudogene" = "#27408b",
-  "snoRNA" = "#2b5540",
-  "snRNA" = "#a91e69",
-  "rRNA" = "#ff576e"
-)
-
 data_excerpt$my_colour <- dplyr::recode(data_excerpt$rna_species, !!!colors_list)
 
 # get maximum RNA count to scale bar plots to
