@@ -178,7 +178,14 @@ server <- function(input, output, session) {
   # create interactive table of the scree data ----
   output$table_scree <- DT::renderDataTable({
     
-    DT::datatable(linked_data_scree(),
+    DT::datatable(linked_data_scree() %>%
+                    dplyr::mutate(across(c(component), base::as.factor)) %>%
+                    dplyr::mutate(across(c(eigenvalue,
+                                           percentage.of.variance,
+                                           cumulative.percentage.of.variance), base::as.double)) %>%
+                    dplyr::mutate(across(c(eigenvalue,
+                                           percentage.of.variance,
+                                           cumulative.percentage.of.variance), ~base::round(.x, digits = 2))),
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("Dimension",
@@ -188,18 +195,15 @@ server <- function(input, output, session) {
                   extensions = base::list("ColReorder" = NULL,
                                           "Buttons" = NULL,
                                           "FixedColumns" = base::list(leftColumns=1)),
-                  options = base::list(
+                  options = list(
                     dom = "BRrltpi",
                     autoWidth = TRUE,
-                    columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                    lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                    ColReorder = TRUE,
                     buttons =
-                      base::list("copy",
-                                 base::list(extend = "collection",
-                                            buttons = c("csv"),
-                                            text = "Download"),
-                                 I("colvis")))) %>%
+                      list("copy",
+                           list(extend = "collection",
+                                buttons = c("csv", "excel", "pdf"),
+                                text = "Download"),
+                           I("colvis")))) %>%
       plotly::highlight(on = "plotly_click",
                         opacityDim = 0.2,
                         selected = attrs_selected(opacity = 1))
@@ -243,7 +247,16 @@ server <- function(input, output, session) {
   # create interactive table of pca (individuals - RNA's) based on the dimensions the user chooses to view ----
   output$table_individuals <- DT::renderDataTable({
     
-    DT::datatable(linked_data_individuals(),
+    DT::datatable(linked_data_individuals() %>%
+                    dplyr::mutate(across(c(rna), base::as.factor)) %>%
+                    dplyr::mutate(across(c(x_coord,
+                                           x_cos,
+                                           y_coord,
+                                           y_cos), base::as.double)) %>%
+                    dplyr::mutate(across(c(x_coord,
+                                           x_cos,
+                                           y_coord,
+                                           y_cos), ~base::round(.x, digits = 2))),
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("RNA",
@@ -254,23 +267,22 @@ server <- function(input, output, session) {
                   extensions = base::list("ColReorder" = NULL,
                                           "Buttons" = NULL,
                                           "FixedColumns" = base::list(leftColumns=1)),
-                  options = base::list(
+                  options = list(
                     dom = "BRrltpi",
                     autoWidth = TRUE,
-                    columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                    lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                    ColReorder = TRUE,
                     buttons =
-                      base::list("copy",
-                                 base::list(extend = "collection",
-                                            buttons = c("csv"),
-                                            text = "Download"),
-                                 I("colvis")))) %>%
+                      list("copy",
+                           list(extend = "collection",
+                                buttons = c("csv", "excel", "pdf"),
+                                text = "Download"),
+                           I("colvis")))) %>%
       plotly::highlight(on = "plotly_selected",
                         opacityDim = 0.2,
                         selected = attrs_selected(opacity = 1))
     
   }, server = FALSE)
+  
+  %>%
   
   # generate scatterplot of the pca (variables - samples) based on the dimensions the user chooses to view ----
   output$variables_plot <- plotly::renderPlotly({
@@ -306,7 +318,17 @@ server <- function(input, output, session) {
   # create interactive table of pca (variables - RNA's) based on the dimensions the user chooses to view ----
   output$table_variables <- DT::renderDataTable({
     
-    DT::datatable(linked_data_variables(),
+    DT::datatable(linked_data_variables() %>%
+                    dplyr::mutate(across(c(sample,
+                                           treatment), base::as.factor)) %>%
+                    dplyr::mutate(across(c(x_coord,
+                                           x_cos,
+                                           y_coord,
+                                           y_cos), base::as.double)) %>%
+                    dplyr::mutate(across(c(x_coord,
+                                           x_cos,
+                                           y_coord,
+                                           y_cos), ~base::round(.x, digits = 2))),
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("Sample",
@@ -318,18 +340,15 @@ server <- function(input, output, session) {
                   extensions = base::list("ColReorder" = NULL,
                                           "Buttons" = NULL,
                                           "FixedColumns" = base::list(leftColumns=1)),
-                  options = base::list(
+                  options = list(
                     dom = "BRrltpi",
                     autoWidth = TRUE,
-                    columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                    lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                    ColReorder = TRUE,
                     buttons =
-                      base::list("copy",
-                                 base::list(extend = "collection",
-                                            buttons = c("csv"),
-                                            text = "Download"),
-                                 I("colvis")))) %>%
+                      list("copy",
+                           list(extend = "collection",
+                                buttons = c("csv", "excel", "pdf"),
+                                text = "Download"),
+                           I("colvis")))) %>%
       plotly::highlight(on = "plotly_selected",
                         opacityDim = 0.01,
                         selected = attrs_selected(opacity = 1))

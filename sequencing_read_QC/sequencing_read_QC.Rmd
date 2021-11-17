@@ -147,10 +147,16 @@ mapping_rates_data %>%
 ```
 
 ```{r, out.width = "100%"}
-# create datatable to explore the RNA's that are found in the media
+# create datatable to explore the data in the barplot
 DT::datatable(mapping_rates_data %>%
-                dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
-                dplyr::mutate(across(c("sample", "treatment", "low_fastq_read_count"), as.factor)) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment,
+                                       low_fastq_read_count), base::as.factor)) %>%
+                dplyr::mutate(across(c(raw_read_count_fastq_file,
+                                       smrnaseq_reads_mapped_to_mature_bowtie_stats_file,
+                                       smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file,
+                                       smrnaseq_reads_unmapped_to_mature_bowtie_stats_file,
+                                       smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file), base::as.integer)) %>%
                 dplyr::select(sample,
                               treatment,
                               raw_read_count_fastq_file,
@@ -175,9 +181,7 @@ DT::datatable(mapping_rates_data %>%
               options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
                   list("copy",
                        list(extend = "collection",
@@ -242,10 +246,14 @@ mapping_rates_data %>%
 ```
 
 ```{r, out.width = "100%"}
-# create datatable to explore the RNA's that are found in the media
+# create datatable to explore the data in the barplot
 DT::datatable(mapping_rates_data %>%
-                dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
-                dplyr::mutate(across(c("sample", "treatment", "low_fastq_read_count"), as.factor)) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment,
+                                       low_fastq_read_count), base::as.factor)) %>%
+                dplyr::mutate(across(c(raw_read_count_fastq_file,
+                                       excerpt_reads_used_for_alignment_stats_file,
+                                       excerpt_not_mapped_to_genome_or_libs_stats_file), base::as.integer)) %>%
                 dplyr::select(sample,
                               treatment,
                               raw_read_count_fastq_file,
@@ -266,9 +274,7 @@ DT::datatable(mapping_rates_data %>%
               options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
                   list("copy",
                        list(extend = "collection",

@@ -74,7 +74,6 @@ base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_b
 ### By treatment groups {.tabset .tabset-fade}
 
 ```{r}
-
 # get the total RNA counts by RNA species, sample and pipeline (collapse individual RNAs)
 data <- counts %>%
   dplyr::group_by(rna_species, sample, pipeline) %>%
@@ -91,9 +90,11 @@ data <- data %>%
 
 # create datatable of data
 data %>%
-  dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
   base::as.data.frame() %>%
-  dplyr::mutate(across(c("treatment", "rna_species", "pipeline"), as.factor)) %>%
+  dplyr::mutate(across(c(treatment,
+                         rna_species,
+                         pipeline), base::as.factor)) %>%
+  dplyr::mutate(across(c(mean_total_raw_count), base::as.integer)) %>%
   DT::datatable(selection = "single",
                 filter = "top",
                 rownames = FALSE,
@@ -104,18 +105,15 @@ data %>%
                 extensions = base::list("ColReorder" = NULL,
                                         "Buttons" = NULL,
                                         "FixedColumns" = base::list(leftColumns=1)),
-                options = base::list(
+                options = list(
                   dom = "BRrltpi",
                   autoWidth = TRUE,
-                  columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                  lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                  ColReorder = TRUE,
                   buttons =
-                    base::list("copy",
-                               base::list(extend = "collection",
-                                          buttons = c("csv", "excel", "pdf"),
-                                          text = "Download"),
-                               I("colvis"))))
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
 ```
 
 #### smrnaseq pipeline
@@ -341,10 +339,13 @@ data <- dplyr::left_join(data, metadata, by = "sample")
 
 # create datatable of data
 data %>%
-  dplyr::select(treatment, sample, rna_species, pipeline, total_raw_count) %>%
   base::as.data.frame() %>%
-  dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0) %>%
-  dplyr::mutate(across(c(treatment, sample, rna_species, pipeline), as.factor)) %>%
+  dplyr::select(treatment, sample, rna_species, pipeline, total_raw_count) %>%
+  dplyr::mutate(across(c(treatment,
+                         sample,
+                         rna_species,
+                         pipeline), base::as.factor)) %>%
+  dplyr::mutate(across(c(total_raw_count), base::as.integer)) %>%
   DT::datatable(selection = "single",
                 filter = "top",
                 rownames = FALSE,
@@ -356,18 +357,15 @@ data %>%
                 extensions = base::list("ColReorder" = NULL,
                                         "Buttons" = NULL,
                                         "FixedColumns" = base::list(leftColumns=1)),
-                options = base::list(
+                options = list(
                   dom = "BRrltpi",
                   autoWidth = TRUE,
-                  columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                  lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                  ColReorder = TRUE,
                   buttons =
-                    base::list("copy",
-                               base::list(extend = "collection",
-                                          buttons = c("csv", "excel", "pdf"),
-                                          text = "Download"),
-                               I("colvis"))))
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
 ```
 
 #### smrnaseq pipeline

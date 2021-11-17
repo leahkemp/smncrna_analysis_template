@@ -164,7 +164,7 @@ low_read_count_flag <- mapping_rates_data %>%
 contrasts <- base::append(config$contrasts, rep.int(FALSE, times = 6))
 contrasts <- contrasts[1:6]
 contrasts[contrasts != FALSE] <- TRUE
-contrasts <- as.logical(contrasts)
+contrasts <- base::as.logical(contrasts)
 
 # specify treatments by creating a string of conditions that match the order of the columns/samples in the count data
 # get the treatments and samples names from the metadata file
@@ -823,31 +823,33 @@ base::cat("#### miRNA's (smrnaseq)")
 ```
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
-summary(decideTests(mirna_smrnaseq_limmavoom_efit)) %>%
+summary(limma::decideTests(mirna_smrnaseq_limmavoom_efit)) %>%
   base::as.data.frame() %>%
-  dplyr::select(Var1, Var2, Freq) %>%
+  dplyr::select(Var1,
+                Var2,
+                Freq) %>%
+  dplyr::mutate(across(c(Var1,
+                         Var2), base::as.factor)) %>%
+  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
   DT::datatable(
-          filter = "top",
-          rownames = FALSE,
-          colnames = c("",
-                       "Comparison",
-                       "Number of RNA's"),
-          extensions = base::list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = base::list(leftColumns=1)),
-          options = base::list(
-            dom = "BRrltpi",
-            autoWidth = FALSE,
-            columnDefs = base::list(base::list(width = "150px", targets = 1)),
-            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-            ColReorder = TRUE,
-            fixedColumns = TRUE,
-            buttons =
-              base::list("copy",
-                         base::list(extend = "collection",
-                                    buttons = c("csv", "excel", "pdf"),
-                                    text = "Download"),
-                         I("colvis"))))
+    filter = "top",
+    rownames = FALSE,
+    colnames = c("Direction",
+                 "Comparison",
+                 "Number of RNA's"),
+    extensions = base::list("ColReorder" = NULL,
+                            "Buttons" = NULL,
+                            "FixedColumns" = base::list(leftColumns=1)),
+    options = list(
+      dom = "BRrltpi",
+      autoWidth = TRUE,
+      columnDefs = list(list(width = "150px", targets = 0:1)),
+      buttons =
+        list("copy",
+             list(extend = "collection",
+                  buttons = c("csv", "excel", "pdf"),
+                  text = "Download"),
+             I("colvis"))))
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -856,31 +858,33 @@ base::cat("#### miRNA's (excerpt)")
 ```
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
-summary(decideTests(mirna_excerpt_limmavoom_efit)) %>%
+summary(limma::decideTests(mirna_excerpt_limmavoom_efit)) %>%
   base::as.data.frame() %>%
-  dplyr::select(Var1, Var2, Freq) %>%
+  dplyr::select(Var1,
+                Var2,
+                Freq) %>%
+  dplyr::mutate(across(c(Var1,
+                         Var2), base::as.factor)) %>%
+  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
   DT::datatable(
-          filter = "top",
-          rownames = FALSE,
-          colnames = c("",
-                       "Comparison",
-                       "Number of RNA's"),
-          extensions = base::list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = base::list(leftColumns=1)),
-          options = base::list(
-            dom = "BRrltpi",
-            autoWidth = FALSE,
-            columnDefs = base::list(base::list(width = "150px", targets = 1)),
-            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-            ColReorder = TRUE,
-            fixedColumns = TRUE,
-            buttons =
-              base::list("copy",
-                         base::list(extend = "collection",
-                                    buttons = c("csv", "excel", "pdf"),
-                                    text = "Download"),
-                         I("colvis"))))
+    filter = "top",
+    rownames = FALSE,
+    colnames = c("Direction",
+                 "Comparison",
+                 "Number of RNA's"),
+    extensions = base::list("ColReorder" = NULL,
+                            "Buttons" = NULL,
+                            "FixedColumns" = base::list(leftColumns=1)),
+    options = list(
+      dom = "BRrltpi",
+      autoWidth = TRUE,
+      columnDefs = list(list(width = "150px", targets = 0:1)),
+      buttons =
+        list("copy",
+             list(extend = "collection",
+                  buttons = c("csv", "excel", "pdf"),
+                  text = "Download"),
+             I("colvis"))))
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -889,31 +893,33 @@ base::cat("#### piRNA's (excerpt)")
 ```
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
-summary(decideTests(pirna_excerpt_limmavoom_efit)) %>%
+summary(limma::decideTests(pirna_excerpt_limmavoom_efit)) %>%
   base::as.data.frame() %>%
-  dplyr::select(Var1, Var2, Freq) %>%
+  dplyr::select(Var1,
+                Var2,
+                Freq) %>%
+  dplyr::mutate(across(c(Var1,
+                         Var2), base::as.factor)) %>%
+  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
   DT::datatable(
-          filter = "top",
-          rownames = FALSE,
-          colnames = c("",
-                       "Comparison",
-                       "Number of RNA's"),
-          extensions = base::list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = base::list(leftColumns=1)),
-          options = base::list(
-            dom = "BRrltpi",
-            autoWidth = FALSE,
-            columnDefs = base::list(base::list(width = "150px", targets = 1)),
-            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-            ColReorder = TRUE,
-            fixedColumns = TRUE,
-            buttons =
-              base::list("copy",
-                         base::list(extend = "collection",
-                                    buttons = c("csv", "excel", "pdf"),
-                                    text = "Download"),
-                         I("colvis"))))
+    filter = "top",
+    rownames = FALSE,
+    colnames = c("Direction",
+                 "Comparison",
+                 "Number of RNA's"),
+    extensions = base::list("ColReorder" = NULL,
+                            "Buttons" = NULL,
+                            "FixedColumns" = base::list(leftColumns=1)),
+    options = list(
+      dom = "BRrltpi",
+      autoWidth = TRUE,
+      columnDefs = list(list(width = "150px", targets = 0:1)),
+      buttons =
+        list("copy",
+             list(extend = "collection",
+                  buttons = c("csv", "excel", "pdf"),
+                  text = "Download"),
+             I("colvis"))))
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -922,31 +928,33 @@ base::cat("#### tRNA's (excerpt)")
 ```
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
-summary(decideTests(trna_excerpt_limmavoom_efit)) %>%
+summary(limma::decideTests(trna_excerpt_limmavoom_efit)) %>%
   base::as.data.frame() %>%
-  dplyr::select(Var1, Var2, Freq) %>%
+  dplyr::select(Var1,
+                Var2,
+                Freq) %>%
+  dplyr::mutate(across(c(Var1,
+                         Var2), base::as.factor)) %>%
+  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
   DT::datatable(
-          filter = "top",
-          rownames = FALSE,
-          colnames = c("",
-                       "Comparison",
-                       "Number of RNA's"),
-          extensions = base::list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = base::list(leftColumns=1)),
-          options = base::list(
-            dom = "BRrltpi",
-            autoWidth = FALSE,
-            columnDefs = base::list(base::list(width = "150px", targets = 1)),
-            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-            ColReorder = TRUE,
-            fixedColumns = TRUE,
-            buttons =
-              base::list("copy",
-                         base::list(extend = "collection",
-                                    buttons = c("csv", "excel", "pdf"),
-                                    text = "Download"),
-                         I("colvis"))))
+    filter = "top",
+    rownames = FALSE,
+    colnames = c("Direction",
+                 "Comparison",
+                 "Number of RNA's"),
+    extensions = base::list("ColReorder" = NULL,
+                            "Buttons" = NULL,
+                            "FixedColumns" = base::list(leftColumns=1)),
+    options = list(
+      dom = "BRrltpi",
+      autoWidth = TRUE,
+      columnDefs = list(list(width = "150px", targets = 0:1)),
+      buttons =
+        list("copy",
+             list(extend = "collection",
+                  buttons = c("csv", "excel", "pdf"),
+                  text = "Download"),
+             I("colvis"))))
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -955,31 +963,33 @@ base::cat("#### circRNA's (excerpt)")
 ```
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
-summary(decideTests(circrna_excerpt_limmavoom_efit)) %>%
+summary(limma::decideTests(circrna_excerpt_limmavoom_efit)) %>%
   base::as.data.frame() %>%
-  dplyr::select(Var1, Var2, Freq) %>%
+  dplyr::select(Var1,
+                Var2,
+                Freq) %>%
+  dplyr::mutate(across(c(Var1,
+                         Var2), base::as.factor)) %>%
+  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
   DT::datatable(
-          filter = "top",
-          rownames = FALSE,
-          colnames = c("",
-                       "Comparison",
-                       "Number of RNA's"),
-          extensions = base::list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = base::list(leftColumns=1)),
-          options = base::list(
-            dom = "BRrltpi",
-            autoWidth = FALSE,
-            columnDefs = base::list(base::list(width = "150px", targets = 1)),
-            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-            ColReorder = TRUE,
-            fixedColumns = TRUE,
-            buttons =
-              base::list("copy",
-                         base::list(extend = "collection",
-                                    buttons = c("csv", "excel", "pdf"),
-                                    text = "Download"),
-                         I("colvis"))))
+    filter = "top",
+    rownames = FALSE,
+    colnames = c("Direction",
+                 "Comparison",
+                 "Number of RNA's"),
+    extensions = base::list("ColReorder" = NULL,
+                            "Buttons" = NULL,
+                            "FixedColumns" = base::list(leftColumns=1)),
+    options = list(
+      dom = "BRrltpi",
+      autoWidth = TRUE,
+      columnDefs = list(list(width = "150px", targets = 0:1)),
+      buttons =
+        list("copy",
+             list(extend = "collection",
+                  buttons = c("csv", "excel", "pdf"),
+                  text = "Download"),
+             I("colvis"))))
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -988,31 +998,33 @@ base::cat("#### gencode's (excerpt)")
 ```
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
-summary(decideTests(gencode_excerpt_limmavoom_efit)) %>%
+summary(limma::decideTests(gencode_excerpt_limmavoom_efit)) %>%
   base::as.data.frame() %>%
-  dplyr::select(Var1, Var2, Freq) %>%
+  dplyr::select(Var1,
+                Var2,
+                Freq) %>%
+  dplyr::mutate(across(c(Var1,
+                         Var2), base::as.factor)) %>%
+  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
   DT::datatable(
-          filter = "top",
-          rownames = FALSE,
-          colnames = c("",
-                       "Comparison",
-                       "Number of RNA's"),
-          extensions = base::list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = base::list(leftColumns=1)),
-          options = base::list(
-            dom = "BRrltpi",
-            autoWidth = FALSE,
-            columnDefs = base::list(base::list(width = "150px", targets = 1)),
-            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-            ColReorder = TRUE,
-            fixedColumns = TRUE,
-            buttons =
-              base::list("copy",
-                         base::list(extend = "collection",
-                                    buttons = c("csv", "excel", "pdf"),
-                                    text = "Download"),
-                         I("colvis"))))
+    filter = "top",
+    rownames = FALSE,
+    colnames = c("Direction",
+                 "Comparison",
+                 "Number of RNA's"),
+    extensions = base::list("ColReorder" = NULL,
+                            "Buttons" = NULL,
+                            "FixedColumns" = base::list(leftColumns=1)),
+    options = list(
+      dom = "BRrltpi",
+      autoWidth = TRUE,
+      columnDefs = list(list(width = "150px", targets = 0:1)),
+      buttons =
+        list("copy",
+             list(extend = "collection",
+                  buttons = c("csv", "excel", "pdf"),
+                  text = "Download"),
+             I("colvis"))))
 ```
 
 ### Venn diagram {.tabset .tabset-fade}
@@ -1025,13 +1037,13 @@ base::cat("#### miRNA's (smrnaseq)")
 ```
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
-mirna_smrnaseq_limmavoom_results <- decideTests(mirna_smrnaseq_limmavoom_efit)
-mfrow.old <- par()$mfrow
-vennDiagram(mirna_smrnaseq_limmavoom_results, 
-    include=c("up", "down"),
-    counts.col=c("red", "blue"),
-    circle.col = c("red", "blue", "green3"),
-    cex = 1)
+mirna_smrnaseq_limmavoom_results <- limma::decideTests(mirna_smrnaseq_limmavoom_efit)
+mfrow.old <- graphics::par()$mfrow
+limma::vennDiagram(mirna_smrnaseq_limmavoom_results, 
+                   include=c("up", "down"),
+                   counts.col=c("red", "blue"),
+                   circle.col = c("red", "blue", "green3"),
+                   cex = 1)
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -1040,13 +1052,13 @@ base::cat("#### miRNA's (excerpt)")
 ```
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
-mirna_excerpt_limmavoom_results <- decideTests(mirna_excerpt_limmavoom_efit)
-mfrow.old <- par()$mfrow
-vennDiagram(mirna_excerpt_limmavoom_results, 
-    include=c("up", "down"),
-    counts.col=c("red", "blue"),
-    circle.col = c("red", "blue", "green3"),
-    cex = 1)
+mirna_excerpt_limmavoom_results <- limma::decideTests(mirna_excerpt_limmavoom_efit)
+mfrow.old <- graphics::par()$mfrow
+limma::vennDiagram(mirna_excerpt_limmavoom_results, 
+                   include=c("up", "down"),
+                   counts.col=c("red", "blue"),
+                   circle.col = c("red", "blue", "green3"),
+                   cex = 1)
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -1055,13 +1067,13 @@ base::cat("#### piRNA's (excerpt)")
 ```
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
-pirna_excerpt_limmavoom_results <- decideTests(pirna_excerpt_limmavoom_efit)
-mfrow.old <- par()$mfrow
-vennDiagram(pirna_excerpt_limmavoom_results, 
-    include=c("up", "down"),
-    counts.col=c("red", "blue"),
-    circle.col = c("red", "blue", "green3"),
-    cex = 1)
+pirna_excerpt_limmavoom_results <- limma::decideTests(pirna_excerpt_limmavoom_efit)
+mfrow.old <- graphics::par()$mfrow
+limma::vennDiagram(pirna_excerpt_limmavoom_results, 
+                   include=c("up", "down"),
+                   counts.col=c("red", "blue"),
+                   circle.col = c("red", "blue", "green3"),
+                   cex = 1)
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -1070,13 +1082,13 @@ base::cat("#### tRNA's (excerpt)")
 ```
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
-trna_excerpt_limmavoom_results <- decideTests(trna_excerpt_limmavoom_efit)
-mfrow.old <- par()$mfrow
-vennDiagram(trna_excerpt_limmavoom_results, 
-    include=c("up", "down"),
-    counts.col=c("red", "blue"),
-    circle.col = c("red", "blue", "green3"),
-    cex = 1)
+trna_excerpt_limmavoom_results <- limma::decideTests(trna_excerpt_limmavoom_efit)
+mfrow.old <- graphics::par()$mfrow
+limma::vennDiagram(trna_excerpt_limmavoom_results, 
+                   include=c("up", "down"),
+                   counts.col=c("red", "blue"),
+                   circle.col = c("red", "blue", "green3"),
+                   cex = 1)
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -1085,13 +1097,13 @@ base::cat("#### circRNA's (excerpt)")
 ```
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
-circrna_excerpt_limmavoom_results <- decideTests(circrna_excerpt_limmavoom_efit)
-mfrow.old <- par()$mfrow
-vennDiagram(circrna_excerpt_limmavoom_results, 
-    include=c("up", "down"),
-    counts.col=c("red", "blue"),
-    circle.col = c("red", "blue", "green3"),
-    cex = 1)
+circrna_excerpt_limmavoom_results <- limma::decideTests(circrna_excerpt_limmavoom_efit)
+mfrow.old <- graphics::par()$mfrow
+limma::vennDiagram(circrna_excerpt_limmavoom_results, 
+                   include=c("up", "down"),
+                   counts.col=c("red", "blue"),
+                   circle.col = c("red", "blue", "green3"),
+                   cex = 1)
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -1100,9 +1112,9 @@ base::cat("#### gencode's (excerpt)")
 ```
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
-gencode_excerpt_limmavoom_results <- decideTests(gencode_excerpt_limmavoom_efit)
-mfrow.old <- par()$mfrow
-vennDiagram(gencode_excerpt_limmavoom_results, 
+gencode_excerpt_limmavoom_results <- limma::decideTests(gencode_excerpt_limmavoom_efit)
+mfrow.old <- graphics::par()$mfrow
+limma::vennDiagram(gencode_excerpt_limmavoom_results, 
     include=c("up", "down"),
     counts.col=c("red", "blue"),
     circle.col = c("red", "blue", "green3"),
@@ -1848,7 +1860,7 @@ diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, b
 
 *Note. only RNA's that were found to be significantly differentially expressed or have a p-value smaller than 0.1 are included in this table. Significance is based on adjusted p-values*
 
-```{r, all contrasts}
+```{r, all contrasts, out.width = "100%"}
 # make a list of all the differential expression results objects in the global environment
 diff_expr_results <- base::do.call("list", base::mget(base::grep("diff_expr_results_", base::names(.GlobalEnv), value=TRUE)))
 
@@ -1881,45 +1893,50 @@ sig_diff_expr_results <- diff_expr_results %>%
 # currently can't use because it causes and error in my downstream heatmap (see https://github.com/ropensci/plotly/issues/1853)
 
 # create datatable to explore the data
-datatable(sig_diff_expr_results %>%
-            dplyr::mutate_if(is.numeric, signif, digits = 4) %>%
-            dplyr::select(rna,
-                          rna_species,
-                          pipeline,
-                          diff_expr_method,
-                          comparison,
-                          log_fc,
-                          p_value,
-                          adj_p_value,
-                          significance) %>%
-            dplyr::mutate(across(c(rna_species, pipeline, diff_expr_method, comparison, significance), as.factor)),
-          filter = "top",
-          rownames = FALSE,
-          colnames = c("RNA",
-                       "RNA species",
-                       "Pipeline",
-                       "Differential expression method",
-                       "Comparison",
-                       "Log fold change",
-                       "p-value",
-                       "Adjusted p-value",
-                       "Significance"),
-          extensions = base::list("ColReorder" = NULL,
-                                  "Buttons" = NULL,
-                                  "FixedColumns" = base::list(leftColumns=1)),
-          options = base::list(
-            dom = "BRrltpi",
-            autoWidth = FALSE,
-            columnDefs = base::list(base::list(width = "150px", targets = 1)),
-            lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-            ColReorder = TRUE,
-            fixedColumns = TRUE,
-            buttons =
-              base::list("copy",
-                         base::list(extend = "collection",
-                                    buttons = c("csv", "excel", "pdf"),
-                                    text = "Download"),
-                         I("colvis"))))
+DT::datatable(sig_diff_expr_results %>%
+                dplyr::select(rna,
+                              rna_species,
+                              pipeline,
+                              diff_expr_method,
+                              comparison,
+                              log_fc,
+                              p_value,
+                              adj_p_value,
+                              significance) %>%
+                dplyr::mutate(across(c(rna_species,
+                                       pipeline,
+                                       diff_expr_method,
+                                       comparison,
+                                       significance), base::as.factor)) %>%
+                dplyr::mutate(across(c(log_fc,
+                                       p_value,
+                                       adj_p_value), base::as.double)) %>%
+                dplyr::mutate(across(c(p_value,
+                                       adj_p_value), ~base::round(.x, digits = 6))) %>%
+                dplyr::mutate(across(c(log_fc), ~base::round(.x, digits = 4))),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("RNA",
+                           "RNA species",
+                           "Pipeline",
+                           "Differential expression method",
+                           "Comparison",
+                           "Log fold change",
+                           "p-value",
+                           "Adjusted p-value",
+                           "Significance"),
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r}
