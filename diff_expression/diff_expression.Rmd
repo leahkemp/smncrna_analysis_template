@@ -26,6 +26,10 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 mkdir -p diff_expr_results/
 ```
 
+## Info
+
+General info:
+
 - Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
 
 ```{r, data_prep, results = "hide"}
@@ -194,11 +198,27 @@ count_datasets <- base::lapply(count_datasets, function(x) {
 })
 ```
 
-## Comparisons
+Treatment comparisons: 
 
 ```{r, results = "asis"}
 # print the treatment group comparisons the user has chosen to analyse
-base::cat(base::paste0(" - ", config$contrasts, "\n"))
+base::cat(base::paste0("- ", config$contrasts, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
 ```
 
 ## limma/voom

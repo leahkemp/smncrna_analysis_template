@@ -83,6 +83,22 @@ base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
                        " - gencode excerpt: ", config$gencode_excerpt, "\n"))
 ```
 
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
 ## MDS {.tabset .tabset-fade}
 
 ```{r, results = "asis"}

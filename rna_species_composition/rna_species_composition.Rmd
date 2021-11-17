@@ -18,7 +18,9 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 
 ## Info
 
-- **The pie charts present only the RNA's the user has chosen to analyse and have been identified by the pipelines, rather than all the RNA's present in the samples**
+General info:
+
+- **The pie charts present only the RNA's from the datasets the user has chosen to analyse and RNA's that have been identified by the pipelines, rather than all the RNA's possibly present in the samples**
 - *The total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group*
 - *Values have been rounded*
 
@@ -34,6 +36,9 @@ counts <- utils::read.csv("../prepare_counts/counts.csv")
 
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
 ```
 
 Datasets analysed:
@@ -48,13 +53,27 @@ base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
                        " - gencode excerpt: ", config$gencode_excerpt, "\n"))
 ```
 
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
 ## RNA species composition {.tabset .tabset-fade}
 
 ### By treatment groups {.tabset .tabset-fade}
 
 ```{r}
-# read in metadata
-metadata <- utils::read.csv(file.path(config$metadata))
 
 # get the total RNA counts by RNA species, sample and pipeline (collapse individual RNAs)
 data <- counts %>%

@@ -18,6 +18,8 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 
 ## Info
 
+General info:
+
 - *Colour ranges are relative within each RNA species*
 - *Only the RNA's that were found to be significantly differentially expressed by at least one differential expression method are plotted here*
 
@@ -230,6 +232,29 @@ base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
                        " - trna excerpt: ", config$trna_excerpt, "\n",
                        " - circrna excerpt: ", config$circrna_excerpt, "\n",
                        " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+Treatment comparisons: 
+
+```{r, results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("- ", config$contrasts, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
 ```
 
 ## Heatmap {.tabset .tabset-fade}
