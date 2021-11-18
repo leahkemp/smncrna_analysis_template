@@ -66,6 +66,9 @@ min_total_count: 15
 # typical values for lfc are log2(1.1), log2(1.2) or log2(1.5)
 min_lfc: "log2(1.1)"
 
+# p-value cutoff to consider an RNA significantly differentially expressed
+pvalue_cutoff: 0.2
+
 #################################################
 #####       EXPRESSION PLOTTING APP        ######
 #################################################

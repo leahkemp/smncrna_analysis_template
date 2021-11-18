@@ -151,6 +151,9 @@ mapping_rates_data$sample <- base::gsub('(_*)_\\w+', '', mapping_rates_data$samp
 mapping_rates_data <- mapping_rates_data %>%
   tidyr::drop_na()
 
+# evalutate/setup minimum logFC threshold
+min_logfc <- base::eval(base::parse(text = config$min_lfc))
+
 # set up a flag for when the sequencing read counts for a sample is low (defined by the user in the config file)
 low_read_count_flag <- mapping_rates_data %>%
   dplyr::filter(raw_read_count_fastq_file < config$low_sequencing_read_count) %>%
@@ -815,312 +818,6 @@ data %>%
                  yaxis = base::list(title = "sqrt(sigma)"))
 ```
 
-### Summary results {.tabset .tabset-fade}
-
-```{r, eval = config$mirna_smrnaseq, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### miRNA's (smrnaseq)")
-```
-
-```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
-summary(limma::decideTests(mirna_smrnaseq_limmavoom_efit)) %>%
-  base::as.data.frame() %>%
-  dplyr::select(Var1,
-                Var2,
-                Freq) %>%
-  dplyr::mutate(across(c(Var1,
-                         Var2), base::as.factor)) %>%
-  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
-  DT::datatable(
-    filter = "top",
-    rownames = FALSE,
-    colnames = c("Direction",
-                 "Comparison",
-                 "Number of RNA's"),
-    extensions = base::list("ColReorder" = NULL,
-                            "Buttons" = NULL,
-                            "FixedColumns" = base::list(leftColumns=1)),
-    options = list(
-      dom = "BRrltpi",
-      autoWidth = TRUE,
-      columnDefs = list(list(width = "150px", targets = 0:1)),
-      buttons =
-        list("copy",
-             list(extend = "collection",
-                  buttons = c("csv", "excel", "pdf"),
-                  text = "Download"),
-             I("colvis"))))
-```
-
-```{r, eval = config$mirna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### miRNA's (excerpt)")
-```
-
-```{r, eval = config$mirna_excerpt, out.width = "100%"}
-summary(limma::decideTests(mirna_excerpt_limmavoom_efit)) %>%
-  base::as.data.frame() %>%
-  dplyr::select(Var1,
-                Var2,
-                Freq) %>%
-  dplyr::mutate(across(c(Var1,
-                         Var2), base::as.factor)) %>%
-  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
-  DT::datatable(
-    filter = "top",
-    rownames = FALSE,
-    colnames = c("Direction",
-                 "Comparison",
-                 "Number of RNA's"),
-    extensions = base::list("ColReorder" = NULL,
-                            "Buttons" = NULL,
-                            "FixedColumns" = base::list(leftColumns=1)),
-    options = list(
-      dom = "BRrltpi",
-      autoWidth = TRUE,
-      columnDefs = list(list(width = "150px", targets = 0:1)),
-      buttons =
-        list("copy",
-             list(extend = "collection",
-                  buttons = c("csv", "excel", "pdf"),
-                  text = "Download"),
-             I("colvis"))))
-```
-
-```{r, eval = config$pirna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### piRNA's (excerpt)")
-```
-
-```{r, eval = config$pirna_excerpt, out.width = "100%"}
-summary(limma::decideTests(pirna_excerpt_limmavoom_efit)) %>%
-  base::as.data.frame() %>%
-  dplyr::select(Var1,
-                Var2,
-                Freq) %>%
-  dplyr::mutate(across(c(Var1,
-                         Var2), base::as.factor)) %>%
-  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
-  DT::datatable(
-    filter = "top",
-    rownames = FALSE,
-    colnames = c("Direction",
-                 "Comparison",
-                 "Number of RNA's"),
-    extensions = base::list("ColReorder" = NULL,
-                            "Buttons" = NULL,
-                            "FixedColumns" = base::list(leftColumns=1)),
-    options = list(
-      dom = "BRrltpi",
-      autoWidth = TRUE,
-      columnDefs = list(list(width = "150px", targets = 0:1)),
-      buttons =
-        list("copy",
-             list(extend = "collection",
-                  buttons = c("csv", "excel", "pdf"),
-                  text = "Download"),
-             I("colvis"))))
-```
-
-```{r, eval = config$trna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### tRNA's (excerpt)")
-```
-
-```{r, eval = config$trna_excerpt, out.width = "100%"}
-summary(limma::decideTests(trna_excerpt_limmavoom_efit)) %>%
-  base::as.data.frame() %>%
-  dplyr::select(Var1,
-                Var2,
-                Freq) %>%
-  dplyr::mutate(across(c(Var1,
-                         Var2), base::as.factor)) %>%
-  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
-  DT::datatable(
-    filter = "top",
-    rownames = FALSE,
-    colnames = c("Direction",
-                 "Comparison",
-                 "Number of RNA's"),
-    extensions = base::list("ColReorder" = NULL,
-                            "Buttons" = NULL,
-                            "FixedColumns" = base::list(leftColumns=1)),
-    options = list(
-      dom = "BRrltpi",
-      autoWidth = TRUE,
-      columnDefs = list(list(width = "150px", targets = 0:1)),
-      buttons =
-        list("copy",
-             list(extend = "collection",
-                  buttons = c("csv", "excel", "pdf"),
-                  text = "Download"),
-             I("colvis"))))
-```
-
-```{r, eval = config$circrna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### circRNA's (excerpt)")
-```
-
-```{r, eval = config$circrna_excerpt, out.width = "100%"}
-summary(limma::decideTests(circrna_excerpt_limmavoom_efit)) %>%
-  base::as.data.frame() %>%
-  dplyr::select(Var1,
-                Var2,
-                Freq) %>%
-  dplyr::mutate(across(c(Var1,
-                         Var2), base::as.factor)) %>%
-  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
-  DT::datatable(
-    filter = "top",
-    rownames = FALSE,
-    colnames = c("Direction",
-                 "Comparison",
-                 "Number of RNA's"),
-    extensions = base::list("ColReorder" = NULL,
-                            "Buttons" = NULL,
-                            "FixedColumns" = base::list(leftColumns=1)),
-    options = list(
-      dom = "BRrltpi",
-      autoWidth = TRUE,
-      columnDefs = list(list(width = "150px", targets = 0:1)),
-      buttons =
-        list("copy",
-             list(extend = "collection",
-                  buttons = c("csv", "excel", "pdf"),
-                  text = "Download"),
-             I("colvis"))))
-```
-
-```{r, eval = config$gencode_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### gencode's (excerpt)")
-```
-
-```{r, eval = config$gencode_excerpt, out.width = "100%"}
-summary(limma::decideTests(gencode_excerpt_limmavoom_efit)) %>%
-  base::as.data.frame() %>%
-  dplyr::select(Var1,
-                Var2,
-                Freq) %>%
-  dplyr::mutate(across(c(Var1,
-                         Var2), base::as.factor)) %>%
-  dplyr::mutate(across(c(Freq), base::as.integer)) %>%
-  DT::datatable(
-    filter = "top",
-    rownames = FALSE,
-    colnames = c("Direction",
-                 "Comparison",
-                 "Number of RNA's"),
-    extensions = base::list("ColReorder" = NULL,
-                            "Buttons" = NULL,
-                            "FixedColumns" = base::list(leftColumns=1)),
-    options = list(
-      dom = "BRrltpi",
-      autoWidth = TRUE,
-      columnDefs = list(list(width = "150px", targets = 0:1)),
-      buttons =
-        list("copy",
-             list(extend = "collection",
-                  buttons = c("csv", "excel", "pdf"),
-                  text = "Download"),
-             I("colvis"))))
-```
-
-### Venn diagram {.tabset .tabset-fade}
-
-Overlap of differentially expressed RNA's between comparisons
-
-```{r, eval = config$mirna_smrnaseq, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### miRNA's (smrnaseq)")
-```
-
-```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
-mirna_smrnaseq_limmavoom_results <- limma::decideTests(mirna_smrnaseq_limmavoom_efit)
-mfrow.old <- graphics::par()$mfrow
-limma::vennDiagram(mirna_smrnaseq_limmavoom_results, 
-                   include=c("up", "down"),
-                   counts.col=c("red", "blue"),
-                   circle.col = c("red", "blue", "green3"),
-                   cex = 1)
-```
-
-```{r, eval = config$mirna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### miRNA's (excerpt)")
-```
-
-```{r, eval = config$mirna_excerpt, out.width = "100%"}
-mirna_excerpt_limmavoom_results <- limma::decideTests(mirna_excerpt_limmavoom_efit)
-mfrow.old <- graphics::par()$mfrow
-limma::vennDiagram(mirna_excerpt_limmavoom_results, 
-                   include=c("up", "down"),
-                   counts.col=c("red", "blue"),
-                   circle.col = c("red", "blue", "green3"),
-                   cex = 1)
-```
-
-```{r, eval = config$pirna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### piRNA's (excerpt)")
-```
-
-```{r, eval = config$pirna_excerpt, out.width = "100%"}
-pirna_excerpt_limmavoom_results <- limma::decideTests(pirna_excerpt_limmavoom_efit)
-mfrow.old <- graphics::par()$mfrow
-limma::vennDiagram(pirna_excerpt_limmavoom_results, 
-                   include=c("up", "down"),
-                   counts.col=c("red", "blue"),
-                   circle.col = c("red", "blue", "green3"),
-                   cex = 1)
-```
-
-```{r, eval = config$trna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### tRNA's (excerpt)")
-```
-
-```{r, eval = config$trna_excerpt, out.width = "100%"}
-trna_excerpt_limmavoom_results <- limma::decideTests(trna_excerpt_limmavoom_efit)
-mfrow.old <- graphics::par()$mfrow
-limma::vennDiagram(trna_excerpt_limmavoom_results, 
-                   include=c("up", "down"),
-                   counts.col=c("red", "blue"),
-                   circle.col = c("red", "blue", "green3"),
-                   cex = 1)
-```
-
-```{r, eval = config$circrna_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### circRNA's (excerpt)")
-```
-
-```{r, eval = config$circrna_excerpt, out.width = "100%"}
-circrna_excerpt_limmavoom_results <- limma::decideTests(circrna_excerpt_limmavoom_efit)
-mfrow.old <- graphics::par()$mfrow
-limma::vennDiagram(circrna_excerpt_limmavoom_results, 
-                   include=c("up", "down"),
-                   counts.col=c("red", "blue"),
-                   circle.col = c("red", "blue", "green3"),
-                   cex = 1)
-```
-
-```{r, eval = config$gencode_excerpt, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat("#### gencode's (excerpt)")
-```
-
-```{r, eval = config$gencode_excerpt, out.width = "100%"}
-gencode_excerpt_limmavoom_results <- limma::decideTests(gencode_excerpt_limmavoom_efit)
-mfrow.old <- graphics::par()$mfrow
-limma::vennDiagram(gencode_excerpt_limmavoom_results, 
-    include=c("up", "down"),
-    counts.col=c("red", "blue"),
-    circle.col = c("red", "blue", "green3"),
-    cex = 1)
-```
-
 ## DESeq2
 
 ```{r, deseq, results = "hide"}
@@ -1146,7 +843,9 @@ deseq <- base::lapply(count_datasets, function(x) {
 deseq_results_1 <- base::lapply(deseq, function(x) {
   
   x %>%
-    DESeq2::results(contrast=c("treatment", base::sub(" - .*", "", config$contrasts[1]), base::sub(".* - ", "", config$contrasts[1])))
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[1]), base::sub(".* - ", "", config$contrasts[1])),
+                    lfcThreshold = min_logfc,
+                    alpha = config$pvalue_cutoff)
   
 })
 ```
@@ -1157,7 +856,9 @@ deseq_results_1 <- base::lapply(deseq, function(x) {
 deseq_results_2 <- base::lapply(deseq, function(x) {
   
   x %>%
-    DESeq2::results(contrast=c("treatment", base::sub(" - .*", "", config$contrasts[2]), base::sub(".* - ", "", config$contrasts[2])))
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[2]), base::sub(".* - ", "", config$contrasts[2])),
+                    lfcThreshold = min_logfc,
+                    alpha = config$pvalue_cutoff)
   
 })
 ```
@@ -1168,7 +869,9 @@ deseq_results_2 <- base::lapply(deseq, function(x) {
 deseq_results_3 <- base::lapply(deseq, function(x) {
   
   x %>%
-    DESeq2::results(contrast=c("treatment", base::sub(" - .*", "", config$contrasts[3]), base::sub(".* - ", "", config$contrasts[3])))
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[3]), base::sub(".* - ", "", config$contrasts[3])),
+                    lfcThreshold = min_logfc,
+                    alpha = config$pvalue_cutoff)
   
 })
 ```
@@ -1179,7 +882,9 @@ deseq_results_3 <- base::lapply(deseq, function(x) {
 deseq_results_4 <- base::lapply(deseq, function(x) {
   
   x %>%
-    DESeq2::results(contrast=c("treatment", base::sub(" - .*", "", config$contrasts[4]), base::sub(".* - ", "", config$contrasts[4])))
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[4]), base::sub(".* - ", "", config$contrasts[4])),
+                    lfcThreshold = min_logfc,
+                    alpha = config$pvalue_cutoff)
   
 })
 ```
@@ -1190,7 +895,9 @@ deseq_results_4 <- base::lapply(deseq, function(x) {
 deseq_results_5 <- base::lapply(deseq, function(x) {
   
   x %>%
-    DESeq2::results(contrast=c("treatment", base::sub(" - .*", "", config$contrasts[5]), base::sub(".* - ", "", config$contrasts[5])))
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[5]), base::sub(".* - ", "", config$contrasts[5])),
+                    lfcThreshold = min_logfc,
+                    alpha = config$pvalue_cutoff)
   
 })
 ```
@@ -1201,7 +908,9 @@ deseq_results_5 <- base::lapply(deseq, function(x) {
 deseq_results_6 <- base::lapply(deseq, function(x) {
   
   x %>%
-    DESeq2::results(contrast=c("treatment", base::sub(" - .*", "", config$contrasts[6]), base::sub(".* - ", "", config$contrasts[6])))
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[6]), base::sub(".* - ", "", config$contrasts[6])),
+                    lfcThreshold = min_logfc,
+                    alpha = config$pvalue_cutoff)
   
 })
 ```
@@ -1341,7 +1050,8 @@ base::cat("#### miRNA's (smrnaseq)")
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
 # plot
-DESeq2::plotMA(deseq_results_1$mirna_smrnaseq)
+DESeq2::plotMA(deseq_results_1$mirna_smrnaseq,
+               alpha = config$pvalue_cutoff)
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -1351,7 +1061,8 @@ base::cat("#### miRNA's (excerpt)")
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # plot
-DESeq2::plotMA(deseq_results_1$mirna_excerpt)
+DESeq2::plotMA(deseq_results_1$mirna_excerpt,
+               alpha = config$pvalue_cutoff)
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -1361,7 +1072,8 @@ base::cat("#### piRNA's (excerpt)")
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # plot
-DESeq2::plotMA(deseq_results_1$pirna_excerpt)
+DESeq2::plotMA(deseq_results_1$pirna_excerpt,
+               alpha = config$pvalue_cutoff)
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -1371,7 +1083,8 @@ base::cat("#### tRNA's (excerpt)")
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
 # plot
-DESeq2::plotMA(deseq_results_1$trna_excerpt)
+DESeq2::plotMA(deseq_results_1$trna_excerpt,
+               alpha = config$pvalue_cutoff)
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -1381,7 +1094,8 @@ base::cat("#### circRNA's (excerpt)")
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # plot
-DESeq2::plotMA(deseq_results_1$circrna_excerpt)
+DESeq2::plotMA(deseq_results_1$circrna_excerpt,
+               alpha = config$pvalue_cutoff)
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -1391,21 +1105,27 @@ base::cat("#### gencodes (excerpt)")
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # plot
-DESeq2::plotMA(deseq_results_1$gencode_excerpt)
+DESeq2::plotMA(deseq_results_1$gencode_excerpt,
+               alpha = config$pvalue_cutoff)
 ```
 
 ## All differential expression results
 
-```{r, eval = contrasts[1]}
+```{r}
 # make a list of all the efit objects in the global environment
 efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
+```
 
+```{r, eval = contrasts[1]}
 # extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
 limma_voom_results_1 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
-    limma::topTreat(coef=1, n=Inf) %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 1,
+                    n = Inf,
+                    p.value = config$pvalue_cutoff,
+                    adjust.method = "BH") %>%
     tibble::rownames_to_column("rna")
   
 })
@@ -1435,15 +1155,15 @@ limma_voom_results_1 <- limma_voom_results_1 %>%
 ```
 
 ```{r, eval = contrasts[2]}
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+# extract the results of the limma/voom differential expression analysis (second contrast) (loop over all efit datasets)
 limma_voom_results_2 <- base::lapply(efit, function(x) {
   
-  x %>%
-    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
-    limma::topTreat(coef=2, n=Inf) %>%
+  mirna_excerpt_limmavoom_efit %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 2,
+                    n = Inf,
+                    p.value = config$pvalue_cutoff,
+                    adjust.method = "BH") %>%
     tibble::rownames_to_column("rna")
   
 })
@@ -1473,15 +1193,15 @@ limma_voom_results_2 <- limma_voom_results_2 %>%
 ```
 
 ```{r, eval = contrasts[3]}
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+# extract the results of the limma/voom differential expression analysis (third contrast) (loop over all efit datasets)
 limma_voom_results_3 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
-    limma::topTreat(coef=3, n=Inf) %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 3,
+                    n = Inf,
+                    p.value = config$pvalue_cutoff,
+                    adjust.method = "BH") %>%
     tibble::rownames_to_column("rna")
   
 })
@@ -1511,15 +1231,15 @@ limma_voom_results_3 <- limma_voom_results_3 %>%
 ```
 
 ```{r, eval = contrasts[4]}
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+# extract the results of the limma/voom differential expression analysis (fourth contrast) (loop over all efit datasets)
 limma_voom_results_4 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
-    limma::topTreat(coef=4, n=Inf) %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 4,
+                    n = Inf,
+                    p.value = config$pvalue_cutoff,
+                    adjust.method = "BH") %>%
     tibble::rownames_to_column("rna")
   
 })
@@ -1552,12 +1272,15 @@ limma_voom_results_4 <- limma_voom_results_4 %>%
 # make a list of all the efit objects in the global environment
 efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
 
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+# extract the results of the limma/voom differential expression analysis (fifth contrast) (loop over all efit datasets)
 limma_voom_results_5 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
-    limma::topTreat(coef=5, n=Inf) %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 5,
+                    n = Inf,
+                    p.value = config$pvalue_cutoff,
+                    adjust.method = "BH") %>%
     tibble::rownames_to_column("rna")
   
 })
@@ -1587,15 +1310,15 @@ limma_voom_results_5 <- limma_voom_results_5 %>%
 ```
 
 ```{r, eval = contrasts[6]}
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
-# extract the results of the limma/voom differential expression analysis (first contrast) (loop over all efit datasets)
+# extract the results of the limma/voom differential expression analysis (sixth contrast) (loop over all efit datasets)
 limma_voom_results_6 <- base::lapply(efit, function(x) {
   
   x %>%
-    limma::treat(lfc=base::eval(base::parse(text = config$min_lfc))) %>%
-    limma::topTreat(coef=6, n=Inf) %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 6,
+                    n = Inf,
+                    p.value = config$pvalue_cutoff,
+                    adjust.method = "BH") %>%
     tibble::rownames_to_column("rna")
   
 })
@@ -1634,11 +1357,27 @@ deseq_results_1 <- base::lapply(deseq_results_1, function(x) {
   
 })
 
+# get the significant RNA's (that meet a logfc and p-value threshold)...
+# ...for positive logFC
+deseq_positive_1 <- base::lapply(deseq_results_1, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange > min_logfc), ]
+  
+})
+
+# ...for negative logFC
+deseq_negative_1 <- base::lapply(deseq_results_1, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange < base::paste0("-", min_logfc)), ]
+  
+})
+
 # collapse the list of dataframes into one
-deseq_results_1 <- base::do.call(rbind, deseq_results_1)
+deseq_positive_1 <- base::do.call(rbind, deseq_positive_1)
+deseq_negative_1 <- base::do.call(rbind, deseq_negative_1)
 
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-deseq_results_1 <- deseq_results_1 %>%
+deseq_negative_1 <- deseq_negative_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
@@ -1647,11 +1386,23 @@ deseq_results_1 <- deseq_results_1 %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
+deseq_positive_1 <- deseq_positive_1 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# bind negative and positive logFC results together
+deseq_results_1 <- rbind(deseq_negative_1, deseq_positive_1)
+
 # select only some columns we're interested in
 deseq_results_1 <- deseq_results_1 %>%
   dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-# rename adjusted p-value column before join
+# rename columns before join
 deseq_results_1 <- deseq_results_1 %>%
   dplyr::rename(p_value = pvalue) %>%
   dplyr::rename(adj_p_value = padj) %>%
@@ -1668,24 +1419,52 @@ deseq_results_2 <- base::lapply(deseq_results_2, function(x) {
   
 })
 
+# get the significant RNA's (that meet a logfc and p-value threshold)...
+# ...for positive logFC
+deseq_positive_2 <- base::lapply(deseq_results_2, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange > min_logfc), ]
+  
+})
+
+# ...for negative logFC
+deseq_negative_2 <- base::lapply(deseq_results_2, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange < base::paste0("-", min_logfc)), ]
+  
+})
+
 # collapse the list of dataframes into one
-deseq_results_2 <- base::do.call(rbind, deseq_results_2)
+deseq_positive_2 <- base::do.call(rbind, deseq_positive_2)
+deseq_negative_2 <- base::do.call(rbind, deseq_negative_2)
 
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-deseq_results_2 <- deseq_results_2 %>%
+deseq_negative_2 <- deseq_negative_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[2]) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
+
+deseq_positive_2 <- deseq_positive_2 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# bind negative and positive logFC results together
+deseq_results_2 <- rbind(deseq_negative_2, deseq_positive_2)
 
 # select only some columns we're interested in
 deseq_results_2 <- deseq_results_2 %>%
   dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-# rename adjusted p-value column before join
+# rename columns before join
 deseq_results_2 <- deseq_results_2 %>%
   dplyr::rename(p_value = pvalue) %>%
   dplyr::rename(adj_p_value = padj) %>%
@@ -1702,24 +1481,52 @@ deseq_results_3 <- base::lapply(deseq_results_3, function(x) {
   
 })
 
+# get the significant RNA's (that meet a logfc and p-value threshold)...
+# ...for positive logFC
+deseq_positive_3 <- base::lapply(deseq_results_3, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange > min_logfc), ]
+  
+})
+
+# ...for negative logFC
+deseq_negative_3 <- base::lapply(deseq_results_3, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange < base::paste0("-", min_logfc)), ]
+  
+})
+
 # collapse the list of dataframes into one
-deseq_results_3 <- base::do.call(rbind, deseq_results_3)
+deseq_positive_3 <- base::do.call(rbind, deseq_positive_3)
+deseq_negative_3 <- base::do.call(rbind, deseq_negative_3)
 
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-deseq_results_3 <- deseq_results_3 %>%
+deseq_negative_3 <- deseq_negative_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[3]) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
+
+deseq_positive_3 <- deseq_positive_3 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# bind negative and positive logFC results together
+deseq_results_3 <- rbind(deseq_negative_3, deseq_positive_3)
 
 # select only some columns we're interested in
 deseq_results_3 <- deseq_results_3 %>%
   dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-# rename adjusted p-value column before join
+# rename columns before join
 deseq_results_3 <- deseq_results_3 %>%
   dplyr::rename(p_value = pvalue) %>%
   dplyr::rename(adj_p_value = padj) %>%
@@ -1736,24 +1543,52 @@ deseq_results_4 <- base::lapply(deseq_results_4, function(x) {
   
 })
 
+# get the significant RNA's (that meet a logfc and p-value threshold)...
+# ...for positive logFC
+deseq_positive_4 <- base::lapply(deseq_results_4, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange > min_logfc), ]
+  
+})
+
+# ...for negative logFC
+deseq_negative_4 <- base::lapply(deseq_results_4, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange < base::paste0("-", min_logfc)), ]
+  
+})
+
 # collapse the list of dataframes into one
-deseq_results_4 <- base::do.call(rbind, deseq_results_4)
+deseq_positive_4 <- base::do.call(rbind, deseq_positive_4)
+deseq_negative_4 <- base::do.call(rbind, deseq_negative_4)
 
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-deseq_results_4 <- deseq_results_4 %>%
+deseq_negative_4 <- deseq_negative_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
+
+deseq_positive_4 <- deseq_positive_4 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# bind negative and positive logFC results together
+deseq_results_4 <- rbind(deseq_negative_4, deseq_positive_4)
 
 # select only some columns we're interested in
 deseq_results_4 <- deseq_results_4 %>%
   dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-# rename adjusted p-value column before join
+# rename columns before join
 deseq_results_4 <- deseq_results_4 %>%
   dplyr::rename(p_value = pvalue) %>%
   dplyr::rename(adj_p_value = padj) %>%
@@ -1770,24 +1605,52 @@ deseq_results_5 <- base::lapply(deseq_results_5, function(x) {
   
 })
 
+# get the significant RNA's (that meet a logfc and p-value threshold)...
+# ...for positive logFC
+deseq_positive_5 <- base::lapply(deseq_results_5, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange > min_logfc), ]
+  
+})
+
+# ...for negative logFC
+deseq_negative_5 <- base::lapply(deseq_results_5, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange < base::paste0("-", min_logfc)), ]
+  
+})
+
 # collapse the list of dataframes into one
-deseq_results_5 <- base::do.call(rbind, deseq_results_5)
+deseq_positive_5 <- base::do.call(rbind, deseq_positive_5)
+deseq_negative_5 <- base::do.call(rbind, deseq_negative_5)
 
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-deseq_results_5 <- deseq_results_5 %>%
+deseq_negative_5 <- deseq_negative_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[5]) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
+
+deseq_positive_5 <- deseq_positive_5 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# bind negative and positive logFC results together
+deseq_results_5 <- rbind(deseq_negative_5, deseq_positive_5)
 
 # select only some columns we're interested in
 deseq_results_5 <- deseq_results_5 %>%
   dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-# rename adjusted p-value column before join
+# rename columns before join
 deseq_results_5 <- deseq_results_5 %>%
   dplyr::rename(p_value = pvalue) %>%
   dplyr::rename(adj_p_value = padj) %>%
@@ -1804,24 +1667,52 @@ deseq_results_6 <- base::lapply(deseq_results_6, function(x) {
   
 })
 
+# get the significant RNA's (that meet a logfc and p-value threshold)...
+# ...for positive logFC
+deseq_positive_6 <- base::lapply(deseq_results_6, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange > min_logfc), ]
+  
+})
+
+# ...for negative logFC
+deseq_negative_6 <- base::lapply(deseq_results_6, function(x) {
+  
+  x[ which(x$padj < config$pvalue_cutoff & x$log2FoldChange < base::paste0("-", min_logfc)), ]
+  
+})
+
 # collapse the list of dataframes into one
-deseq_results_6 <- base::do.call(rbind, deseq_results_6)
+deseq_positive_6 <- base::do.call(rbind, deseq_positive_6)
+deseq_negative_6 <- base::do.call(rbind, deseq_negative_6)
 
 # define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
-deseq_results_6 <- deseq_results_6 %>%
+deseq_negative_6 <- deseq_negative_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
   dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[6]) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
+
+deseq_positive_6 <- deseq_positive_6 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
+  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# bind negative and positive logFC results together
+deseq_results_6 <- rbind(deseq_negative_6, deseq_positive_6)
 
 # select only some columns we're interested in
 deseq_results_6 <- deseq_results_6 %>%
   dplyr::select(rna, pvalue, padj, log2FoldChange, rna_species, pipeline, comparison, diff_expr_method)
 
-# rename adjusted p-value column before join
+# rename columns before join
 deseq_results_6 <- deseq_results_6 %>%
   dplyr::rename(p_value = pvalue) %>%
   dplyr::rename(adj_p_value = padj) %>%
@@ -1858,7 +1749,7 @@ diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5, b
 diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
 ```
 
-*Note. only RNA's that were found to be significantly differentially expressed or have a p-value smaller than 0.1 are included in this table. Significance is based on adjusted p-values*
+*Note. only RNA's that were found to be significantly differentially expressed are included in this table*
 
 ```{r, all contrasts, out.width = "100%"}
 # make a list of all the differential expression results objects in the global environment
@@ -1875,25 +1766,13 @@ diff_expr_results  <- base::do.call(rbind, diff_expr_results)
 # This data will be used as a "flag" (using highlighting) in the downstream app to indicate a possibly
 # significantly differentiated RNA the user of the app might want to investigate
 diff_expr_results <- diff_expr_results %>%
-  dplyr::mutate(significance = dplyr::case_when(adj_p_value > 0.10 ~ "not_significant",
-                                  (adj_p_value > 0.05) & (adj_p_value <= 0.10) ~ "significant_10%",
-                                  (adj_p_value > 0.01) & (adj_p_value <= 0.05) ~ "significant_5%",
-                                  (adj_p_value <= 0.01) ~ "significant_1%"))
-
-# then replace any NA's with "not_significant"
-diff_expr_results <- diff_expr_results %>%
-  dplyr::mutate_at(vars(significance), ~replace(., is.na(.), "not_significant"))
-
-# get only the significant RNA's
-sig_diff_expr_results <- diff_expr_results %>%
-  dplyr::filter(significance != "not_significant" | p_value <= 0.10)
-
-# add NA when empty cell (and still allow filtering on number ranges)
-# options(htmlwidgets.TOJSON_ARGS = list(na = "string"))
-# currently can't use because it causes and error in my downstream heatmap (see https://github.com/ropensci/plotly/issues/1853)
+  dplyr::mutate(significance = dplyr::case_when(adj_p_value > 0.10 ~ "greater_than_10%",
+                                                (adj_p_value > 0.05) & (adj_p_value <= 0.10) ~ "significant_10%",
+                                                (adj_p_value > 0.01) & (adj_p_value <= 0.05) ~ "significant_5%",
+                                                (adj_p_value <= 0.01) ~ "significant_1%"))
 
 # create datatable to explore the data
-DT::datatable(sig_diff_expr_results %>%
+DT::datatable(diff_expr_results %>%
                 dplyr::select(rna,
                               rna_species,
                               pipeline,
