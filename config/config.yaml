@@ -67,7 +67,7 @@ min_total_count: 15
 min_lfc: "log2(1.1)"
 
 # p-value cutoff to consider an RNA significantly differentially expressed
-pvalue_cutoff: 0.2
+pvalue_cutoff: 0.1
 
 #################################################
 #####       EXPRESSION PLOTTING APP        ######
