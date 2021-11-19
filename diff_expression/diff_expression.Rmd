@@ -306,8 +306,8 @@ plotSA_interactive <- function(data) {
     plotly::plot_ly(x = ~x,
                     y = ~y,
                     hoverinfo = "text",
-                    text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
-                                         "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
+                    text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 3),
+                                         "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 4),
                                          "</br> RNA:", rna)) %>%
     plotly::layout(shapes = base::list(hline(h))) %>%
     plotly::layout(xaxis = base::list(title = "Average log expression"),
