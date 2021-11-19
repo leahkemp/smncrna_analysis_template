@@ -113,6 +113,60 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
   # replace "." with "-" so RNA names are the same
 base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
 
+# create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
+to_eval_chunk <- config[c("mirna_smrnaseq",
+                          "mirna_excerpt",
+                          "pirna_excerpt",
+                          "trna_excerpt",
+                          "circrna_excerpt",
+                          "gencode_excerpt")] %>%
+  rep(times = 6)
+
+names(to_eval_chunk)[1:6] <- paste(names(to_eval_chunk)[1:6], "1", sep = "_")
+names(to_eval_chunk)[7:12] <- paste(names(to_eval_chunk)[7:12], "2", sep = "_")
+names(to_eval_chunk)[13:18] <- paste(names(to_eval_chunk)[13:18], "3", sep = "_")
+names(to_eval_chunk)[19:24] <- paste(names(to_eval_chunk)[19:24], "4", sep = "_")
+names(to_eval_chunk)[25:30] <- paste(names(to_eval_chunk)[25:30], "5", sep = "_")
+names(to_eval_chunk)[31:36] <- paste(names(to_eval_chunk)[31:36], "6", sep = "_")
+
+n_contrasts <- length(config$contrasts)
+
+to_eval_chunk <- if(n_contrasts == 1) {
+  replace(to_eval_chunk, 7:36, FALSE)
+} else if(n_contrasts == 2) {
+  replace(to_eval_chunk, 13:36, FALSE)
+} else if(n_contrasts == 3) {
+  replace(to_eval_chunk, 19:36, FALSE)
+} else if(n_contrasts == 4) {
+  replace(to_eval_chunk, 25:36, FALSE)
+} else if(n_contrasts == 5) {
+  replace(to_eval_chunk, 31:36, FALSE)
+} else if(n_contrasts == 6) {
+  to_eval_chunk
+}
+
+# create a list defining which code chunks to analyse (based on the number of contrasts to analyse) based on the yaml user configuration file
+contrasts_chunk_eval <- list(contrast_1 = TRUE,
+                             contrast_2 = TRUE,
+                             contrast_3 = TRUE,
+                             contrast_4 = TRUE,
+                             contrast_5 = TRUE,
+                             contrast_6 = TRUE)
+
+contrasts_chunk_eval <- if(n_contrasts == 1) {
+  replace(contrasts_chunk_eval, 2:6, FALSE)
+} else if(n_contrasts == 2) {
+  replace(contrasts_chunk_eval, 3:6, FALSE)
+} else if(n_contrasts == 3) {
+  replace(contrasts_chunk_eval, 4:6, FALSE)
+} else if(n_contrasts == 4) {
+  replace(contrasts_chunk_eval, 5:6, FALSE)
+} else if(n_contrasts == 5) {
+  replace(contrasts_chunk_eval, 6, FALSE)
+} else if(n_contrasts == 6) {
+  contrasts_chunk_eval
+}
+
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
                        "mirna_excerpt",
@@ -199,6 +253,66 @@ count_datasets <- base::lapply(count_datasets, function(x) {
     base::as.matrix(sep = "\t", row.names = "rna_id")
   
 })
+
+# setup a function to plot residual variances
+# (code adapted from the "limma::plotSA()" function to make interactive and add more info like which RNA each point is)
+plotSA_interactive <- function(data) {
+  
+  # get data from voom fit
+  x <- data$Amean
+  y <- base::sqrt(data$sigma)
+  
+  if (!(base::is.null(data$weights) || zero.weights)) {
+    allzero <- base::rowSums(data$weights > 0, na.rm = TRUE) == 
+      0
+    y[allzero] <- NA
+  }
+  
+  if (length(data$df.prior) > 1L) {
+    df2 <- base::max(data$df.prior)
+    s2 <- data$sigma^2/fit$s2.prior
+    pdn <- stats::pf(s2, df1 = data$df.residual, df2 = df2)
+    pup <- stats::pf(s2, df1 = data$df.residual, df2 = df2, lower.tail = FALSE)
+    FDR <- stats::p.adjust(2 * pmin(pdn, pup), method = "BH")
+    colv[FDR <= 0.5] <- col[2]
+  }
+  
+  # make into a dataframe for plotting, also get the RNA info
+  plotting_data <- base::cbind(x, y) %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("rna")
+  
+  # shorten the RNA names for plotting
+  plotting_data$rna <- base::gsub("\\|.*", " etc.", plotting_data$rna)
+  
+  # calculate horizontal line
+  h <- base::sqrt(base::sqrt(data$s2.prior))
+  
+  # set up function to draw horizontal line
+  hline <- function(y = 0, color = "blue") {
+    base::list(
+      type = "line", 
+      x0 = 0, 
+      x1 = 1, 
+      xref = "paper",
+      y0 = y, 
+      y1 = y, 
+      line = base::list(color = color)
+    )
+  }
+  
+  # plot
+  plotting_data %>%
+    plotly::plot_ly(x = ~x,
+                    y = ~y,
+                    hoverinfo = "text",
+                    text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
+                                         "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
+                                         "</br> RNA:", rna)) %>%
+    plotly::layout(shapes = base::list(hline(h))) %>%
+    plotly::layout(xaxis = base::list(title = "Average log expression"),
+                   yaxis = base::list(title = "sqrt(sigma)"))
+}
 ```
 
 Treatment comparisons: 
@@ -375,11 +489,6 @@ gencode_excerpt_limmavoom_v <- limma::voom(dge_gencode_excerpt_filtered,  model_
 
 ### Residual variances {.tabset .tabset-fade}
 
-```{r, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat(base::paste0("- The residual variances plots present data only for the first treatment group comparison/contrast: ", config$contrasts[1]))
-```
-
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### miRNA's (smrnaseq)")
@@ -395,62 +504,8 @@ mirna_smrnaseq_limmavoom_vfit <- limma::contrasts.fit(mirna_smrnaseq_limmavoom_v
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 mirna_smrnaseq_limmavoom_efit <- limma::eBayes(mirna_smrnaseq_limmavoom_vfit)
 
-# (code adapted from the "limma::plotSA()" function to make interactive and add more info like which RNA each point is)
-
-# get data from voom fit
-x <- mirna_smrnaseq_limmavoom_efit$Amean
-y <- base::sqrt(mirna_smrnaseq_limmavoom_efit$sigma)
-
-if (!(base::is.null(mirna_smrnaseq_limmavoom_efit$weights) || zero.weights)) {
-  allzero <- base::rowSums(mirna_smrnaseq_limmavoom_efit$weights > 0, na.rm = TRUE) == 
-    0
-  y[allzero] <- NA
-}
-
-if (length(mirna_smrnaseq_limmavoom_efit$df.prior) > 1L) {
-  df2 <- base::max(mirna_smrnaseq_limmavoom_efit$df.prior)
-  s2 <- mirna_smrnaseq_limmavoom_efit$sigma^2/fit$s2.prior
-  pdn <- stats::pf(s2, df1 = mirna_smrnaseq_limmavoom_efit$df.residual, df2 = df2)
-  pup <- stats::pf(s2, df1 = mirna_smrnaseq_limmavoom_efit$df.residual, df2 = df2, lower.tail = FALSE)
-  FDR <- stats::p.adjust(2 * pmin(pdn, pup), method = "BH")
-  colv[FDR <= 0.5] <- col[2]
-}
-
-# make into a dataframe for plotting, also get the RNA info
-data <- base::cbind(x, y) %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna")
-
-# shorten the RNA names for plotting
-data$rna <- base::gsub("\\|.*", " etc.", data$rna)
-
-# calculate horizontal line
-h <- base::sqrt(base::sqrt(mirna_smrnaseq_limmavoom_efit$s2.prior))
-
-# set up function to draw horizontal line
-hline <- function(y = 0, color = "blue") {
-  base::list(
-    type = "line", 
-    x0 = 0, 
-    x1 = 1, 
-    xref = "paper",
-    y0 = y, 
-    y1 = y, 
-    line = base::list(color = color)
-  )
-}
-
-# plot
-data %>%
-  plotly::plot_ly(x = ~x,
-                  y = ~y,
-                  hoverinfo = "text",
-                  text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> RNA:", rna)) %>%
-  plotly::layout(shapes = base::list(hline(h))) %>%
-  plotly::layout(xaxis = base::list(title = "Average log expression"),
-                 yaxis = base::list(title = "sqrt(sigma)"))
+# plot residual variances (code adapted from the "limma::plotSA()" function)
+plotSA_interactive(mirna_smrnaseq_limmavoom_efit)
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -468,62 +523,8 @@ mirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(mirna_excerpt_limmavoom_vfi
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 mirna_excerpt_limmavoom_efit <- limma::eBayes(mirna_excerpt_limmavoom_vfit)
 
-# (code adapted from the "limma::plotSA()" function to make interactive and add more info like which RNA each point is)
-
-# get data from voom fit
-x <- mirna_excerpt_limmavoom_efit$Amean
-y <- base::sqrt(mirna_excerpt_limmavoom_efit$sigma)
-
-if (!(base::is.null(mirna_excerpt_limmavoom_efit$weights) || zero.weights)) {
-  allzero <- base::rowSums(mirna_excerpt_limmavoom_efit$weights > 0, na.rm = TRUE) == 
-    0
-  y[allzero] <- NA
-}
-
-if (length(mirna_excerpt_limmavoom_efit$df.prior) > 1L) {
-  df2 <- base::max(mirna_excerpt_limmavoom_efit$df.prior)
-  s2 <- mirna_excerpt_limmavoom_efit$sigma^2/fit$s2.prior
-  pdn <- stats::pf(s2, df1 = mirna_excerpt_limmavoom_efit$df.residual, df2 = df2)
-  pup <- stats::pf(s2, df1 = mirna_excerpt_limmavoom_efit$df.residual, df2 = df2, lower.tail = FALSE)
-  FDR <- stats::p.adjust(2 * pmin(pdn, pup), method = "BH")
-  colv[FDR <= 0.5] <- col[2]
-}
-
-# make into a dataframe for plotting, also get the RNA info
-data <- base::cbind(x, y) %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna")
-
-# shorten the RNA names for plotting
-data$rna <- base::gsub("\\|.*", " etc.", data$rna)
-
-# calculate horizontal line
-h <- base::sqrt(base::sqrt(mirna_excerpt_limmavoom_efit$s2.prior))
-
-# set up function to draw horizontal line
-hline <- function(y = 0, color = "blue") {
-  base::list(
-    type = "line", 
-    x0 = 0, 
-    x1 = 1, 
-    xref = "paper",
-    y0 = y, 
-    y1 = y, 
-    line = base::list(color = color)
-  )
-}
-
-# plot
-data %>%
-  plotly::plot_ly(x = ~x,
-                  y = ~y,
-                  hoverinfo = "text",
-                  text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> RNA:", rna)) %>%
-  plotly::layout(shapes = base::list(hline(h))) %>%
-  plotly::layout(xaxis = base::list(title = "Average log expression"),
-                 yaxis = base::list(title = "sqrt(sigma)"))
+# plot residual variances (code adapted from the "limma::plotSA()" function)
+plotSA_interactive(mirna_excerpt_limmavoom_efit)
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -541,62 +542,8 @@ pirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(pirna_excerpt_limmavoom_vfi
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 pirna_excerpt_limmavoom_efit <- limma::eBayes(pirna_excerpt_limmavoom_vfit)
 
-# (code adapted from the "limma::plotSA()" function to make interactive and add more info like which RNA each point is)
-
-# get data from voom fit
-x <- pirna_excerpt_limmavoom_efit$Amean
-y <- base::sqrt(pirna_excerpt_limmavoom_efit$sigma)
-
-if (!(base::is.null(pirna_excerpt_limmavoom_efit$weights) || zero.weights)) {
-  allzero <- base::rowSums(pirna_excerpt_limmavoom_efit$weights > 0, na.rm = TRUE) == 
-    0
-  y[allzero] <- NA
-}
-
-if (length(pirna_excerpt_limmavoom_efit$df.prior) > 1L) {
-  df2 <- base::max(pirna_excerpt_limmavoom_efit$df.prior)
-  s2 <- pirna_excerpt_limmavoom_efit$sigma^2/fit$s2.prior
-  pdn <- stats::pf(s2, df1 = pirna_excerpt_limmavoom_efit$df.residual, df2 = df2)
-  pup <- stats::pf(s2, df1 = pirna_excerpt_limmavoom_efit$df.residual, df2 = df2, lower.tail = FALSE)
-  FDR <- stats::p.adjust(2 * pmin(pdn, pup), method = "BH")
-  colv[FDR <= 0.5] <- col[2]
-}
-
-# make into a dataframe for plotting, also get the RNA info
-data <- base::cbind(x, y) %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna")
-
-# shorten the RNA names for plotting
-data$rna <- base::gsub("\\|.*", " etc.", data$rna)
-
-# calculate horizontal line
-h <- base::sqrt(base::sqrt(pirna_excerpt_limmavoom_efit$s2.prior))
-
-# set up function to draw horizontal line
-hline <- function(y = 0, color = "blue") {
-  base::list(
-    type = "line", 
-    x0 = 0, 
-    x1 = 1, 
-    xref = "paper",
-    y0 = y, 
-    y1 = y, 
-    line = base::list(color = color)
-  )
-}
-
-# plot
-data %>%
-  plotly::plot_ly(x = ~x,
-                  y = ~y,
-                  hoverinfo = "text",
-                  text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> RNA:", rna)) %>%
-  plotly::layout(shapes = base::list(hline(h))) %>%
-  plotly::layout(xaxis = base::list(title = "Average log expression"),
-                 yaxis = base::list(title = "sqrt(sigma)"))
+# plot residual variances (code adapted from the "limma::plotSA()" function)
+plotSA_interactive(pirna_excerpt_limmavoom_efit)
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -614,62 +561,8 @@ trna_excerpt_limmavoom_vfit <- limma::contrasts.fit(trna_excerpt_limmavoom_vfit,
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 trna_excerpt_limmavoom_efit <- limma::eBayes(trna_excerpt_limmavoom_vfit)
 
-# (code adapted from the "limma::plotSA()" function to make interactive and add more info like which RNA each point is)
-
-# get data from voom fit
-x <- trna_excerpt_limmavoom_efit$Amean
-y <- base::sqrt(trna_excerpt_limmavoom_efit$sigma)
-
-if (!(base::is.null(trna_excerpt_limmavoom_efit$weights) || zero.weights)) {
-  allzero <- base::rowSums(trna_excerpt_limmavoom_efit$weights > 0, na.rm = TRUE) == 
-    0
-  y[allzero] <- NA
-}
-
-if (length(trna_excerpt_limmavoom_efit$df.prior) > 1L) {
-  df2 <- base::max(trna_excerpt_limmavoom_efit$df.prior)
-  s2 <- trna_excerpt_limmavoom_efit$sigma^2/fit$s2.prior
-  pdn <- stats::pf(s2, df1 = trna_excerpt_limmavoom_efit$df.residual, df2 = df2)
-  pup <- stats::pf(s2, df1 = trna_excerpt_limmavoom_efit$df.residual, df2 = df2, lower.tail = FALSE)
-  FDR <- stats::p.adjust(2 * pmin(pdn, pup), method = "BH")
-  colv[FDR <= 0.5] <- col[2]
-}
-
-# make into a dataframe for plotting, also get the RNA info
-data <- base::cbind(x, y) %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna")
-
-# shorten the RNA names for plotting
-data$rna <- base::gsub("\\|.*", " etc.", data$rna)
-
-# calculate horizontal line
-h <- base::sqrt(base::sqrt(trna_excerpt_limmavoom_efit$s2.prior))
-
-# set up function to draw horizontal line
-hline <- function(y = 0, color = "blue") {
-  base::list(
-    type = "line", 
-    x0 = 0, 
-    x1 = 1, 
-    xref = "paper",
-    y0 = y, 
-    y1 = y, 
-    line = base::list(color = color)
-  )
-}
-
-# plot
-data %>%
-  plotly::plot_ly(x = ~x,
-                  y = ~y,
-                  hoverinfo = "text",
-                  text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> RNA:", rna)) %>%
-  plotly::layout(shapes = base::list(hline(h))) %>%
-  plotly::layout(xaxis = base::list(title = "Average log expression"),
-                 yaxis = base::list(title = "sqrt(sigma)"))
+# plot residual variances (code adapted from the "limma::plotSA()" function)
+plotSA_interactive(trna_excerpt_limmavoom_efit)
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -687,62 +580,8 @@ circrna_excerpt_limmavoom_vfit <- limma::contrasts.fit(circrna_excerpt_limmavoom
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 circrna_excerpt_limmavoom_efit <- limma::eBayes(circrna_excerpt_limmavoom_vfit)
 
-# (code adapted from the "limma::plotSA()" function to make interactive and add more info like which RNA each point is)
-
-# get data from voom fit
-x <- circrna_excerpt_limmavoom_efit$Amean
-y <- base::sqrt(circrna_excerpt_limmavoom_efit$sigma)
-
-if (!(base::is.null(circrna_excerpt_limmavoom_efit$weights) || zero.weights)) {
-  allzero <- base::rowSums(circrna_excerpt_limmavoom_efit$weights > 0, na.rm = TRUE) == 
-    0
-  y[allzero] <- NA
-}
-
-if (length(circrna_excerpt_limmavoom_efit$df.prior) > 1L) {
-  df2 <- base::max(circrna_excerpt_limmavoom_efit$df.prior)
-  s2 <- circrna_excerpt_limmavoom_efit$sigma^2/fit$s2.prior
-  pdn <- stats::pf(s2, df1 = circrna_excerpt_limmavoom_efit$df.residual, df2 = df2)
-  pup <- stats::pf(s2, df1 = circrna_excerpt_limmavoom_efit$df.residual, df2 = df2, lower.tail = FALSE)
-  FDR <- stats::p.adjust(2 * pmin(pdn, pup), method = "BH")
-  colv[FDR <= 0.5] <- col[2]
-}
-
-# make into a dataframe for plotting, also get the RNA info
-data <- base::cbind(x, y) %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna")
-
-# shorten the RNA names for plotting
-data$rna <- base::gsub("\\|.*", " etc.", data$rna)
-
-# calculate horizontal line
-h <- base::sqrt(base::sqrt(circrna_excerpt_limmavoom_efit$s2.prior))
-
-# set up function to draw horizontal line
-hline <- function(y = 0, color = "blue") {
-  base::list(
-    type = "line", 
-    x0 = 0, 
-    x1 = 1, 
-    xref = "paper",
-    y0 = y, 
-    y1 = y, 
-    line = base::list(color = color)
-  )
-}
-
-# plot
-data %>%
-  plotly::plot_ly(x = ~x,
-                  y = ~y,
-                  hoverinfo = "text",
-                  text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> RNA:", rna)) %>%
-  plotly::layout(shapes = base::list(hline(h))) %>%
-  plotly::layout(xaxis = base::list(title = "Average log expression"),
-                 yaxis = base::list(title = "sqrt(sigma)"))
+# plot residual variances (code adapted from the "limma::plotSA()" function)
+plotSA_interactive(circrna_excerpt_limmavoom_efit)
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -760,62 +599,8 @@ gencode_excerpt_limmavoom_vfit <- limma::contrasts.fit(gencode_excerpt_limmavoom
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 gencode_excerpt_limmavoom_efit <- limma::eBayes(gencode_excerpt_limmavoom_vfit)
 
-# (code adapted from the "limma::plotSA()" function to make interactive and add more info like which RNA each point is)
-
-# get data from voom fit
-x <- gencode_excerpt_limmavoom_efit$Amean
-y <- base::sqrt(gencode_excerpt_limmavoom_efit$sigma)
-
-if (!(base::is.null(gencode_excerpt_limmavoom_efit$weights) || zero.weights)) {
-  allzero <- base::rowSums(gencode_excerpt_limmavoom_efit$weights > 0, na.rm = TRUE) == 
-    0
-  y[allzero] <- NA
-}
-
-if (length(gencode_excerpt_limmavoom_efit$df.prior) > 1L) {
-  df2 <- base::max(gencode_excerpt_limmavoom_efit$df.prior)
-  s2 <- gencode_excerpt_limmavoom_efit$sigma^2/fit$s2.prior
-  pdn <- stats::pf(s2, df1 = gencode_excerpt_limmavoom_efit$df.residual, df2 = df2)
-  pup <- stats::pf(s2, df1 = gencode_excerpt_limmavoom_efit$df.residual, df2 = df2, lower.tail = FALSE)
-  FDR <- stats::p.adjust(2 * pmin(pdn, pup), method = "BH")
-  colv[FDR <= 0.5] <- col[2]
-}
-
-# make into a dataframe for plotting, also get the RNA info
-data <- base::cbind(x, y) %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna")
-
-# shorten the RNA names for plotting
-data$rna <- base::gsub("\\|.*", " etc.", data$rna)
-
-# calculate horizontal line
-h <- base::sqrt(base::sqrt(gencode_excerpt_limmavoom_efit$s2.prior))
-
-# set up function to draw horizontal line
-hline <- function(y = 0, color = "blue") {
-  base::list(
-    type = "line", 
-    x0 = 0, 
-    x1 = 1, 
-    xref = "paper",
-    y0 = y, 
-    y1 = y, 
-    line = base::list(color = color)
-  )
-}
-
-# plot
-data %>%
-  plotly::plot_ly(x = ~x,
-                  y = ~y,
-                  hoverinfo = "text",
-                  text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 2),
-                                       "</br> RNA:", rna)) %>%
-  plotly::layout(shapes = base::list(hline(h))) %>%
-  plotly::layout(xaxis = base::list(title = "Average log expression"),
-                 yaxis = base::list(title = "sqrt(sigma)"))
+# plot residual variances (code adapted from the "limma::plotSA()" function)
+plotSA_interactive(gencode_excerpt_limmavoom_efit)
 ```
 
 ## DESeq2
@@ -916,11 +701,6 @@ deseq_results_6 <- base::lapply(deseq, function(x) {
 ```
 
 ### Count outlier detection {.tabset .tabset-fade}
-
-```{r, results = "asis"}
-# optionally include/print markdown header for this section if being analysed
-base::cat(base::paste0("- The count outlier detection plots present data only for the first treatment group comparison/contrast: ", config$contrasts[1]))
-```
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
@@ -1038,74 +818,429 @@ graphics::abline(h = qf(.99, p, m - p))
 
 ### MA plots {.tabset .tabset-fade}
 
-```{r, results = "asis"}
+```{r, eval = contrasts_chunk_eval$contrast_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat(base::paste0("- The MA plots present data only for the first treatment group comparison/contrast: ", config$contrasts[1]))
+base::cat("####", config$contrasts[[1]], "{.tabset .tabset-fade}")
 ```
 
-```{r, eval = config$mirna_smrnaseq, results = "asis"}
+```{r, eval = to_eval_chunk$mirna_smrnaseq_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("#### miRNA's (smrnaseq)")
+base::cat("##### miRNA's (smrnaseq)")
 ```
 
-```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
+```{r, eval = to_eval_chunk$mirna_smrnaseq_1, out.width = "100%"}
 # plot
 DESeq2::plotMA(deseq_results_1$mirna_smrnaseq,
                alpha = config$pvalue_cutoff)
 ```
 
-```{r, eval = config$mirna_excerpt, results = "asis"}
+```{r, eval = to_eval_chunk$mirna_excerpt_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("#### miRNA's (excerpt)")
+base::cat("##### miRNA's (excerpt)")
 ```
 
-```{r, eval = config$mirna_excerpt, out.width = "100%"}
+```{r, eval = to_eval_chunk$mirna_excerpt_1, out.width = "100%"}
 # plot
 DESeq2::plotMA(deseq_results_1$mirna_excerpt,
                alpha = config$pvalue_cutoff)
 ```
 
-```{r, eval = config$pirna_excerpt, results = "asis"}
+```{r, eval = to_eval_chunk$pirna_excerpt_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("#### piRNA's (excerpt)")
+base::cat("##### piRNA's (excerpt)")
 ```
 
-```{r, eval = config$pirna_excerpt, out.width = "100%"}
+```{r, eval = to_eval_chunk$pirna_excerpt_1, out.width = "100%"}
 # plot
 DESeq2::plotMA(deseq_results_1$pirna_excerpt,
                alpha = config$pvalue_cutoff)
 ```
 
-```{r, eval = config$trna_excerpt, results = "asis"}
+```{r, eval = to_eval_chunk$trna_excerpt_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("#### tRNA's (excerpt)")
+base::cat("##### tRNA's (excerpt)")
 ```
 
-```{r, eval = config$trna_excerpt, out.width = "100%"}
+```{r, eval = to_eval_chunk$trna_excerpt_1, out.width = "100%"}
 # plot
 DESeq2::plotMA(deseq_results_1$trna_excerpt,
                alpha = config$pvalue_cutoff)
 ```
 
-```{r, eval = config$circrna_excerpt, results = "asis"}
+```{r, eval = to_eval_chunk$circrna_excerpt_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("#### circRNA's (excerpt)")
+base::cat("##### circRNA's (excerpt)")
 ```
 
-```{r, eval = config$circrna_excerpt, out.width = "100%"}
+```{r, eval = to_eval_chunk$circrna_excerpt_1, out.width = "100%"}
 # plot
 DESeq2::plotMA(deseq_results_1$circrna_excerpt,
                alpha = config$pvalue_cutoff)
 ```
 
-```{r, eval = config$gencode_excerpt, results = "asis"}
+```{r, eval = to_eval_chunk$gencode_excerpt_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
-base::cat("#### gencodes (excerpt)")
+base::cat("##### gencodes (excerpt)")
 ```
 
-```{r, eval = config$gencode_excerpt, out.width = "100%"}
+```{r, eval = to_eval_chunk$gencode_excerpt_1, out.width = "100%"}
 # plot
 DESeq2::plotMA(deseq_results_1$gencode_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("####", config$contrasts[[2]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_2, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_2$mirna_smrnaseq,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_2, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_2$mirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_2, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_2$pirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_2, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_2$trna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_2, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_2$circrna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_2, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_2$gencode_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("####", config$contrasts[[3]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_3, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_3$mirna_smrnaseq,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_3, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_3$mirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_3, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_3$pirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_3, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_3$trna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_3, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_3$circrna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_3, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_3$gencode_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("####", config$contrasts[[4]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_4, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_4$mirna_smrnaseq,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_4, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_4$mirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_4, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_4$pirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_4, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_4$trna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_4, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_4$circrna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_4, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_4$gencode_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("####", config$contrasts[[5]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_5, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_5$mirna_smrnaseq,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_5, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_5$mirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_5, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_5$pirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_5, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_5$trna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_5, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_5$circrna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_5, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_5$gencode_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("####", config$contrasts[[6]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_6, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_6$mirna_smrnaseq,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_6, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_6$mirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_6, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_6$pirna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_6, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_6$trna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_6, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_6$circrna_excerpt,
+               alpha = config$pvalue_cutoff)
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("##### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_6, out.width = "100%"}
+# plot
+DESeq2::plotMA(deseq_results_6$gencode_excerpt,
                alpha = config$pvalue_cutoff)
 ```
 
