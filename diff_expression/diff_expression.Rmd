@@ -340,11 +340,12 @@ base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_b
 
 ## limma/voom
 
-### Filtering settings:
+```{r, results = "asis"}
+base::cat(base::paste0("The data was filtered using the [filterByExpr](https://rdrr.io/bioc/edgeR/man/filterByExpr.html) function. The filtering keeps RNA's that have count-per-million (CPM) above min.count (", config$min_count, ")", " in n samples (", length(unique(metadata$sample)), "). In addition, each kept RNA is required to have at least min.total.count reads (", config$min_total_count, ") across all the samples. Normalization factors used to scale the raw library sizes are calculated using the [calcNormFactors](https://www.rdocumentation.org/packages/edgeR/versions/3.14.0/topics/calcNormFactors) function using the TMM normalization method. This method uses the weighted trimmed mean of M-values (to the reference) proposed by [Robinson and Oshlack (2010)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25), where the weights are from the delta method on Binomial data. From a statistical point of view, removing low count genes allows the mean-variance relationship in the data to be estimated with greater reliability ([Law et al., (2018)](https://f1000research.com/articles/5-1408))."))
+```
 
 ```{r, results = "asis"}
-# print the filtering options the user has chosen to use
-base::cat(base::paste0("- Min total count:", config$min_total_count, "\n", " - Min count:", config$min_count, "\n"))
+base::cat(base::paste0("The count data is then transformed to log2-counts per million (logCPM) using the [voom](https://www.rdocumentation.org/packages/limma/versions/3.28.14/topics/voom) function (see the paper [here](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29)). Fitting linear models to the comparisons/contrasts (", base::toString(config$contrasts), ") is carried out using the [lmFit](https://www.rdocumentation.org/packages/limma/versions/3.28.14/topics/lmFit) and [contrasts.fit](https://www.rdocumentation.org/packages/limma/versions/3.28.14/topics/contrasts.fit) functions. Next, empirical Bayes moderation is carried using the [eBayes](https://www.rdocumentation.org/packages/limma/versions/3.28.14/topics/ebayes) function which borrows information across all RNA's to obtain more precise estimates of RNA-wise variability ([Law et al., (2018)](https://f1000research.com/articles/5-1408)). It computes moderated t-statistics, moderated F-statistic, and log-odds of differential expression by empirical Bayes moderation of the standard errors towards a common value."))
 ```
 
 ```{r, limma_voom}
@@ -427,6 +428,10 @@ contr_matrix <- base::lapply(model_matrix, function(x) {
 
 ### Mean variance plot {.tabset .tabset-fade}
 
+The mean-variance relationship of log-CPM values for this dataset. Typically, the “voom-plot” shows a decreasing trend between the means and variances resulting from a combination of technical variation in the sequencing experiment and biological variation amongst the replicate samples from different treatment groups. Experiments with high biological variation usually result in flatter trends, where variance values plateau at high expression values. Experiments with low biological variation tend to result in sharp decreasing trends ([Law et al., (2018)](https://f1000research.com/articles/5-1408)).
+
+Moreover, the voom-plot provides a visual check on the level of filtering performed upstream. If filtering of lowly-expressed genes is insufficient, a drop in variance levels can be observed at the low end of the expression scale due to very small counts. If this is observed, one should return to the earlier filtering step and increase the expression threshold applied to the dataset ([Law et al., (2018)](https://f1000research.com/articles/5-1408)).
+
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### miRNA's (smrnaseq)")
@@ -488,6 +493,8 @@ gencode_excerpt_limmavoom_v <- limma::voom(dge_gencode_excerpt_filtered,  model_
 ```
 
 ### Residual variances {.tabset .tabset-fade}
+
+An adapted version of the [plotSA](http://rstudio.esr.cri.nz:8787/s/dec5c0fe7569e683b7632/help/library/limma/html/plotSA.html) function was used to create this plot (made interactive and included individual RNA information for each data point), which can be used to check the mean-variance relationship of the expression data, after fitting a linear model.
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
@@ -841,7 +848,9 @@ limma_voom_results_6 <- limma_voom_results_6 %>%
   dplyr::rename(log_fc = logFC)
 ```
 
-*Note. only RNA's that were found to be significantly differentially expressed are included in this table*
+```{r, results = "asis"}
+base::cat(base::paste0("RNA's found to be significantly differentially expressed (with a p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) differential expression method are reported here."))
+```
 
 ```{r, out.width = "100%"}
 # make a list of all the differential expression results objects in the global environment
@@ -918,6 +927,10 @@ limma_voom_diff_expr_results %>%
 
 ## DESeq2
 
+```{r, results = "asis"}
+base::cat(base::paste0("This differential expression method is undertaken using the [DESeq2](https://www.rdocumentation.org/packages/DESeq2/versions/1.12.3/topics/DESeq) function"))
+```
+
 ```{r, deseq, results = "hide"}
 # convert sample column to rownames since deseq seems to require this format
 ordered_treatments <- treatments %>%
@@ -930,7 +943,7 @@ deseq <- base::lapply(count_datasets, function(x) {
   x %>%
     DESeq2::DESeqDataSetFromMatrix(colData = ordered_treatments,
                                    design = ~ treatment) %>%
-    DESeq()
+    DESeq2::DESeq()
   
 })
 ```
@@ -1014,6 +1027,8 @@ deseq_results_6 <- base::lapply(deseq, function(x) {
 ```
 
 ### Count outlier detection {.tabset .tabset-fade}
+
+DESeq2 relies on the negative binomial distribution to make estimates and perform statistical inference on differences. While the negative binomial is versatile in having a mean and dispersion parameter, extreme counts in individual samples might not fit well to the negative binomial. For this reason, we perform automatic detection of count outliers. We use Cook’s distance, which is a measure of how much the fitted coefficients would change if an individual sample were removed (Cook 1977). For more on the implementation of Cook’s distance see the manual page for the results function. Below we plot the maximum value of Cook’s distance for each row over the rank of the test statistic to justify its use as a filtering criterion (based on [DESeq2 vignette](https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#count-outlier-detection)).
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
@@ -1130,6 +1145,10 @@ graphics::abline(h = qf(.99, p, m - p))
 ```
 
 ### MA plots {.tabset .tabset-fade}
+
+```{r, eval = contrasts_chunk_eval$contrast_1, results = "asis"}
+base::cat("These plots are created using the [plotMA](https://www.rdocumentation.org/packages/DESeq2/versions/1.12.3/topics/plotMA) function which plots the log2 fold changes versus the mean of normalized counts using the p-value cutoff of ", config$pvalue_cutoff, ".", "These can be used to visualize the differences between treatment group comparisons. In general we would expect the expression of genes to remain consistent between treatment groups and so the MA plot should be similar to the shape of a trumpet with most points residing on a y intercept of 0. Differentially expressed RNA's are marked blue.")
+```
 
 ```{r, eval = contrasts_chunk_eval$contrast_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
@@ -1931,7 +1950,9 @@ deseq_results_6 <- deseq_results_6 %>%
   dplyr::rename(log_fc = log2FoldChange)
 ```
 
-*Note. only RNA's that were found to be significantly differentially expressed are included in this table*
+```{r, results = "asis"}
+base::cat(base::paste0("RNA's found to be significantly differentially expressed (with a p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
+```
 
 ```{r, out.width = "100%"}
 # make a list of all the differential expression results objects in the global environment
@@ -2038,7 +2059,9 @@ diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5, b
 diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
 ```
 
-*Note. only RNA's that were found to be significantly differentially expressed are included in this table*
+```{r, results = "asis"}
+base::cat(base::paste0("RNA's found to be significantly differentially expressed (with a p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by both the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
+```
 
 ```{r, out.width = "100%"}
 # make a list of all the differential expression results objects in the global environment
