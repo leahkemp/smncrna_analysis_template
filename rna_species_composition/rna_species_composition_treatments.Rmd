@@ -1,0 +1,330 @@
+---
+title: "RNA species composition"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+output:
+  html_document:
+    code_download: true
+  editor_options: 
+    chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+## Info
+
+General info:
+
+- **The pie charts present only the RNA's from the datasets the user has chosen to analyse and RNA's that have been identified by the pipelines, rather than all the RNA's possibly present in the samples**
+- *The total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group*
+- *Values have been rounded*
+
+```{r}
+# load libraries
+library(dplyr)
+library(plotly)
+library(gtools)
+library(DT)
+
+# read in pre-prepared count data
+counts <- utils::read.csv("../prepare_counts/counts.csv")
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
+```
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
+                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
+                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
+                       " - trna excerpt: ", config$trna_excerpt, "\n",
+                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
+                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
+## RNA species composition {.tabset .tabset-fade}
+
+```{r}
+# get the total RNA counts by RNA species, sample and pipeline (collapse individual RNAs)
+data <- counts %>%
+  dplyr::group_by(rna_species, sample, pipeline) %>%
+  dplyr::summarise(total_raw_count = base::sum(raw_counts))
+
+# join with metadata
+data <- dplyr::left_join(data, metadata, by = "sample")
+
+# get the average RNA counts by RNA species (and pipeline)
+data <- data %>%
+  dplyr::group_by(treatment, rna_species, pipeline) %>%
+  dplyr::summarise(mean_total_raw_count = base::mean(total_raw_count)) %>%
+  dplyr::arrange(dplyr::desc(treatment, mean_total_raw_count))
+
+# create datatable of data
+data %>%
+  base::as.data.frame() %>%
+  dplyr::mutate(across(c(treatment,
+                         rna_species,
+                         pipeline), base::as.factor)) %>%
+  dplyr::mutate(across(c(mean_total_raw_count), base::as.integer)) %>%
+  DT::datatable(selection = "single",
+                filter = "top",
+                rownames = FALSE,
+                colnames = c("Treatment",
+                             "RNA species",
+                             "Pipeline",
+                             "Average raw count"),
+                extensions = base::list("ColReorder" = NULL,
+                                        "Buttons" = NULL,
+                                        "FixedColumns" = base::list(leftColumns=1)),
+                options = list(
+                  dom = "BRrltpi",
+                  autoWidth = TRUE,
+                  buttons =
+                    list("copy",
+                         list(extend = "collection",
+                              buttons = c("csv", "excel", "pdf"),
+                              text = "Download"),
+                         I("colvis"))))
+```
+
+### smrnaseq pipeline
+
+```{r}
+# filter to get only the data for the smrnaseq pipeline
+data_smrnaseq <- data %>%
+  dplyr::filter(pipeline == "smrnaseq")
+
+# hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
+# are consistant between all the plots
+colors_list <- base::list(
+  "trna" = "#173b4e",
+  "mirna" = "#D95F02",
+  "pirna" = "#7570B3",
+  "protein_coding" = "#b17eb1",
+  "Mt_rRNA" = "#66A61E",
+  "misc_RNA" = "#27408b",
+  "retained_intron" = "#ffec8b",
+  "processed_transcript" = "#88d4c3",
+  "nonsense_mediated_decay" = "#1B9E77",
+  "lincRNA" = "#ff9457",
+  "antisense" = "#f190c1",
+  "processed_pseudogene" = "#27408b",
+  "snoRNA" = "#2b5540",
+  "snRNA" = "#a91e69",
+  "rRNA" = "#ff576e",
+  "unprocessed_pseudogene" = "#27408b",
+  "processed_transcript" = "#FAEBD7",
+  "Mt_tRNA" = "#A52A2A",
+  "TEC" = "#EE6A50",
+  "transcribed_processed_pseudogene" = "#FFF8DC",
+  "unitary_pseudogene" = "#8B8878",
+  "polymorphic_pseudogene" = "#FF6A6A",
+  "transcribed_unprocessed_pseudogene" = "#BA55D3",
+  "macro_lncRNA" = "#FFE4E1",
+  "non_coding" = "#8B7D7B",
+  "sense_overlapping" = "#DB7093",
+  "sense_intronic" = "#6C7B8B",
+  "scaRNA" = "#FFFF00",
+  "ribozyme" = "#EED2EE",
+  "non_stop_decay" = "#00FF7F",
+  "TR_J_gene" = "#FA8072"
+)
+
+data_smrnaseq$my_colour <- dplyr::recode(data_smrnaseq$rna_species, !!!colors_list)
+
+# get maximum RNA count to scale bar plots to
+max_range_barplot <- base::round(base::max(data_smrnaseq$mean_total_raw_count), digits = 0)
+
+# make a list of the number of samples in each treatment group (so it can be passed to the tooltip below)
+num_samples_by_treatment <- metadata %>%
+  dplyr::group_by(treatment) %>%
+  dplyr::summarise(num_samples = n())
+
+# create a plot for each unique sample
+# see issue I faced with a for loop in Rmd here: https://stackoverflow.com/questions/49990653/plotly-plot-doesnt-render-within-for-loop-of-rmarkdown-document
+# and solution I applied here: https://github.com/ropensci/plotly/issues/273#issuecomment-195611009
+
+htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$treatment)), function(x) { 
+  
+  # pie chart
+  pie <- data_smrnaseq %>%
+    dplyr::filter(treatment == x) %>%
+    plotly::plot_ly(labels = ~rna_species,
+                    values = ~mean_total_raw_count,
+                    textposition = "inside",
+                    textinfo = "label+percent",
+                    insidetextfont = base::list(color = "#FFFFFF"),
+                    hoverinfo = "text",
+                    marker = base::list(colors = ~my_colour),
+                    text = ~paste(" RNA species:", rna_species,
+                                  "</br></br>",
+                                  "Treatment:", treatment,
+                                  "</br>",
+                                  "Pipeline:", pipeline,
+                                  "</br>",
+                                  "Number of samples: ", (num_samples_by_treatment %>% dplyr::filter(treatment == x)) %>% dplyr::select(num_samples),
+                                  "</br>",
+                                  "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
+                                  "</br>",
+                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                    showlegend = FALSE) %>%
+    add_pie() %>%
+    plotly::layout(title = x,
+                   xaxis = base::list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, domain = c(0.8,1)))
+  
+  # set plot size
+  pie <- pie %>% layout(width = 200)
+  
+  # bar chart
+  bar <- data_smrnaseq %>%
+    dplyr::filter(treatment == x) %>%
+    plotly::plot_ly(x = ~rna_species,
+                    y = ~mean_total_raw_count,
+                    type = "bar",
+                    marker = base::list(color = ~my_colour),
+                    hoverinfo = "text",
+                    textposition = "none",
+                    text = ~paste(" RNA species:", rna_species,
+                                  "</br></br>",
+                                  "Treatment:", treatment,
+                                  "</br>",
+                                  "Pipeline:", pipeline,
+                                  "</br>",
+                                  "Number of samples: ", (num_samples_by_treatment %>% dplyr::filter(treatment == x)) %>% dplyr::select(num_samples),
+                                  "</br>",
+                                  "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
+                                  "</br>",
+                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                    showlegend = FALSE,
+                    domain = base::list(x = c(0, 0.05))) %>%
+    # get the same xaxis range for easy visual comparing between plots
+    plotly::layout(yaxis = base::list(title = " ", range = c(0, max_range_barplot)),
+                   xaxis = base::list(title = " ", showticklabels = FALSE))
+  
+  # set plot size
+  bar <- bar %>% layout(width = 800)
+  
+  subplot(pie, bar, widths = c(0.8, 0.2))
+  
+}))
+```
+
+### excerpt pipeline
+
+```{r, out.width = "100%"}
+# filter to get only the data for the smrnaseq pipeline
+data_excerpt <- data %>%
+  dplyr::filter(pipeline == "excerpt")
+
+# hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
+# are consistant between all the plots
+data_excerpt$my_colour <- dplyr::recode(data_excerpt$rna_species, !!!colors_list)
+
+# get maximum RNA count to scale bar plots to
+max_range_barplot <- base::round(base::max(data_excerpt$mean_total_raw_count), digits = 0)
+
+# make a list of the number of samples in each treatment group (so it can be passed to the tooltip below)
+num_samples_by_treatment <- metadata %>%
+  dplyr::group_by(treatment) %>%
+  dplyr::summarise(num_samples = n())
+
+# create a plot for each unique sample
+# see issue I faced with a for loop in Rmd here: https://stackoverflow.com/questions/49990653/plotly-plot-doesnt-render-within-for-loop-of-rmarkdown-document
+# and solution I applied here: https://github.com/ropensci/plotly/issues/273#issuecomment-195611009
+
+htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$treatment)), function(x) { 
+  
+  # pie chart
+  pie <- data_excerpt %>%
+    dplyr::filter(treatment == x) %>%
+    plotly::plot_ly(labels = ~rna_species,
+                    values = ~mean_total_raw_count,
+                    textposition = "inside",
+                    textinfo = "label+percent",
+                    insidetextfont = base::list(color = "#FFFFFF"),
+                    hoverinfo = "text",
+                    marker = base::list(colors = ~my_colour),
+                    text = ~paste(" RNA species:", rna_species,
+                                  "</br></br>",
+                                  "Treatment:", treatment,
+                                  "</br>",
+                                  "Pipeline:", pipeline,
+                                  "</br>",
+                                  "Number of samples: ", (num_samples_by_treatment %>% dplyr::filter(treatment == x)) %>% dplyr::select(num_samples),
+                                  "</br>",
+                                  "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
+                                  "</br>",
+                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                    showlegend = FALSE) %>%
+    add_pie() %>%
+    plotly::layout(title = x,
+                   xaxis = base::list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, domain = c(0.8,1)))
+  
+  # set plot size
+  pie <- pie %>% layout(width = 200)
+  
+  # bar chart
+  bar <- data_excerpt %>%
+    dplyr::filter(treatment == x) %>%
+    plotly::plot_ly(x = ~rna_species,
+                    y = ~mean_total_raw_count,
+                    type = "bar",
+                    marker = base::list(color = ~my_colour),
+                    hoverinfo = "text",
+                    textposition = "none",
+                    text = ~paste(" RNA species:", rna_species,
+                                  "</br></br>",
+                                  "Treatment:", treatment,
+                                  "</br>",
+                                  "Pipeline:", pipeline,
+                                  "</br>",
+                                  "Number of samples: ", (num_samples_by_treatment %>% dplyr::filter(treatment == x)) %>% dplyr::select(num_samples),
+                                  "</br>",
+                                  "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
+                                  "</br>",
+                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                    showlegend = FALSE,
+                    domain = base::list(x = c(0, 0.05))) %>%
+    # get the same xaxis range for easy visual comparing between plots
+    plotly::layout(yaxis = base::list(title = " ", range = c(0, max_range_barplot)),
+                   xaxis = base::list(title = " ", showticklabels = FALSE))
+  
+  # set plot size
+  bar <- bar %>% layout(width = 800)
+  
+  subplot(pie, bar, widths = c(0.8, 0.2))
+  
+}))
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```
