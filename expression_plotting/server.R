@@ -265,8 +265,8 @@ server <- function(input, output, session) {
                                            pipeline,
                                            treatment), base::as.factor)) %>%
                     dplyr::mutate(across(c(raw_counts,
-                                           counts_per_million), base::as.integer)) %>%
-                    selection = "single",
+                                           counts_per_million), base::as.integer)),
+                  selection = "single",
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("RNA",
