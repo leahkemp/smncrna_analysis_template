@@ -1,0 +1,23 @@
+fastq_dir: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/test/fastq/
+template_dir: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/
+metadata_path: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/config/metadata.csv
+smrnaseq_results_dir: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/test/smrnaseq_pipeline_run/results/
+excerpt_results_dir: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/test/excerpt_pipeline_run/exceRpt_output/
+excerpt_merged_results_dir: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/test/excerpt_pipeline_run/merged/
+low_sequencing_read_count: 5000000
+mirna_smrnaseq: yes
+mirna_excerpt: yes
+pirna_excerpt: yes
+trna_excerpt: yes
+circrna_excerpt: yes
+gencode_excerpt: yes
+contrasts:
+- treatment1 - treatment2
+- treatment1 - treatment3
+min_count: 10
+min_total_count: 15
+min_lfc: log2(1.1)
+treatment_order:
+- treatment1
+- treatment2
+- treatment3
