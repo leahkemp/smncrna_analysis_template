@@ -869,7 +869,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) 
 } else if (all(is.na(lcpm_gencode_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed gencodes"))
 } else {
-  cat(paste("No significantly differentially expressed gencodes)"))
+  cat(paste("No significantly differentially expressed gencodes"))
 }
 ```
 

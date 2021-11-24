@@ -45,7 +45,7 @@ variables_4_5 <- utils::read.csv("./variables_4_5.csv", header = TRUE, stringsAs
 scree$component <- base::as.character(scree$component)
 
 # natural sorting of xaxis
-scree$component <- base::factor(scree$component, levels = mixedsort(scree$component))
+scree$component <- base::factor(scree$component, levels = gtools::mixedsort(scree$component))
 
 # define server logic for app ----
 server <- function(input, output, session) {
@@ -281,8 +281,6 @@ server <- function(input, output, session) {
                         selected = attrs_selected(opacity = 1))
     
   }, server = FALSE)
-  
-  %>%
   
   # generate scatterplot of the pca (variables - samples) based on the dimensions the user chooses to view ----
   output$variables_plot <- plotly::renderPlotly({
