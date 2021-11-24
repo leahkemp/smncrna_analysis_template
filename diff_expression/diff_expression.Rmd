@@ -230,7 +230,7 @@ treatments <- metadata %>%
 
 # also sort by the sample column (important so it matches the order of the samples count datasets)
 # this is critical for DESeq2 - it assumes they are in the same order
-treatments$sample <- gtools::mixedsort(treatments$sample)
+treatments <- treatments[gtools::mixedorder(base::as.character(treatments$sample)),]
 
 # extract only the conditions/groups and create a list out of it
 ordered_treatments <- treatments %>%
