@@ -849,7 +849,7 @@ limma_voom_results_6 <- limma_voom_results_6 %>%
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's found to be significantly differentially expressed (with a p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) differential expression method are reported here."))
+base::cat(base::paste0("RNA's found to be significantly differentially expressed (with an adjusted p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) differential expression method are reported here."))
 ```
 
 ```{r, out.width = "100%"}
@@ -1951,7 +1951,7 @@ deseq_results_6 <- deseq_results_6 %>%
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's found to be significantly differentially expressed (with a p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
+base::cat(base::paste0("RNA's found to be significantly differentially expressed (with an adjusted p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
 ```
 
 ```{r, out.width = "100%"}
@@ -2060,7 +2060,7 @@ diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, b
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's found to be significantly differentially expressed (with a p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by both the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
+base::cat(base::paste0("RNA's found to be significantly differentially expressed (with an adjusted p-value less than ", config$pvalue_cutoff, " and a log fold change greater than ", config$min_lfc ,") by both the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
 ```
 
 ```{r, out.width = "100%"}
