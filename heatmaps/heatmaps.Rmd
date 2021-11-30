@@ -135,8 +135,9 @@ count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
 count_datasets <- count_datasets[to_analyse]
 
 # get a list of RNA's that were found to be significantly differentially expressed by at least one differential expression method
+# (based on the user threshold of "significant)
 sig_rnas <- diff_expr_results %>%
-  dplyr::filter(significance != "not_significant") %>%
+  dplyr::filter(adj_p_value <= config$pvalue_cutoff) %>%
   dplyr::pull(unique(rna))
 
 # stop scientific notation
@@ -354,7 +355,7 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) < 3) {
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
@@ -456,7 +457,7 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) < 3) {
+} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_mirna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
@@ -558,7 +559,7 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) < 3) {
+} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed piRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_pirna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed piRNA's"))
@@ -660,7 +661,7 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) < 3) {
+} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed tRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_trna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed tRNA's"))
@@ -762,7 +763,7 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) 
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) < 3) {
+} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed circRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_circrna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed circRNA's"))
@@ -864,7 +865,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) 
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) < 3) {
+} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed gencodes to cluster in a PCA"))
 } else if (all(is.na(lcpm_gencode_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed gencodes"))
@@ -929,7 +930,7 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) < 3) {
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
@@ -992,7 +993,7 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) < 3) {
+} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_mirna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
@@ -1055,7 +1056,7 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) < 3) {
+} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed piRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_pirna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed piRNA's"))
@@ -1118,7 +1119,7 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) < 3) {
+} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed tRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_trna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed tRNA's"))
@@ -1181,7 +1182,7 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) 
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) < 3) {
+} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed circRNA's to cluster in a PCA"))
 } else if (all(is.na(lcpm_circrna_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed circRNA's"))
@@ -1244,7 +1245,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) 
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) < 3) {
+} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3) {
   cat(paste("Too few significantly differentially expressed gencode's to cluster in a PCA"))
 } else if (all(is.na(lcpm_gencode_excerpt)) == TRUE) {
   cat(paste("No significantly differentially expressed gencode's"))
