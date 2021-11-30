@@ -182,20 +182,78 @@ counts <- dplyr::full_join(counts_cpm, counts_lcpm, by = c("rna", "sample", "pip
 counts <- dplyr::full_join(counts, counts_raw, by = c("rna", "sample", "pipeline", "rna_species")) 
 
 # further split the gencode data into different RNA categories
-# overwrite the rna_species column with a partial string from the rna column (for the gencode data)
-# otherwise overwrite the rna_species column with what is already in the rna_species column
-counts <- dplyr::mutate(counts, rna_species = dplyr::case_when(rna_species == "gencode" ~ base::sub('.*:', '', counts$rna),
-                                                               rna_species != "gencode" ~ counts$rna_species
+# (I'll put into a new column)
+# overwrite the rna_species_2 column with a partial string from the rna column (for the gencode data)
+# otherwise overwrite the rna_species_2 column with what is already in the rna_species_2 column
+counts <- dplyr::mutate(counts, rna_species_2 = rna_species)
+counts <- dplyr::mutate(counts, rna_species_2 = dplyr::case_when(rna_species_2 == "gencode" ~ base::sub('.*:', '', counts$rna),
+                                                                 rna_species_2 != "gencode" ~ counts$rna_species_2
 ))
 
-# rename mirna (from "rna_species") so that it matches up with miRNA and gets put in the same group in downstream analyses
+# rename mirna (from rna_species_2") so that it matches up with miRNA and gets put in the same group in downstream analyses
 counts <- counts %>%
-  dplyr::mutate(rna_species = dplyr::case_when(
-    rna_species == "miRNA" ~ "mirna", 
-    TRUE ~ rna_species))
+  dplyr::mutate(rna_species_2 = dplyr::case_when(
+    rna_species_2 == "miRNA" ~ "mirna", 
+    TRUE ~ rna_species_2))
 
 # write the data to a csv file so I can use it in other documents
 utils::write.csv(counts, "./prepare_counts/counts.csv", row.names = FALSE)
+
+# also save some rds objects for Miles to have a play with (first define the treatment groups in the column headers)
+treatments <- utils::read.csv(base::file.path(config$metadata)) %>%
+  dplyr::select(sample, treatment)
+
+treatments <- treatments[gtools::mixedorder(base::as.character(treatments$sample)),]
+treatments <- base::paste(treatments$sample, treatments$treatment, sep="_")
+
+raw_mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+raw_mirna_excerpt_data <- mirna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+raw_pirna_excerpt_data <- pirna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+raw_trna_excerpt_data <- trna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+raw_circrna_excerpt_data <- circrna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+raw_gencode_excerpt_data <- gencode_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+base::colnames(raw_mirna_smrnaseq_data) <- treatments
+base::colnames(raw_mirna_excerpt_data) <- treatments
+base::colnames(raw_pirna_excerpt_data) <- treatments
+base::colnames(raw_trna_excerpt_data) <- treatments
+base::colnames(raw_circrna_excerpt_data) <- treatments
+base::colnames(raw_gencode_excerpt_data) <- treatments
+
+dir.create("./prepare_counts/rds_objects/", showWarnings = FALSE)
+
+base::saveRDS(raw_mirna_smrnaseq_data, file = "./prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds")
+base::saveRDS(raw_mirna_excerpt_data, file = "./prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds")
+base::saveRDS(raw_pirna_excerpt_data, file = "./prepare_counts/rds_objects/raw_pirna_excerpt_counts.rds")
+base::saveRDS(raw_trna_excerpt_data, file = "./prepare_counts/rds_objects/raw_trna_excerpt_counts.rds")
+base::saveRDS(raw_circrna_excerpt_data, file = "./prepare_counts/rds_objects/raw_circrna_excerpt_counts.rds")
+base::saveRDS(raw_gencode_excerpt_data, file = "./prepare_counts/rds_objects/raw_gencode_excerpt_counts.rds")
+
+cpm_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  edgeR::cpm()
+cpm_mirna_excerpt_data <- raw_mirna_excerpt_data %>%
+  edgeR::cpm()
+cpm_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
+  edgeR::cpm()
+cpm_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  edgeR::cpm()
+cpm_circrna_excerpt_data <- raw_circrna_excerpt_data %>%
+  edgeR::cpm()
+cpm_gencode_excerpt_data <- raw_gencode_excerpt_data %>%
+  edgeR::cpm()
+  
+base::saveRDS(cpm_mirna_smrnaseq_data, file = "./prepare_counts/rds_objects/cpm_mirna_smrnaseq_counts.rds")
+base::saveRDS(cpm_mirna_excerpt_data, file = "./prepare_counts/rds_objects/cpm_mirna_excerpt_counts.rds")
+base::saveRDS(cpm_pirna_excerpt_data, file = "./prepare_counts/rds_objects/cpm_pirna_excerpt_counts.rds")
+base::saveRDS(cpm_trna_excerpt_data, file = "./prepare_counts/rds_objects/cpm_trna_excerpt_counts.rds")
+base::saveRDS(cpm_circrna_excerpt_data, file = "./prepare_counts/rds_objects/cpm_circrna_excerpt_counts.rds")
+base::saveRDS(cpm_gencode_excerpt_data, file = "./prepare_counts/rds_objects/cpm_gencode_excerpt_counts.rds")
 
 # clean up
 rm(list = ls())

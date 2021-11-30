@@ -74,7 +74,7 @@ base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_b
 ```{r}
 # get the total RNA counts by RNA species, sample and pipeline (collapse individual RNAs)
 data <- counts %>%
-  dplyr::group_by(rna_species, sample, pipeline) %>%
+  dplyr::group_by(rna_species_2, sample, pipeline) %>%
   dplyr::summarise(total_raw_count = base::sum(raw_counts))
 
 # join with metadata
@@ -82,7 +82,7 @@ data <- dplyr::left_join(data, metadata, by = "sample")
 
 # get the average RNA counts by RNA species (and pipeline)
 data <- data %>%
-  dplyr::group_by(treatment, rna_species, pipeline) %>%
+  dplyr::group_by(treatment, rna_species_2, pipeline) %>%
   dplyr::summarise(mean_total_raw_count = base::mean(total_raw_count)) %>%
   dplyr::arrange(dplyr::desc(treatment, mean_total_raw_count))
 
@@ -90,7 +90,7 @@ data <- data %>%
 data %>%
   base::as.data.frame() %>%
   dplyr::mutate(across(c(treatment,
-                         rna_species,
+                         rna_species_2,
                          pipeline), base::as.factor)) %>%
   dplyr::mutate(across(c(mean_total_raw_count), base::as.integer)) %>%
   DT::datatable(selection = "single",
@@ -157,7 +157,7 @@ colors_list <- base::list(
   "TR_J_gene" = "#FA8072"
 )
 
-data_smrnaseq$my_colour <- dplyr::recode(data_smrnaseq$rna_species, !!!colors_list)
+data_smrnaseq$my_colour <- dplyr::recode(data_smrnaseq$rna_species_2, !!!colors_list)
 
 # get maximum RNA count to scale bar plots to
 max_range_barplot <- base::round(base::max(data_smrnaseq$mean_total_raw_count), digits = 0)
@@ -176,14 +176,14 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
   # pie chart
   pie <- data_smrnaseq %>%
     dplyr::filter(treatment == x) %>%
-    plotly::plot_ly(labels = ~rna_species,
+    plotly::plot_ly(labels = ~rna_species_2,
                     values = ~mean_total_raw_count,
                     textposition = "inside",
                     textinfo = "label+percent",
                     insidetextfont = base::list(color = "#FFFFFF"),
                     hoverinfo = "text",
                     marker = base::list(colors = ~my_colour),
-                    text = ~paste(" RNA species:", rna_species,
+                    text = ~paste(" RNA species:", rna_species_2,
                                   "</br></br>",
                                   "Treatment:", treatment,
                                   "</br>",
@@ -205,13 +205,13 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
   # bar chart
   bar <- data_smrnaseq %>%
     dplyr::filter(treatment == x) %>%
-    plotly::plot_ly(x = ~rna_species,
+    plotly::plot_ly(x = ~rna_species_2,
                     y = ~mean_total_raw_count,
                     type = "bar",
                     marker = base::list(color = ~my_colour),
                     hoverinfo = "text",
                     textposition = "none",
-                    text = ~paste(" RNA species:", rna_species,
+                    text = ~paste(" RNA species:", rna_species_2,
                                   "</br></br>",
                                   "Treatment:", treatment,
                                   "</br>",
@@ -245,7 +245,7 @@ data_excerpt <- data %>%
 
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
-data_excerpt$my_colour <- dplyr::recode(data_excerpt$rna_species, !!!colors_list)
+data_excerpt$my_colour <- dplyr::recode(data_excerpt$rna_species_2, !!!colors_list)
 
 # get maximum RNA count to scale bar plots to
 max_range_barplot <- base::round(base::max(data_excerpt$mean_total_raw_count), digits = 0)
@@ -264,14 +264,14 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$trea
   # pie chart
   pie <- data_excerpt %>%
     dplyr::filter(treatment == x) %>%
-    plotly::plot_ly(labels = ~rna_species,
+    plotly::plot_ly(labels = ~rna_species_2,
                     values = ~mean_total_raw_count,
                     textposition = "inside",
                     textinfo = "label+percent",
                     insidetextfont = base::list(color = "#FFFFFF"),
                     hoverinfo = "text",
                     marker = base::list(colors = ~my_colour),
-                    text = ~paste(" RNA species:", rna_species,
+                    text = ~paste(" RNA species:", rna_species_2,
                                   "</br></br>",
                                   "Treatment:", treatment,
                                   "</br>",
@@ -293,13 +293,13 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$trea
   # bar chart
   bar <- data_excerpt %>%
     dplyr::filter(treatment == x) %>%
-    plotly::plot_ly(x = ~rna_species,
+    plotly::plot_ly(x = ~rna_species_2,
                     y = ~mean_total_raw_count,
                     type = "bar",
                     marker = base::list(color = ~my_colour),
                     hoverinfo = "text",
                     textposition = "none",
-                    text = ~paste(" RNA species:", rna_species,
+                    text = ~paste(" RNA species:", rna_species_2,
                                   "</br></br>",
                                   "Treatment:", treatment,
                                   "</br>",
