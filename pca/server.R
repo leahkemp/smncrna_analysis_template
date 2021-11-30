@@ -178,14 +178,7 @@ server <- function(input, output, session) {
   # create interactive table of the scree data ----
   output$table_scree <- DT::renderDataTable({
     
-    DT::datatable(linked_data_scree() %>%
-                    dplyr::mutate(across(c(component), base::as.factor)) %>%
-                    dplyr::mutate(across(c(eigenvalue,
-                                           percentage.of.variance,
-                                           cumulative.percentage.of.variance), base::as.double)) %>%
-                    dplyr::mutate(across(c(eigenvalue,
-                                           percentage.of.variance,
-                                           cumulative.percentage.of.variance), ~base::round(.x, digits = 2))),
+    DT::datatable(linked_data_scree(),
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("Dimension",
@@ -247,16 +240,7 @@ server <- function(input, output, session) {
   # create interactive table of pca (individuals - RNA's) based on the dimensions the user chooses to view ----
   output$table_individuals <- DT::renderDataTable({
     
-    DT::datatable(linked_data_individuals() %>%
-                    dplyr::mutate(across(c(rna), base::as.factor)) %>%
-                    dplyr::mutate(across(c(x_coord,
-                                           x_cos,
-                                           y_coord,
-                                           y_cos), base::as.double)) %>%
-                    dplyr::mutate(across(c(x_coord,
-                                           x_cos,
-                                           y_coord,
-                                           y_cos), ~base::round(.x, digits = 2))),
+    DT::datatable(linked_data_individuals(),
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("RNA",
@@ -316,17 +300,7 @@ server <- function(input, output, session) {
   # create interactive table of pca (variables - RNA's) based on the dimensions the user chooses to view ----
   output$table_variables <- DT::renderDataTable({
     
-    DT::datatable(linked_data_variables() %>%
-                    dplyr::mutate(across(c(sample,
-                                           treatment), base::as.factor)) %>%
-                    dplyr::mutate(across(c(x_coord,
-                                           x_cos,
-                                           y_coord,
-                                           y_cos), base::as.double)) %>%
-                    dplyr::mutate(across(c(x_coord,
-                                           x_cos,
-                                           y_coord,
-                                           y_cos), ~base::round(.x, digits = 2))),
+    DT::datatable(linked_data_variables(),
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("Sample",
