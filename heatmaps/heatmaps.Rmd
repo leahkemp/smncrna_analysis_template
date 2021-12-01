@@ -123,6 +123,14 @@ to_analyse <- config[c("mirna_smrnaseq",
   dplyr::mutate(dataset_name = base::paste0(rna_species, "_", pipeline)) %>%
   dplyr::pull(dataset_name)
 
+# define which datasets/rna species were actually analysed in the differential expression analysis
+# to be used to flag the difference between "no significantly differentially expressed RNA's found"
+# and "RNA not analysed in differential expression anaysis
+diff_expr_analysed <- diff_expr_results %>%
+  dplyr::mutate(dataset = paste(rna_species, pipeline, sep = "_"))
+
+diff_expr_analysed <- unique(diff_expr_analysed$dataset)
+
 # set up a vector of all the possible datasets to analyse
 count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
                              mirna_excerpt = mirna_excerpt_data,
@@ -304,7 +312,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -355,12 +364,12 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3) {
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE) {
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed miRNA's)"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -406,7 +415,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -457,12 +467,12 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) <= 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed miRNA's)"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -508,7 +518,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -559,12 +570,12 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed piRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed piRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed piRNA's)"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -610,7 +621,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -661,12 +673,12 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3 & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed tRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_trna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed tRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed tRNA's)"))
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -712,7 +724,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -763,12 +776,12 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) 
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed circRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed circRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed circRNA's)"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -814,7 +827,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -865,12 +879,12 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) 
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3) {
-  cat(paste("Too few significantly differentially expressed gencodes to cluster in a PCA"))
-} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE) {
-  cat(paste("No significantly differentially expressed gencodes"))
-} else {
-  cat(paste("No significantly differentially expressed gencodes"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed gencode's to cluster in a PCA"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed gencode's"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -912,7 +926,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_mirna_smrnaseq %>%
@@ -930,12 +945,12 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3) {
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE) {
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed miRNA's)"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -975,7 +990,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_mirna_excerpt %>%
@@ -993,12 +1009,12 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed miRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed miRNA's)"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -1038,7 +1054,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_pirna_excerpt %>%
@@ -1056,12 +1073,12 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed piRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed piRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed piRNA's)"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -1101,7 +1118,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_trna_excerpt %>%
@@ -1119,12 +1137,12 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3) {
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed tRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_trna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed tRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed tRNA's)"))
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -1164,7 +1182,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_circrna_excerpt %>%
@@ -1182,12 +1201,12 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3) 
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3) {
+} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed circRNA's to cluster in a PCA"))
-} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed circRNA's"))
-} else {
-  cat(paste("No significantly differentially expressed circRNA's)"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -1227,7 +1246,8 @@ gradient_col <- ggplot2::scale_fill_gradient2(
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
 # if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_gencode_excerpt %>%
@@ -1245,12 +1265,12 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3) 
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
-} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3) {
+} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("Too few significantly differentially expressed gencode's to cluster in a PCA"))
-} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE) {
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
   cat(paste("No significantly differentially expressed gencode's"))
-} else {
-  cat(paste("No significantly differentially expressed gencode's)"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
