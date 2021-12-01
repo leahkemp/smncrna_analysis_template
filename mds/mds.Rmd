@@ -71,6 +71,10 @@ mkdir -p ./mds_results/
 
 ## Info
 
+General info:
+
+- *Values have been rounded*
+
 Datasets analysed:
 
 ```{r, results = "asis"}
@@ -173,11 +177,15 @@ data %>%
 ```{r, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
-                dplyr::mutate(across(c("sample", "treatment"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -187,18 +195,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
@@ -249,11 +255,15 @@ data %>%
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
-                dplyr::mutate(across(c("sample", "treatment"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -263,18 +273,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -325,11 +333,15 @@ data %>%
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
-                dplyr::mutate(across(c("sample", "treatment"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -339,18 +351,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -401,11 +411,15 @@ data %>%
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
-                dplyr::mutate(across(c("sample", "treatment"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -415,18 +429,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -477,11 +489,15 @@ data %>%
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
-                dplyr::mutate(across(c("sample", "treatment"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -491,18 +507,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -553,11 +567,15 @@ data %>%
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
-                dplyr::mutate(across(c("sample", "treatment"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -567,18 +585,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -629,11 +645,15 @@ data %>%
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # plot data in datatable
 DT::datatable(data %>%
-                dplyr::mutate(across(c("sample", "treatment"), as.factor)) %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -643,18 +663,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             list(extend = "collection",
-                                  buttons = c("csv", "excel", "pdf"),
-                                  text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, cleanup, results = "hide"}
