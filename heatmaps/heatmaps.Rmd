@@ -941,7 +941,7 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "
                          showticklabels = c(FALSE, TRUE),
                          titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
@@ -1005,7 +1005,7 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mi
                          showticklabels = c(FALSE, TRUE),
                          titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
@@ -1069,7 +1069,7 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pi
                          showticklabels = c(FALSE, TRUE),
                          titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
@@ -1133,7 +1133,7 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna
                          showticklabels = c(FALSE, TRUE),
                          titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
@@ -1197,7 +1197,7 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 &
                          showticklabels = c(FALSE, TRUE),
                          titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
@@ -1261,7 +1261,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3 &
                          showticklabels = c(FALSE, TRUE),
                          titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
                          hide_colorbar = TRUE)
   
