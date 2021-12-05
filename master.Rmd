@@ -33,14 +33,6 @@ renv::restore()
 bash mapping_rates/extract_mapping_info.sh
 ```
 
-## Summarise the read counts/mapping rates for manual mapping "pipeline"
-
-*This will output a csv file with various mapping/read count metrics for all samples from the manual mapping outputs as well as the raw fastq files (./manual_mapping/mapping_rates.csv)*
-
-```{bash}
-bash manual_mapping/extract_mapping_info_manual_mapping.sh
-```
-
 ## Seqeuencing read QC
 
 *This will output an interactive html document exploring the raw sequencing read count and number of reads used for alignment (./sequencing_read_QC/sequencing_read_QC.html)*
