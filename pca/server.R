@@ -45,7 +45,7 @@ variables_4_5 <- utils::read.csv("./variables_4_5.csv", header = TRUE, stringsAs
 scree$component <- base::as.character(scree$component)
 
 # natural sorting of xaxis
-scree$component <- base::factor(scree$component, levels = mixedsort(scree$component))
+scree$component <- base::factor(scree$component, levels = gtools::mixedsort(scree$component))
 
 # define server logic for app ----
 server <- function(input, output, session) {
@@ -188,18 +188,15 @@ server <- function(input, output, session) {
                   extensions = base::list("ColReorder" = NULL,
                                           "Buttons" = NULL,
                                           "FixedColumns" = base::list(leftColumns=1)),
-                  options = base::list(
+                  options = list(
                     dom = "BRrltpi",
                     autoWidth = TRUE,
-                    columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                    lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                    ColReorder = TRUE,
                     buttons =
-                      base::list("copy",
-                                 base::list(extend = "collection",
-                                            buttons = c("csv"),
-                                            text = "Download"),
-                                 I("colvis")))) %>%
+                      list("copy",
+                           list(extend = "collection",
+                                buttons = c("csv", "excel", "pdf"),
+                                text = "Download"),
+                           I("colvis")))) %>%
       plotly::highlight(on = "plotly_click",
                         opacityDim = 0.2,
                         selected = attrs_selected(opacity = 1))
@@ -254,18 +251,15 @@ server <- function(input, output, session) {
                   extensions = base::list("ColReorder" = NULL,
                                           "Buttons" = NULL,
                                           "FixedColumns" = base::list(leftColumns=1)),
-                  options = base::list(
+                  options = list(
                     dom = "BRrltpi",
                     autoWidth = TRUE,
-                    columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                    lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                    ColReorder = TRUE,
                     buttons =
-                      base::list("copy",
-                                 base::list(extend = "collection",
-                                            buttons = c("csv"),
-                                            text = "Download"),
-                                 I("colvis")))) %>%
+                      list("copy",
+                           list(extend = "collection",
+                                buttons = c("csv", "excel", "pdf"),
+                                text = "Download"),
+                           I("colvis")))) %>%
       plotly::highlight(on = "plotly_selected",
                         opacityDim = 0.2,
                         selected = attrs_selected(opacity = 1))
@@ -318,18 +312,15 @@ server <- function(input, output, session) {
                   extensions = base::list("ColReorder" = NULL,
                                           "Buttons" = NULL,
                                           "FixedColumns" = base::list(leftColumns=1)),
-                  options = base::list(
+                  options = list(
                     dom = "BRrltpi",
                     autoWidth = TRUE,
-                    columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                    lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                    ColReorder = TRUE,
                     buttons =
-                      base::list("copy",
-                                 base::list(extend = "collection",
-                                            buttons = c("csv"),
-                                            text = "Download"),
-                                 I("colvis")))) %>%
+                      list("copy",
+                           list(extend = "collection",
+                                buttons = c("csv", "excel", "pdf"),
+                                text = "Download"),
+                           I("colvis")))) %>%
       plotly::highlight(on = "plotly_selected",
                         opacityDim = 0.01,
                         selected = attrs_selected(opacity = 1))

@@ -18,6 +18,8 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 
 ## Info
 
+General info:
+
 - *Colour ranges are relative within each RNA species*
 - *Only the RNA's that were found to be significantly differentially expressed by at least one differential expression method are plotted here*
 
@@ -86,16 +88,15 @@ gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_
   dplyr::rename_with(~ base::sub(".fastq", "", .))
 
 mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
-                                                         "/edgeR/miRBase_mature/mature_counts.csv"),
-                                         header = TRUE,
-                                         stringsAsFactors = TRUE,
-                                         sep = ",") %>%
-  # formatting
-  base::t() %>%
-  base::as.data.frame() %>%
-  janitor::row_to_names(row_number = 1) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub(".mature", "", .))
+                                                         "/mirtop/mirtop.tsv"),
+                                                         header = TRUE) %>%
+  # get only the count data
+  dplyr::select(-c("UID", "Read", "Variant", "iso_5p", "iso_3p", "iso_add3p", "iso_snp", "iso_5p_nt", "iso_3p_nt", "iso_add3p_nt", "iso_snp_nt")) %>%
+  # "squash" out the isoform info (of the mirtop from smrnaseq pipeline)
+  dplyr::group_by(miRNA) %>%
+  dplyr::summarise_each(sum) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::column_to_rownames(var="miRNA")
 
 # formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
 mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
@@ -122,6 +123,14 @@ to_analyse <- config[c("mirna_smrnaseq",
   dplyr::mutate(dataset_name = base::paste0(rna_species, "_", pipeline)) %>%
   dplyr::pull(dataset_name)
 
+# define which datasets/rna species were actually analysed in the differential expression analysis
+# to be used to flag the difference between "no significantly differentially expressed RNA's found"
+# and "RNA not analysed in differential expression anaysis
+diff_expr_analysed <- diff_expr_results %>%
+  dplyr::mutate(dataset = paste(rna_species, pipeline, sep = "_"))
+
+diff_expr_analysed <- unique(diff_expr_analysed$dataset)
+
 # set up a vector of all the possible datasets to analyse
 count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
                              mirna_excerpt = mirna_excerpt_data,
@@ -134,8 +143,9 @@ count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
 count_datasets <- count_datasets[to_analyse]
 
 # get a list of RNA's that were found to be significantly differentially expressed by at least one differential expression method
+# (based on the user threshold of "significant)
 sig_rnas <- diff_expr_results %>%
-  dplyr::filter(significance != "not_significant") %>%
+  dplyr::filter(adj_p_value <= config$pvalue_cutoff) %>%
   dplyr::pull(unique(rna))
 
 # stop scientific notation
@@ -233,6 +243,29 @@ base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
                        " - gencode excerpt: ", config$gencode_excerpt, "\n"))
 ```
 
+Treatment comparisons: 
+
+```{r, results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("- ", config$contrasts, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
 ## Heatmap {.tabset .tabset-fade}
 
 ### By treatment group {.tabset .tabset-fade}
@@ -277,9 +310,10 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -321,9 +355,7 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -332,8 +364,12 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else {
-   cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed miRNA's"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -377,9 +413,10 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -403,7 +440,7 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE) {
     
     # create custom text that will be appended to the tooltip
     custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                               "\nPipeline: smrnaseq"
+                                               "\nPipeline: excerpt"
     ),
     # make it the same dimensions as the current dataset (required for this to work)
     nrow = base::nrow(data_list[[i]]),
@@ -421,9 +458,7 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -432,8 +467,12 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else {
-   cat(paste("No significantly differentially expressed miRNA's (excerpt)"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) <= 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed miRNA's"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -477,9 +516,10 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_pirna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -503,7 +543,7 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE) {
     
     # create custom text that will be appended to the tooltip
     custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                               "\nPipeline: smrnaseq"
+                                               "\nPipeline: excerpt"
     ),
     # make it the same dimensions as the current dataset (required for this to work)
     nrow = base::nrow(data_list[[i]]),
@@ -521,9 +561,7 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -532,8 +570,12 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else {
-   cat(paste("No significantly differentially expressed piRNA's (excerpt)"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed piRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed piRNA's"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -577,9 +619,10 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_trna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -603,7 +646,7 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE) {
     
     # create custom text that will be appended to the tooltip
     custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                               "\nPipeline: smrnaseq"
+                                               "\nPipeline: excerpt"
     ),
     # make it the same dimensions as the current dataset (required for this to work)
     nrow = base::nrow(data_list[[i]]),
@@ -621,9 +664,7 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -632,8 +673,12 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else {
-   cat(paste("No significantly differentially expressed tRNA's (excerpt)"))
+} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3 & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed tRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed tRNA's"))
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -677,9 +722,10 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_circrna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -703,7 +749,7 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE) {
     
     # create custom text that will be appended to the tooltip
     custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                               "\nPipeline: smrnaseq"
+                                               "\nPipeline: excerpt"
     ),
     # make it the same dimensions as the current dataset (required for this to work)
     nrow = base::nrow(data_list[[i]]),
@@ -721,9 +767,7 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -732,8 +776,12 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else {
-   cat(paste("No significantly differentially expressed circRNA's (excerpt)"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed circRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed circRNA's"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -777,9 +825,10 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_gencode_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # loop plotting over all treatment levels
   for (i in 1:N) {
@@ -803,7 +852,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE) {
     
     # create custom text that will be appended to the tooltip
     custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
-                                               "\nPipeline: smrnaseq"
+                                               "\nPipeline: excerpt"
     ),
     # make it the same dimensions as the current dataset (required for this to work)
     nrow = base::nrow(data_list[[i]]),
@@ -821,9 +870,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE) {
                            showticklabels = c(FALSE, TRUE),
                            titleX = FALSE,
                            srtCol = 45,
-                           hide_colorbar = TRUE) %>%
-      plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                     yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                           hide_colorbar = TRUE)
     
     plot_list[[i]] = p
     
@@ -832,8 +879,12 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE) {
   # plot all together
   plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
   
-} else {
-   cat(paste("No significantly differentially expressed gencode's (excerpt)"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed gencode's to cluster in a PCA"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed gencode's"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -857,6 +908,13 @@ maximum_rna_count <- base::max(c(lcpm_mirna_smrnaseq))
 # get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_mirna_smrnaseq))
 
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_mirna_smrnaseq)),
+                                           "\nPipeline: smrnaseq"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_mirna_smrnaseq)) %>%
+  t()
+
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
   low = "blue",
@@ -866,26 +924,33 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_mirna_smrnaseq %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
-} else {
-  cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3 & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed miRNA's"))
+} else if (all(is.na(lcpm_mirna_smrnaseq)) == TRUE & "mirna_smrnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -896,7 +961,7 @@ base::cat("#### miRNA's (excerpt)")
 
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt, out.width = "100%"}
 # extract datasets
-lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_excerpt
+lcpm_mirna_excerpt <- log_counts_per_million$mirna_excerpt
 
 # shorten miRNA names for plotting sakes
 base::rownames(lcpm_mirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_mirna_excerpt))
@@ -907,6 +972,13 @@ maximum_rna_count <- base::max(c(lcpm_mirna_excerpt))
 # get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_mirna_excerpt))
 
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_mirna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_mirna_excerpt)) %>%
+  t()
+
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
   low = "blue",
@@ -916,26 +988,33 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_mirna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_mirna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
-} else {
-  cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_smrnaseq) <= 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed miRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed miRNA's"))
+} else if (all(is.na(lcpm_mirna_excerpt)) == TRUE & "mirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -948,14 +1027,21 @@ base::cat("#### piRNA's (excerpt)")
 # extract datasets
 lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten piRNA names for plotting sakes
 base::rownames(lcpm_pirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_pirna_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all pirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_pirna_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all pirnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_pirna_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_pirna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_pirna_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -966,26 +1052,33 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_pirna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_pirna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
-} else {
-  cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) <= 3 & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed piRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed piRNA's"))
+} else if (all(is.na(lcpm_pirna_excerpt)) == TRUE & "pirna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -998,14 +1091,21 @@ base::cat("#### tRNA's (excerpt)")
 # extract datasets
 lcpm_trna_excerpt <- log_counts_per_million$trna_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten tRNA names for plotting sakes
 base::rownames(lcpm_trna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_trna_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all trnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_trna_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all trnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_trna_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_trna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_trna_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -1016,26 +1116,33 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_trna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_trna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
-} else {
-  cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
+} else if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) <= 3 & "mirna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed tRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed tRNA's"))
+} else if (all(is.na(lcpm_trna_excerpt)) == TRUE & "trna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -1048,14 +1155,21 @@ base::cat("#### circRNA's (excerpt)")
 # extract datasets
 lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten circrna names for plotting sakes
 base::rownames(lcpm_circrna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_circrna_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all circrnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_circrna_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all circrnas) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_circrna_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_circrna_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_circrna_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -1066,26 +1180,33 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_circrna_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_circrna_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
-} else {
-  cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) <= 3 & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed circRNA's to cluster in a PCA"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed circRNA's"))
+} else if (all(is.na(lcpm_circrna_excerpt)) == TRUE & "circrna_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 
@@ -1098,14 +1219,21 @@ base::cat("#### gencode's (excerpt)")
 # extract datasets
 lcpm_gencode_excerpt <- log_counts_per_million$gencode_excerpt
 
-# shorten miRNA names for plotting sakes
+# shorten gencode names for plotting sakes
 base::rownames(lcpm_gencode_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_gencode_excerpt))
 
-# get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the max RNA count in all datasets (over all gencodes) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_gencode_excerpt))
 
-# get the min RNA count in all datasets (over all mirnas) to scale the colour scale to
+# get the min RNA count in all datasets (over all gencodes) to scale the colour scale to
 minimum_rna_count <- base::min(c(lcpm_gencode_excerpt))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_gencode_excerpt)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_gencode_excerpt)) %>%
+  t()
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
@@ -1116,26 +1244,33 @@ gradient_col <- ggplot2::scale_fill_gradient2(
   limits = c(minimum_rna_count, maximum_rna_count))
 
 # check if the matrix for plotting is empty after filtering for only significantly differentially expressed RNA's
-# if there ARE significantly differentially expressed RNA's, create a heatmap
+# if there ARE significantly differentially expressed RNA's (and there are more than two of them), create a heatmap
 # if there AREN'T significantly differentially expressed RNA's, print a message saying so
-if (all(is.na(lcpm_gencode_excerpt)) == FALSE) {
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
   
   # plot a heatmap for each treatment
   lcpm_gencode_excerpt %>%
     heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
                          xlab = "Sample",
+                         dendrogram = c("both"),
                          key.title = "Log counts \n per million",
                          label_names = c("RNA", "Sample", "Log counts per million"),
                          label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
                          srtCol = 45,
-                         seriate = "OLO",
+                         seriate = "mean",
                          col_side_colors = ordered_treatments,
-                         hide_colorbar = TRUE) %>%
-    plotly::layout(xaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)),
-                   yaxis = list(titlefont = list(size = 10), tickfont = list(size = 10)))
+                         hide_colorbar = TRUE)
   
-} else {
-  cat(paste("No significantly differentially expressed miRNA's (smrnaseq)"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) <= 3 & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed gencode's to cluster in a PCA"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed gencode's"))
+} else if (all(is.na(lcpm_gencode_excerpt)) == TRUE & "gencode_excerpt" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
 }
 ```
 

@@ -20,7 +20,8 @@ metadata <- utils::read.csv(config$metadata_path)
 diff_expr_data <- utils::read.table("./diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 
 # read in mapping rates data
-mapping_rates <- utils::read.csv("./mapping_rates/mapping_rates.csv")
+mapping_rates <- utils::read.csv("./mapping_rates/mapping_rates.csv") %>%
+  tidyr::drop_na()
 
 ##################################################################
 ##                   Prep of count data                         ##
@@ -37,7 +38,13 @@ low_read_count_flag <- mapping_rates %>%
 counts <- dplyr::mutate(counts, low_sequencing_read_count = sample %in% low_read_count_flag)
 
 # append metadata to the count data
-counts <- dplyr::left_join(counts, metadata, by= "sample")
+counts <- dplyr::left_join(counts, metadata, by = "sample")
+
+# make a column that notes the raw read count for a given sample
+raw_read_count <- mapping_rates %>%
+  dplyr::select(sample, raw_read_count_fastq_file)
+
+counts <- dplyr::left_join(counts, raw_read_count, by = "sample")
 
 ##################################################################
 ##           Prep of differential expression data               ##

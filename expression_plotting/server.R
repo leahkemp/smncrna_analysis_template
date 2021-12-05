@@ -91,15 +91,27 @@ server <- function(input, output, session) {
   # create interactive table of the users current selection of rna and rna_species that show differential expressions results ----
   output$table_diff_expr <- DT::renderDataTable({
     
-    DT::datatable(subset_diff_expr_data() %>% dplyr::select(rna,
-                                                            rna_species,
-                                                            comparison,
-                                                            pipeline,
-                                                            diff_expr_method,
-                                                            log_fc,
-                                                            p_value,
-                                                            adj_p_value,
-                                                            significance),
+    DT::datatable(subset_diff_expr_data() %>%
+                    dplyr::select(rna,
+                                  rna_species,
+                                  comparison,
+                                  pipeline,
+                                  diff_expr_method,
+                                  log_fc,
+                                  p_value,
+                                  adj_p_value,
+                                  significance) %>%
+                    dplyr::mutate(across(c(rna_species,
+                                           pipeline,
+                                           diff_expr_method,
+                                           comparison,
+                                           significance), base::as.factor)) %>%
+                    dplyr::mutate(across(c(log_fc,
+                                           p_value,
+                                           adj_p_value), base::as.double)) %>%
+                    dplyr::mutate(across(c(p_value,
+                                           adj_p_value), ~base::round(.x, digits = 6))) %>%
+                    dplyr::mutate(across(c(log_fc), ~base::round(.x, digits = 4))),
                   filter = "top",
                   rownames = FALSE,
                   colnames = c("RNA",
@@ -190,7 +202,8 @@ server <- function(input, output, session) {
                                       "</br> Sample:", x$sample,
                                       "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
-                                      "</br> Low sequencing read count:", low_sequencing_read_count)) %>%
+                                      "</br> Low sequencing read count:", low_sequencing_read_count,
+                                      "</br> Sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2))) %>%
           plotly::layout(yaxis = base::list(title = "Counts per million"),
                          xaxis = base::list(title = "", tickangle = 270, type = "category"))
       }) %>% plotly::subplot(shareY = TRUE)
@@ -226,11 +239,12 @@ server <- function(input, output, session) {
                         mode  = "markers",
                         marker = base::list(opacity = 0.5),
                         hoverinfo = "text",
-                        text = ~paste("</br> Raw count:",base::format(raw_counts, big.mark = ",", scientific = FALSE, digits = 2),
+                        text = ~paste("</br> Raw count:", base::format(raw_counts, big.mark = ",", scientific = FALSE, digits = 2),
                                       "</br> Sample:", x$sample,
                                       "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
-                                      "</br> Low sequencing read count:", low_sequencing_read_count)) %>%
+                                      "</br> Low sequencing read count:", low_sequencing_read_count,
+                                      "</br> Sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2))) %>%
           plotly::layout(yaxis = base::list(title = "Raw counts"),
                          xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
       plotly::subplot(shareY = TRUE)
@@ -243,11 +257,19 @@ server <- function(input, output, session) {
                                                         rna_species,
                                                         sample,
                                                         low_sequencing_read_count,
+                                                        raw_read_count_fastq_file,
                                                         pipeline,
                                                         raw_counts,
                                                         counts_per_million,
                                                         treatment) %>%
-                    dplyr::mutate_if(is.numeric, format, big.mark = ",", scientific = FALSE, digits = 0),
+                    dplyr::mutate(across(c(rna_species,
+                                           sample,
+                                           low_sequencing_read_count,
+                                           pipeline,
+                                           treatment), base::as.factor)) %>%
+                    dplyr::mutate(across(c(raw_counts,
+                                           counts_per_million,
+                                           raw_read_count_fastq_file), base::as.integer)),
                   selection = "single",
                   filter = "top",
                   rownames = FALSE,
@@ -255,6 +277,7 @@ server <- function(input, output, session) {
                                "RNA species",
                                "Sample",
                                "Low sequencing read count",
+                               "Sequencing read count",
                                "Pipeline",
                                "Raw counts",
                                "Counts per million",

@@ -31,10 +31,10 @@ low_sequencing_read_count: 5000000
 # set the offending datasets to false here so the analysis can continue without these datasets
 mirna_smrnaseq: true
 mirna_excerpt: true
-pirna_excerpt: false
+pirna_excerpt: true
 trna_excerpt: true
-circrna_excerpt: false
-gencode_excerpt: false
+circrna_excerpt: true
+gencode_excerpt: true
 
 #################################################
 #####   DIFFERENTIAL EXPRESSION ANALYSIS   ######
@@ -65,6 +65,9 @@ min_total_count: 15
 # see more info about this function/flag here: https://rdrr.io/bioc/limma/man/ebayes.html
 # typical values for lfc are log2(1.1), log2(1.2) or log2(1.5)
 min_lfc: "log2(1.1)"
+
+# p-value cutoff to consider an RNA significantly differentially expressed
+pvalue_cutoff: 0.1
 
 #################################################
 #####       EXPRESSION PLOTTING APP        ######

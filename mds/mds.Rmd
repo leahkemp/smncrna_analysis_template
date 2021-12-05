@@ -71,6 +71,10 @@ mkdir -p ./mds_results/
 
 ## Info
 
+General info:
+
+- *Values have been rounded*
+
 Datasets analysed:
 
 ```{r, results = "asis"}
@@ -81,6 +85,22 @@ base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
                        " - trna excerpt: ", config$trna_excerpt, "\n",
                        " - circrna excerpt: ", config$circrna_excerpt, "\n",
                        " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
 ```
 
 ## MDS {.tabset .tabset-fade}
@@ -147,6 +167,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -159,7 +180,12 @@ DT::datatable(data %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -169,18 +195,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$mirna_smrnaseq, results = "asis"}
@@ -221,6 +245,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -233,7 +258,12 @@ DT::datatable(data %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -243,18 +273,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -295,6 +323,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -307,7 +336,12 @@ DT::datatable(data %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -317,18 +351,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -369,6 +401,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -381,7 +414,12 @@ DT::datatable(data %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -391,18 +429,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -443,6 +479,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -455,7 +492,12 @@ DT::datatable(data %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -465,18 +507,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -517,6 +557,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -529,7 +570,12 @@ DT::datatable(data %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -539,18 +585,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             base::list(extend = "collection",
-                                        buttons = c("csv", "excel", "pdf"),
-                                        text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -591,6 +635,7 @@ data %>%
                   color = ~treatment,
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
                                 "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
                                 "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
   plotly::layout(xaxis = base::list(title = "Dim1"),
@@ -603,7 +648,12 @@ DT::datatable(data %>%
                 dplyr::select(sample,
                               treatment,
                               dim1,
-                              dim2),
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
@@ -613,18 +663,16 @@ DT::datatable(data %>%
               extensions = base::list("ColReorder" = NULL,
                                       "Buttons" = NULL,
                                       "FixedColumns" = base::list(leftColumns=1)),
-              options = base::list(
+              options = list(
                 dom = "BRrltpi",
                 autoWidth = TRUE,
-                columnDefs = base::list(base::list(width = "200px", targets = 0)),
-                lengthMenu = base::list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
                 buttons =
-                  base::list("copy",
-                             list(extend = "collection",
-                                  buttons = c("csv", "excel", "pdf"),
-                                  text = "Download"),
-                             I("colvis"))))
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 ```
 
 ```{r, cleanup, results = "hide"}

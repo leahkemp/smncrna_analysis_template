@@ -53,16 +53,13 @@ Lastly, the composition of the RNA species that are identified in each treatment
 
 ## Prerequisite software
 
-[python 3](https://www.python.org/), [cut](https://www.man7.org/linux/man-pages/man1/cut.1.html), [zgrep](https://linux.die.net/man/1/zgrep), [GNU cat](https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html), [GNU bc](https://www.gnu.org/software/bc/), [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html), [GNU ls](https://www.gnu.org/software/coreutils/manual/html_node/ls-invocation.html), [pandas](https://pypi.org/project/pandas/), [PyYAML](https://pypi.org/project/PyYAML/)
+[python 3](https://www.python.org/), [cut](https://www.man7.org/linux/man-pages/man1/cut.1.html), [zgrep](https://linux.die.net/man/1/zgrep), [GNU software](https://www.gnu.org/software/), [pandas](https://pypi.org/project/pandas/), [PyYAML](https://pypi.org/project/PyYAML/), [R](https://www.r-project.org/), [git](https://git-scm.com/)
 
 ## Testing
 
 This template has been validated to work on:
 
-- [nextflow 21.04.0](https://github.com/nextflow-io/nextflow/tree/v21.04.0)
-- [singularity 3.7.2](https://github.com/hpcng/singularity/tree/v3.7.2)
-- [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0)
-- [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2)
+- Pipeline outputs created using [nextflow 21.04.0](https://github.com/nextflow-io/nextflow/tree/v21.04.0), [singularity 3.7.2](https://github.com/hpcng/singularity/tree/v3.7.2), [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0), [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2)
 - R version 4.0.5
 - CentOS Linux 7
 

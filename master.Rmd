@@ -51,10 +51,11 @@ base::source("./prepare_counts/prepare_counts.R")
 
 ## RNA species composition plotting
 
-*This will output an interactive html document exploring the RNA species composition (./rna_species_composition/rna_species_composition.html)*
+*This will output two interactive html document exploring the RNA species composition (./rna_species_composition/rna_species_composition_treatments.html and ./rna_species_composition/rna_species_composition_samples.html)*
 
 ```{r}
-rmarkdown::render("./rna_species_composition/rna_species_composition.Rmd")
+rmarkdown::render("./rna_species_composition/rna_species_composition_treatments.Rmd")
+rmarkdown::render("./rna_species_composition/rna_species_composition_samples.Rmd")
 ```
 
 ## MDS plots
