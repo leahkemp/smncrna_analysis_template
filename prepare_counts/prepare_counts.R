@@ -199,7 +199,8 @@ counts <- counts %>%
 # write the data to a csv file so I can use it in other documents
 utils::write.csv(counts, "./prepare_counts/counts.csv", row.names = FALSE)
 
-# also save some rds objects for Miles to have a play with (first define the treatment groups in the column headers)
+# also save some rds objects (first define the treatment groups in the column headers)
+# (these rds objects aren't used by the tempalate, but can be useful to load and play with)
 treatments <- utils::read.csv(base::file.path(config$metadata)) %>%
   dplyr::select(sample, treatment)
 
