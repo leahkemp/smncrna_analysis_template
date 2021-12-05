@@ -31,10 +31,10 @@ low_sequencing_read_count: 5000000
 # set the offending datasets to false here so the analysis can continue without these datasets
 mirna_smrnaseq: true
 mirna_excerpt: true
-pirna_excerpt: false
+pirna_excerpt: true
 trna_excerpt: true
-circrna_excerpt: false
-gencode_excerpt: false
+circrna_excerpt: true
+gencode_excerpt: true
 
 #################################################
 #####   DIFFERENTIAL EXPRESSION ANALYSIS   ######
