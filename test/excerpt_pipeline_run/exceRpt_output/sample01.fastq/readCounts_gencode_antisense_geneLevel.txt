@@ -1,0 +1,15 @@
+GeneSymbol	uniqueReadCount	totalReadCount	multimapAdjustedReadCount	multimapAdjustedBarcodeCount
+AHDC1	1	4	4.0	0.0
+RPAP2	1	4	4.0	0.0
+TAF1A	1	4	2.0	0.0
+COPS6	1	4	2.0	0.0
+STOML1	1	2	2.0	0.0
+FKBP1A	1	2	1.5	0.0
+TKT	1	1	1.0	0.0
+GOLGA2P1	1	1	1.0	0.0
+MTMR2	1	1	1.0	0.0
+SUPT20H	1	1	0.9999999999999998	0.0
+Y_RNA.267	1	1	0.5	0.0
+Y_RNA.696	1	1	0.5	0.0
+SRSF10	1	2	0.25	0.0
+FKBP1C	1	2	0.25	0.0

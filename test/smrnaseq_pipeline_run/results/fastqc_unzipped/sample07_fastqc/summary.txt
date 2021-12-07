@@ -1,0 +1,11 @@
+PASS	Basic Statistics	sample07.fastq.gz
+PASS	Per base sequence quality	sample07.fastq.gz
+WARN	Per tile sequence quality	sample07.fastq.gz
+PASS	Per sequence quality scores	sample07.fastq.gz
+FAIL	Per base sequence content	sample07.fastq.gz
+PASS	Per sequence GC content	sample07.fastq.gz
+PASS	Per base N content	sample07.fastq.gz
+PASS	Sequence Length Distribution	sample07.fastq.gz
+PASS	Sequence Duplication Levels	sample07.fastq.gz
+PASS	Overrepresented sequences	sample07.fastq.gz
+FAIL	Adapter Content	sample07.fastq.gz

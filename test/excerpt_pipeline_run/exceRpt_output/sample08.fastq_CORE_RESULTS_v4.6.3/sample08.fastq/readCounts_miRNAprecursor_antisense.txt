@@ -1,0 +1,2 @@
+ReferenceID	uniqueReadCount	totalReadCount	multimapAdjustedReadCount	multimapAdjustedBarcodeCount
+hsa-let-7b:MI0000063:Homo:sapiens:let-7b:stem-loop	1	1	1.0	0.0

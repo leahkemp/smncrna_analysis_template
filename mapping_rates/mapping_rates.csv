@@ -1,0 +1,14 @@
+sample,raw_read_count_fastq_file,excerpt_clipped_read_count_fastq_file,excerpt_clipped_trimmed_read_count_fastq_file,excerpt_clipped_trimmed_filtered_read_count_fastq_file,excerpt_failed_quality_filter_read_count_stats_file,excerpt_failed_homopolymer_filter_read_count_stats_file,excerpt_reads_used_for_alignment_stats_file,excerpt_not_mapped_to_genome_or_libs_stats_file,smrnaseq_raw_read_count_fastqc_file,smrnaseq_trimmed_read_count_fastq_file,smrnaseq_qc_passed_read_count_fastq_file,smrnaseq_qc_passed_rna_type_unknown_read_count_fastq_file,smrnaseq_reads_mapped_to_mature_bowtie_stats_file,smrnaseq_reads_unmapped_to_mature_bowtie_stats_file,smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file,smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file,smrnaseq_reads_unmapped_to_hairpin_fastq_file
+sample01,10000,6538,6538,5794,47,697,5399,3618,10000,3103,667,429,927,2353,300,2167,2167
+sample02,10000,9607,9607,8950,36,621,8383,4450,10000,6077,1559,1198,1636,4708,565,4368,4368
+sample03,10000,9644,9644,9034,65,545,8386,4756,10000,5730,1683,1288,1758,4282,699,3826,3826
+sample04,10000,8681,8681,8079,48,554,7519,4246,10000,5161,1540,1219,1595,3857,646,3488,3488
+sample05,10000,9079,9079,8654,44,381,7990,4958,10000,5846,1839,1440,1363,4739,455,4511,4511
+sample06,10000,8631,8631,8256,43,332,7641,4089,10000,5557,1450,1108,1522,4288,546,4033,4033
+sample07,10000,8909,8909,8511,50,348,8018,2863,10000,6494,1189,786,3017,3713,997,3302,3302
+sample08,10000,9178,9178,8723,35,420,8238,4497,10000,6147,1661,1282,2359,4080,581,3780,3780
+sample09,10000,9047,9047,8501,56,490,7933,4369,10000,5323,1516,1120,1871,3668,584,3369,3369
+sample10,10000,8920,8920,8304,54,562,7815,5499,10000,4959,1438,1153,1225,3931,359,3715,3715
+sample11,10000,8998,8998,8625,55,318,8051,4171,10000,6079,1471,1120,1916,4468,873,4042,4042
+sample12,10000,7029,7029,6742,40,247,6325,4027,10000,4563,1479,1175,1067,3696,479,3447,3447
+,,,,,,,,,,,,,,,,,

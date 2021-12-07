@@ -25,7 +25,7 @@ ui <- shiny::fluidPage(
   tags$head(
     base::lapply(sig_diff_expr_data_1, function(x){
       tags$style(HTML(
-        base::paste0(".option[data-value=", x, "], .item[data-value=", x, "] {background: #ffe342 !important;}")
+        base::paste0(".option[data-value=", x, "], .item[data-value=", x, "] {background: #85C659 !important;}")
       ))
     })
   ),
@@ -33,7 +33,7 @@ ui <- shiny::fluidPage(
   tags$head(
     base::lapply(sig_diff_expr_data_5, function(x){
       tags$style(HTML(
-        base::paste0(".option[data-value=", x, "], .item[data-value=", x, "] {background: #ffef8a !important;}")
+        base::paste0(".option[data-value=", x, "], .item[data-value=", x, "] {background: #febf2a !important;}")
       ))
     })
   ),
@@ -41,7 +41,7 @@ ui <- shiny::fluidPage(
   tags$head(
     base::lapply(sig_diff_expr_data_10, function(x){
       tags$style(HTML(
-        base::paste0(".option[data-value=", x, "], .item[data-value=", x, "] {background: #fff5b8 !important;}")
+        base::paste0(".option[data-value=", x, "], .item[data-value=", x, "] {background: #ec1515 !important;}")
       ))
     })
   ),
@@ -73,7 +73,7 @@ ui <- shiny::fluidPage(
       # add help text that reminds the user that all this differential expression data is based on
       # on only one of the variables they can choose to explore
       shiny::helpText(tags$i(
-        h5("Explore the differential expression results, raw counts and counts per million by RNA. RNA's highlighted in yellow were found to be significantly differentially expressed by at least one differential expression analysis. A smaller p-value is highlighted in a bolder yellow. A differential expression analysis was only carried out on miRNAs, piRNA's and tRNA's.")))
+        h5("Explore the differential expression results, raw counts and counts per million by RNA. RNA's highlighted in green, yellow and red were found to be significantly differentially expressed by at least one differential expression analysis.")))
     ),
     
     # plot all the tables and boxplots ----        
@@ -81,37 +81,37 @@ ui <- shiny::fluidPage(
       
       # plot differential expression table
       DT::dataTableOutput("table_diff_expr") %>%
-        shinycssloaders::withSpinner(color="#0dc5c1")
+        shinycssloaders::withSpinner(color="#0097db")
     ),
     
     shiny::wellPanel(
       
       plotly::plotlyOutput(outputId = "scatterplot_raw_by_sample") %>%
-        shinycssloaders::withSpinner(color="#0dc5c1")
+        shinycssloaders::withSpinner(color="#0097db")
     ), 
     
     shiny::wellPanel(
       
       plotly::plotlyOutput(outputId = "box_plot_raw") %>%
-        shinycssloaders::withSpinner(color="#0dc5c1")
+        shinycssloaders::withSpinner(color="#0097db")
     ),
     
     shiny::wellPanel(
       
       plotly::plotlyOutput(outputId = "scatterplot_cpm_by_sample") %>%
-        shinycssloaders::withSpinner(color="#0dc5c1")
+        shinycssloaders::withSpinner(color="#0097db")
     ),
     
     shiny::wellPanel(
       
       plotly::plotlyOutput(outputId = "box_plot_cpm") %>%
-        shinycssloaders::withSpinner(color="#0dc5c1")
+        shinycssloaders::withSpinner(color="#0097db")
     ),
     
     shiny::wellPanel(
       
       DT::dataTableOutput("table") %>%
-        shinycssloaders::withSpinner(color="#0dc5c1")
+        shinycssloaders::withSpinner(color="#0097db")
       
     )
   )

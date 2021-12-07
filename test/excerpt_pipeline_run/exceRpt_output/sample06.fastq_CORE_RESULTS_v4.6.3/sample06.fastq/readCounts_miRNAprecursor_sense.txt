@@ -1,0 +1,4 @@
+ReferenceID	uniqueReadCount	totalReadCount	multimapAdjustedReadCount	multimapAdjustedBarcodeCount
+hsa-mir-423:MI0001445:Homo:sapiens:miR-423:stem-loop	1	2	2.0	0.0
+hsa-mir-486-1:MI0002470:Homo:sapiens:miR-486:stem-loop	1	1	0.5	0.0
+hsa-mir-486-2:MI0023622:Homo:sapiens:miR-486-2:stem-loop	1	1	0.5	0.0

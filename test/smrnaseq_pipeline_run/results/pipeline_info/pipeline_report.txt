@@ -1,0 +1,66 @@
+----------------------------------------------------
+                                        ,--./,-.
+        ___     __   __   __   ___     /,-._.--~\
+  |\ | |__  __ /  ` /  \ |__) |__         }  {
+  | \| |       \__, \__/ |  \ |___     \`-._,-`-,
+                                        `._,._,'
+  nf-core/smrnaseq v1.1.0
+----------------------------------------------------
+
+Run Name: condescending_wright
+
+## nf-core/smrnaseq execution completed successfully! ##
+
+
+The workflow was completed at 2021-11-02T16:55:04.406935+13:00 (duration: 44.8s)
+
+The command used to launch the workflow was as follows:
+
+  nextflow run nf-core/smrnaseq --input '/NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/test/fastq/*.fastq.gz' --protocol nextflex -profile singularity --mature /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/mature.fa --hairpin /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/hairpin.fa --mirna_gtf /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/genomes/hsa.gff3 --mirtrace_species hsa --saveReference -resume --min_length 17 --skip_mirdeep
+
+
+
+Pipeline Configuration:
+-----------------------
+ - Pipeline Release: master
+ - Run Name: condescending_wright
+ - Input: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/test/fastq/*.fastq.gz
+ - Genome: null
+ - Min Trimmed Length: 17
+ - Trim 5' R1: 4
+ - Trim 3' R1: 4
+ - miRBase mature: /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/mature.fa
+ - miRBase hairpin: /NGS/scratch/KSCBIOM/HumanGenomics/publicData/mirbase.org/pub/mirbase/CURRENT/hairpin.fa
+ - Reference Genome: false
+ - Save Reference: Yes
+ - Protocol: nextflex
+ - Mirtrace Protocol: nextflex
+ - miRTrace species: hsa
+ - 3' adapter: TGGAATTCTCGGGTGCCAAGG
+ - Output dir: ./results
+ - Launch dir: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/smrnaseq_pipeline_run
+ - Working dir: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/smrnaseq_pipeline_run/work
+ - Current home: /home/lkemp
+ - Current user: lkemp
+ - Current path: /NGS/scratch/KSCBIOM/HumanGenomics/smncrna_analysis_template/smrnaseq_pipeline_run
+ - Script dir: /home/lkemp/.nextflow/assets/nf-core/smrnaseq
+ - Config Profile: singularity
+ - Fasta Ref: false
+ - Max Resources: 128 GB memory, 16 cpus, 10d time per job
+ - Container: singularity - nfcore/smrnaseq:1.1.0
+ - User: lkemp
+ - Config Files: /home/lkemp/.nextflow/assets/nf-core/smrnaseq/nextflow.config
+ - Date Started: 2021-11-02T16:54:19.650076+13:00
+ - Date Completed: 2021-11-02T16:55:04.406935+13:00
+ - Pipeline script file path: /home/lkemp/.nextflow/assets/nf-core/smrnaseq/main.nf
+ - Pipeline script hash ID: 33661065c199ca61925ffad7890dc67c
+ - Pipeline repository Git URL: https://github.com/nf-core/smrnaseq
+ - Pipeline repository Git Commit: 03333bfa17adc8d829a400012ed9f13c5abf4cc3
+ - Pipeline Git branch/tag: master
+ - Nextflow Version: 21.04.0
+ - Nextflow Build: 5552
+ - Nextflow Compile Timestamp: 02-05-2021 16:22 UTC
+
+--
+nf-core/smrnaseq
+https://github.com/nf-core/smrnaseq
