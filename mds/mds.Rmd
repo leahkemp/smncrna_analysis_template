@@ -4,13 +4,25 @@ author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
 date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
 output:
-  html_document:
-    code_download: true
-    toc: false
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
   editor_options: 
     chunk_output_type: console
 ---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
 
 ```{r setup, include=FALSE}
 # setup default chunk settings
@@ -29,6 +41,9 @@ library(limma)
 library(textshape)
 library(DT)
 library(yaml)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
@@ -62,6 +77,51 @@ metadata <- utils::read.csv(config$metadata_path)
 
 # join with metadata
 counts <- dplyr::left_join(counts, metadata, by = "sample")
+
+# subset all count data to the count data specified to be analysed by the user in the config file
+# this will remove rows of data matching the said conditions
+
+if(config$mirna_smrnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "smrnaseq")))
+  
+}
+
+if(config$mirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$pirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "pirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$trna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "trna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$circrna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "circrna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$gencode_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "gencode") & (pipeline == "excerpt")))
+  
+}
 ```
 
 ```{bash}
@@ -165,6 +225,7 @@ data %>%
                   y = ~dim2,
                   type = "scatter",
                   color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
                                 "</br> Treatment:", treatment,
@@ -243,6 +304,7 @@ data %>%
                   y = ~dim2,
                   type = "scatter",
                   color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
                                 "</br> Treatment:", treatment,
@@ -321,6 +383,7 @@ data %>%
                   y = ~dim2,
                   type = "scatter",
                   color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
                                 "</br> Treatment:", treatment,
@@ -399,6 +462,7 @@ data %>%
                   y = ~dim2,
                   type = "scatter",
                   color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
                                 "</br> Treatment:", treatment,
@@ -477,6 +541,7 @@ data %>%
                   y = ~dim2,
                   type = "scatter",
                   color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
                                 "</br> Treatment:", treatment,
@@ -555,6 +620,7 @@ data %>%
                   y = ~dim2,
                   type = "scatter",
                   color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
                                 "</br> Treatment:", treatment,
@@ -633,6 +699,7 @@ data %>%
                   y = ~dim2,
                   type = "scatter",
                   color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                   hoverinfo = "text",
                   text = ~paste("</br> Sample:", sample,
                                 "</br> Treatment:", treatment,

@@ -4,12 +4,25 @@ author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
 date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
 output:
-  html_document:
-    code_download: true
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
   editor_options: 
     chunk_output_type: console
 ---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
 
 ```{r setup, include=FALSE}
 # setup default chunk settings
@@ -32,6 +45,9 @@ library(DT)
 library(heatmaply)
 library(edgeR)
 library(textshape)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 
 # read in pre-prepared count data
 counts <- utils::read.csv("../prepare_counts/counts.csv")
@@ -303,9 +319,9 @@ minimum_rna_count <- base::min(c(lcpm_mirna_smrnaseq))
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -406,9 +422,9 @@ minimum_rna_count <- base::min(c(lcpm_mirna_excerpt))
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -509,9 +525,9 @@ minimum_rna_count <- base::min(c(lcpm_pirna_excerpt))
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -612,9 +628,9 @@ minimum_rna_count <- base::min(c(lcpm_trna_excerpt))
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -715,9 +731,9 @@ minimum_rna_count <- base::min(c(lcpm_circrna_excerpt))
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -818,9 +834,9 @@ minimum_rna_count <- base::min(c(lcpm_gencode_excerpt))
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -917,9 +933,9 @@ custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -981,9 +997,9 @@ custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -1045,9 +1061,9 @@ custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -1109,9 +1125,9 @@ custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -1173,9 +1189,9 @@ custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 
@@ -1237,9 +1253,9 @@ custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments
 
 # set up the colour gradient palette
 gradient_col <- ggplot2::scale_fill_gradient2(
-  low = "blue",
+  low = "#0097db",
   mid = "white",
-  high = "red",
+  high = "#ec1515",
   midpoint = maximum_rna_count/1.5,
   limits = c(minimum_rna_count, maximum_rna_count))
 

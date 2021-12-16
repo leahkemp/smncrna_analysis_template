@@ -154,9 +154,9 @@ server <- function(input, output, session) {
                     backgroundColor = styleEqual(c("significant_1%",
                                                    "significant_5%",
                                                    "significant_10%"),
-                                                 c("#ffe342",
-                                                   "#ffef8a",
-                                                   "#fff5b8")))
+                                                 c("#85C659",
+                                                   "#febf2a",
+                                                   "#ec1515")))
     
   })
   
@@ -174,6 +174,7 @@ server <- function(input, output, session) {
                     y = ~counts_per_million,
                     split = ~pipeline,
                     color = ~get(main_variable()),
+                    colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                     type = "box") %>%
       plotly::layout(yaxis = base::list(title = "Counts per million"),
                      xaxis = base::list(title = "", tickangle = 270),
@@ -194,6 +195,7 @@ server <- function(input, output, session) {
                         y = ~counts_per_million,
                         split = ~pipeline,
                         color = ~get(main_variable()),
+                        colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                         type = "scatter",
                         mode  = "markers",
                         marker = base::list(opacity = 0.5),
@@ -218,6 +220,7 @@ server <- function(input, output, session) {
                     y = ~raw_counts,
                     split = ~pipeline,
                     color = ~get(main_variable()),
+                    colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                     type = "box") %>%
       plotly::layout(yaxis = base::list(title = "Raw counts"),
                      xaxis = base::list(title = "", tickangle = 270),
@@ -235,6 +238,7 @@ server <- function(input, output, session) {
                         y = ~raw_counts,
                         split = ~pipeline,
                         color = ~get(main_variable()),
+                        colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                         type = "scatter",
                         mode  = "markers",
                         marker = base::list(opacity = 0.5),

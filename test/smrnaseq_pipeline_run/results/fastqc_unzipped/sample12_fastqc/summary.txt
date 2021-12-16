@@ -1,0 +1,11 @@
+PASS	Basic Statistics	sample12.fastq.gz
+PASS	Per base sequence quality	sample12.fastq.gz
+WARN	Per tile sequence quality	sample12.fastq.gz
+PASS	Per sequence quality scores	sample12.fastq.gz
+FAIL	Per base sequence content	sample12.fastq.gz
+WARN	Per sequence GC content	sample12.fastq.gz
+PASS	Per base N content	sample12.fastq.gz
+PASS	Sequence Length Distribution	sample12.fastq.gz
+PASS	Sequence Duplication Levels	sample12.fastq.gz
+WARN	Overrepresented sequences	sample12.fastq.gz
+FAIL	Adapter Content	sample12.fastq.gz

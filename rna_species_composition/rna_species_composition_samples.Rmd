@@ -4,9 +4,20 @@ author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
 date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
 output:
-  html_document:
-    code_download: true
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
   editor_options: 
     chunk_output_type: console
 ---
@@ -15,6 +26,8 @@ output:
 # setup default chunk settings
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
 
 ## Info
 
@@ -31,6 +44,9 @@ library(plotly)
 library(gtools)
 library(DT)
 
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
 # read in pre-prepared count data
 counts <- utils::read.csv("../prepare_counts/counts.csv")
 
@@ -39,6 +55,52 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(file.path(config$metadata))
+
+# subset all count data to the count data specified to be analysed by the user in the config file
+# this will remove rows of data matching the said conditions
+
+if(config$mirna_smrnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "smrnaseq")))
+  
+}
+
+if(config$mirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$pirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "pirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$trna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "trna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$circrna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "circrna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$gencode_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "gencode") & (pipeline == "excerpt")))
+  
+}
+
 ```
 
 Datasets analysed:
@@ -121,12 +183,12 @@ data_smrnaseq <- data %>%
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
 colors_list <- base::list(
-  "trna" = "#173b4e",
-  "mirna" = "#D95F02",
-  "pirna" = "#7570B3",
-  "protein_coding" = "#b17eb1",
-  "Mt_rRNA" = "#66A61E",
-  "misc_RNA" = "#27408b",
+  "trna" = "#85C659",
+  "mirna" = "#0097db",
+  "pirna" = "#ec1515",
+  "protein_coding" = "#febf2a",
+  "Mt_rRNA" = "#784f96",
+  "misc_RNA" = "#1abcc1",
   "retained_intron" = "#ffec8b",
   "processed_transcript" = "#88d4c3",
   "nonsense_mediated_decay" = "#1B9E77",

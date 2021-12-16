@@ -4,23 +4,38 @@ author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
 date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
 output:
-  html_document:
-    code_download: true
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
   editor_options: 
     chunk_output_type: console
 ---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
 
 ```{r setup, include=FALSE}
 # setup default chunk settings
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
 ```
 
-# Context
+## Info
 
-# Sequencing read counts {.tabset .tabset-fade}
+Explore the number of raw sequencing reads and the number of aligned/unaligned reads for each pipeline run
 
-## smrnaseq
+## Alignment rates {.tabset .tabset-fade}
+
+### smrnaseq
 
 ```{r, out.width = "100%"}
 # load libraries
@@ -29,6 +44,9 @@ library(tidyr)
 library(plotly)
 library(gtools)
 library(DT)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
@@ -62,6 +80,7 @@ mapping_rates_data %>%
   plotly::plot_ly(x = ~sample,
                   y = ~raw_read_count_fastq_file,
                   type = "bar",
+                  color = I("#0097db"),
                   textposition = "none",
                   name = "Raw sequencing \n read count",
                   hoverinfo = "text",
@@ -69,24 +88,28 @@ mapping_rates_data %>%
                                       "</br> Sample:", sample,
                                       "</br> Treatment:", treatment)) %>%
   plotly::add_trace(y = ~smrnaseq_reads_mapped_to_mature_bowtie_stats_file,
+                    color = I("#85C659"),
                     name = "Reads aligned to mature RNA's",
                     hoverinfo = "text",
                     text = ~base::paste("</br> Reads aligned to mature RNA's:", base::format(smrnaseq_reads_mapped_to_mature_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
   plotly::add_trace(y = ~smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file,
+                    color = I("#ec1515"),
                     name = "Reads aligned to hairpin RNA's",
                     hoverinfo = "text",
                     text = ~base::paste("</br> Reads aligned to hairpin RNA's:", base::format(smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
   plotly::add_trace(y = ~smrnaseq_reads_unmapped_to_mature_bowtie_stats_file,
+                    color = I("#febf2a"),
                     name = "Reads unaligned to mature RNA's",
                     hoverinfo = "text",
                     text = ~base::paste("</br> Reads unaligned to mature RNA's:", base::format(smrnaseq_reads_unmapped_to_mature_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
   plotly::add_trace(y = ~smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file,
+                    color = I("#784f96"),
                     name = "Reads unaligned to hairpin RNA's",
                     hoverinfo = "text",
                     text = ~base::paste("</br> Reads unaligned to hairpin RNA's:", base::format(smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
@@ -98,35 +121,35 @@ mapping_rates_data %>%
                        y = base::mean(mapping_rates_data$raw_read_count_fastq_file),
                        yend = base::mean(mapping_rates_data$raw_read_count_fastq_file),
                        name = "Average raw \n sequencing read count",
-                       color = I("#1f77b4")) %>%
+                       color = I("#0097db")) %>%
   # add line that show you the average number of reads aligned to mature RNA's
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_mature_bowtie_stats_file),
                        yend = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_mature_bowtie_stats_file),
                        name = "Average reads aligned to \n mature RNA's",
-                       color = I("#ff7f0e")) %>%
+                       color = I("#85C659")) %>%
   # add line that show you the average number of reads aligned to hairpin RNA's
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file),
                        yend = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file),
                        name = "Average reads aligned to \n hairpin RNA's",
-                       color = I("#2ca02c")) %>%
+                       color = I("#ec1515")) %>%
   # add line that show you the average number of reads unmapped to mature RNA's
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_mature_bowtie_stats_file),
                        yend = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_mature_bowtie_stats_file),
                        name = "Average reads unaligned to \n mature RNA's",
-                       color = I("#d62728")) %>%
+                       color = I("#febf2a")) %>%
   # add line that show you the average number of reads unmapped to hairpin RNA's
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file),
                        yend = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file),
                        name = "Average reads unaligned to \n hairpin RNA's",
-                       color = I("#9467bd")) %>%
+                       color = I("#784f96")) %>%
   plotly::layout(xaxis = xform) %>%
   plotly::layout(xaxis = list(title = "Sample"),
                  yaxis = list(title = "Read count"))
@@ -178,7 +201,7 @@ DT::datatable(mapping_rates_data %>%
                        I("colvis"))))
 ```
 
-## excerpt
+### excerpt
 
 ```{r, out.width = "100%"}
 # create a bar chart of the raw read counts
@@ -186,6 +209,7 @@ mapping_rates_data %>%
   plotly::plot_ly(x = ~sample,
                   y = ~raw_read_count_fastq_file,
                   type = "bar",
+                  color = I("#0097db"),
                   textposition = "none",
                   name = "Raw sequencing \n read count",
                   hoverinfo = "text",
@@ -193,12 +217,14 @@ mapping_rates_data %>%
                                       "</br> Sample:", sample,
                                       "</br> Treatment:", treatment)) %>%
   plotly::add_trace(y = ~excerpt_reads_used_for_alignment_stats_file,
+                    color = I("#85C659"),
                     name = "Reads used for alignment",
                     hoverinfo = "text",
                     text = ~base::paste("</br> Reads used for alignment:", base::format(excerpt_reads_used_for_alignment_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
   plotly::add_trace(y = ~excerpt_not_mapped_to_genome_or_libs_stats_file,
+                    color = I("#ec1515"),
                     name = "Not mapped to \n genome or libs",
                     hoverinfo = "text",
                     text = ~base::paste("</br> Not mapped to \n genome or libs:", base::format(excerpt_not_mapped_to_genome_or_libs_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
@@ -210,21 +236,21 @@ mapping_rates_data %>%
                        y = base::mean(mapping_rates_data$raw_read_count_fastq_file),
                        yend = base::mean(mapping_rates_data$raw_read_count_fastq_file),
                        name = "Average raw sequencing \n read count",
-                       color = I("#1f77b4")) %>%
+                       color = I("#0097db")) %>%
   # add line that show you the average number of reads used for alignment across all samples
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$excerpt_reads_used_for_alignment_stats_file),
                        yend = base::mean(mapping_rates_data$excerpt_reads_used_for_alignment_stats_file),
                        name = "Average reads used \n for alignment",
-                       color = I("#ff7f0e")) %>%
+                       color = I("#85C659")) %>%
   # add line that show you the average number of reads not mapped to genome or libs
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
                        y = base::mean(mapping_rates_data$excerpt_not_mapped_to_genome_or_libs_stats_file),
                        yend = base::mean(mapping_rates_data$excerpt_not_mapped_to_genome_or_libs_stats_file),
                        name = "Average reads not \n mapped to genome or libs",
-                       color = I("#2ca02c")) %>%
+                       color = I("#ec1515")) %>%
   plotly::layout(xaxis = xform) %>%
   plotly::layout(xaxis = list(title = "Sample"),
                  yaxis = list(title = "Read count"))

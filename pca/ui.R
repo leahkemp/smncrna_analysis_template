@@ -36,12 +36,14 @@ ui <- shiny::fluidPage(
     
     shiny::wellPanel(style = "padding: 80px;",
                      
-                     crosstalk::bscols(plotly::plotlyOutput(outputId = "scree_plot"), DT::dataTableOutput("table_scree"), widths = c(5,6))
+                     crosstalk::bscols(plotly::plotlyOutput(outputId = "scree_plot"), DT::dataTableOutput("table_scree"), widths = c(5,6)) %>%
+                       shinycssloaders::withSpinner(color="#0097db")
     ),
     
     shiny::wellPanel(style = "padding: 80px;",
                      
-                     crosstalk::bscols(plotly::plotlyOutput(outputId = "variables_plot"), DT::dataTableOutput("table_variables"), widths = c(5,7))
+                     crosstalk::bscols(plotly::plotlyOutput(outputId = "variables_plot"), DT::dataTableOutput("table_variables"), widths = c(5,7)) %>%
+                       shinycssloaders::withSpinner(color="#0097db")
                      
     ),
     
@@ -51,7 +53,8 @@ ui <- shiny::fluidPage(
                      helpText(tags$i(
                        h5("Please be patient, I'm a little slow because there are many data points!"))),
                      
-                     crosstalk::bscols(plotly::plotlyOutput(outputId = "individuals_plot"), DT::dataTableOutput("table_individuals"), widths = c(5,7))
+                     crosstalk::bscols(plotly::plotlyOutput(outputId = "individuals_plot"), DT::dataTableOutput("table_individuals"), widths = c(5,7)) %>%
+                       shinycssloaders::withSpinner(color="#0097db")
     )
     
   )

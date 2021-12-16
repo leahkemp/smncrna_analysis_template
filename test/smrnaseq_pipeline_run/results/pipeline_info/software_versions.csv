@@ -1,0 +1,12 @@
+nf-core/smrnaseq	v1.1.0
+Nextflow	v21.04.0
+R	v3.6.3
+FastQC	v0.11.9
+Trim Galore!	v0.6.6
+Bowtie	v1.3.0
+Samtools	v1.12
+Htseq	vand
+FASTX	v0.0.14
+miRTrace	v1.0.1
+MultiQC	v1.10.1
+miRDeep2	v2.0.1.2

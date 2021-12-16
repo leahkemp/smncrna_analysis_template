@@ -4,18 +4,25 @@ author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
 date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
 output:
-  html_document:
-    code_download: true
-    code_folding: hide
+  bookdown::html_document2:
     toc: true
     toc_depth: 3
     toc_float:
       collapsed: true
       smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
   editor_options: 
     chunk_output_type: console
 ---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
@@ -31,6 +38,7 @@ mkdir -p diff_expr_results/
 General info:
 
 - Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
+- Some values have been rounded
 
 ```{r, data_prep, results = "hide"}
 # load libraries
@@ -46,6 +54,9 @@ library(heatmaply)
 library(gtools)
 library(textshape)
 library(tidyr)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
@@ -289,7 +300,7 @@ plotSA_interactive <- function(data) {
   h <- base::sqrt(base::sqrt(data$s2.prior))
   
   # set up function to draw horizontal line
-  hline <- function(y = 0, color = "blue") {
+  hline <- function(y = 0, color = "black") {
     base::list(
       type = "line", 
       x0 = 0, 
@@ -305,10 +316,12 @@ plotSA_interactive <- function(data) {
   plotting_data %>%
     plotly::plot_ly(x = ~x,
                     y = ~y,
+                    marker = list(color = "#0097db", opacity = 0.7),
                     hoverinfo = "text",
                     text = ~ base::paste("</br> Average log expression:", base::format(x, big.mark = ",", scientific = FALSE, digits = 3),
                                          "</br> sqrt(sigma):", base::format(y, big.mark = ",", scientific = FALSE, digits = 4),
-                                         "</br> RNA:", rna)) %>%
+                                         "</br> RNA:", rna),
+                    showlegend = FALSE) %>%
     plotly::layout(shapes = base::list(hline(h))) %>%
     plotly::layout(xaxis = base::list(title = "Average log expression"),
                    yaxis = base::list(title = "sqrt(sigma)"))
@@ -317,12 +330,12 @@ plotSA_interactive <- function(data) {
 # setup a function to plot volcano plots
 volcano_interactive <- function(data_frame) {
   
-  # add all points in grey
+  # add all points in blue
   plotly::plot_ly(data = data_frame,
                   x = ~log_fc,
                   y = ~adj_p_value,
                   type = "scatter",
-                  marker = list(color = "grey", opacity = 0.5),
+                  marker = list(color = "#0097db", opacity = 0.7),
                   hoverinfo = "text",
                   text = ~paste(" RNA:", rna,
                                 "</br></br>",
@@ -340,21 +353,21 @@ volcano_interactive <- function(data_frame) {
               x = ~log_fc,
               y = ~adj_p_value,
               type = "scatter",
-              marker = list(color = "red", opacity = 1)) %>%
+              marker = list(color = "#ec1515", opacity = 0.7)) %>%
     
-    # add significant points in orange
+    # add significant points in yellow
     add_trace(data = dplyr::filter(data_frame, (adj_p_value <= 0.05) & ((log_fc >= min_logfc) | (log_fc <= -min_logfc))),
               x = ~log_fc,
               y = ~adj_p_value,
               type = "scatter",
-              marker = list(color = "orange", opacity = 1)) %>%
+              marker = list(color = "#febf2a", opacity = 0.7)) %>%
     
-    # add significant points in yellow
+    # add significant points in green
     add_trace(data = dplyr::filter(data_frame, (adj_p_value <= 0.01) & ((log_fc >= min_logfc) | (log_fc <= -min_logfc))),
               x = ~log_fc,
               y = ~adj_p_value,
               type = "scatter",
-              marker = list(color = "#FFD500", opacity = 1)) %>%
+              marker = list(color = "#85C659", opacity = 0.7)) %>%
 
     # formatting
     plotly::layout(xaxis = base::list(title = "Log fold change"),
@@ -371,7 +384,7 @@ MA_interactive <- function(data_frame) {
                   x = ~ baseMean,
                   y = ~ log_fc,
                   type = "scatter",
-                  marker = list(color = "grey", opacity = 0.5),
+                  marker = list(color = "#0097db", opacity = 0.7),
                   hoverinfo = "text",
                   text = ~ base::paste(" RNA:", rna,
                                        "</br></br>",
@@ -387,21 +400,21 @@ MA_interactive <- function(data_frame) {
               x = ~ baseMean,
               y = ~ log_fc,
               type = "scatter",
-              marker = list(color = "red", opacity = 1)) %>%
+              marker = list(color = "#ec1515", opacity = 0.7)) %>%
     
-    # add significant points in orange
+    # add significant points in yellow
     add_trace(data = dplyr::filter(data_frame, (adj_p_value <= 0.05) & ((log_fc >= min_logfc) | (log_fc <= -min_logfc))),
               x = ~ baseMean,
               y = ~ log_fc,
               type = "scatter",
-              marker = list(color = "orange", opacity = 1)) %>%
+              marker = list(color = "#febf2a", opacity = 0.7)) %>%
     
-    # add significant points in yellow
+    # add significant points in green
     add_trace(data = dplyr::filter(data_frame, (adj_p_value <= 0.01) & ((log_fc >= min_logfc) | (log_fc <= -min_logfc))),
               x = ~ baseMean,
               y = ~ log_fc,
               type = "scatter",
-              marker = list(color = "#FFD500", opacity = 1)) %>%
+              marker = list(color = "#85C659", opacity = 0.7)) %>%
     
     # formatting
     plotly::layout(xaxis = base::list(title = "Mean of normalized counts",
@@ -432,8 +445,6 @@ n_samples_by_treatment <- metadata %>%
 
 base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
 ```
-
-*Note. some values are rounded with the [round function](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/Round)*
 
 ## limma/voom
 
@@ -969,28 +980,40 @@ limma_voom_diff_expr_results <- limma_voom_diff_expr_results %>%
 ### Volcano plots {.tabset .tabset-fade}
 
 ```{r, results = "asis"}
-base::cat("These plots plot the negative log of the p-value against the log fold change")
+base::cat("These plots plot the negative log of the p-value against the log fold change. RNA's with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " are plotted here.")
 ```
 
-```{r, results = "asis"}
-base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc, " are plotted here."))
-```
+<div class="alert alert-custom-blue">
 
 ```{r, results = "asis"}
-base::cat(base::paste0("- Grey: RNA's with an **adjusted p-value** greater than of 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'greater_than_10% in the tables.'")
+base::cat(base::paste0("Blue: RNA's with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
 ```
 
-```{r, results = "asis"}
-base::cat(base::paste0("- Red: RNA's with an **adjusted p-value** smaller than of 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_10% in the tables.'")
-```
+</div>
+
+<div class="alert alert-custom-red">
 
 ```{r, results = "asis"}
-base::cat(base::paste0("- Orange: RNA's with an **adjusted p-value** smaller than of 0.05 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_5% in the tables.'")
+base::cat(base::paste0("Red: RNA's with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
 ```
 
+</div>
+
+<div class="alert alert-custom-yellow">
+
 ```{r, results = "asis"}
-base::cat(base::paste0("- Yellow: RNA's with an **adjusted p-value** smaller than of 0.01 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_1% in the tables.'")
+base::cat(base::paste0("Yellow: RNA's with an **adjusted p-value** smaller than 0.05 and a log fold change greater/smaller than +-", config$min_lfc))
 ```
+
+</div>
+
+<div class="alert alert-custom-green">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Green: RNA's with an **adjusted p-value** smaller than 0.01 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
 
 ```{r, eval = contrasts_chunk_eval$contrast_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
@@ -1421,7 +1444,7 @@ limma_voom_diff_expr_results %>%
 ### Results
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc, " for the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) differential expression method are reported here."))
+base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " for the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) differential expression method are reported here."))
 ```
 
 ```{r, results = "asis"}
@@ -1437,7 +1460,7 @@ base::cat(base::paste0(" - 'significant_10%' means the RNA meets the logFC thres
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0(" - 'greater_than_10%' means the RNA meets the logFC threshold and has an **adjusted p-value** greater than 0.10"))
+base::cat(base::paste0(" - 'greater_than_10%' means the RNA meets the logFC threshold and has an **adjusted p-value** smaller than 0.10"))
 ```
 
 ```{r, out.width = "100%"}
@@ -1935,24 +1958,40 @@ base::cat("These plots plot the log2 fold changes versus the mean of normalized 
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc, " are plotted here."))
+base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " are plotted here."))
 ```
 
-```{r, results = "asis"}
-base::cat(base::paste0("- Grey: RNA's with an **adjusted p-value** greater than of 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'greater_than_10% in the tables.'")
-```
+<div class="alert alert-custom-blue">
 
 ```{r, results = "asis"}
-base::cat(base::paste0("- Red: RNA's with an **adjusted p-value** smaller than of 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_10% in the tables.'")
+base::cat(base::paste0("Blue: RNA's with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
 ```
 
-```{r, results = "asis"}
-base::cat(base::paste0("- Orange: RNA's with an **adjusted p-value** smaller than of 0.05 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_5% in the tables.'")
-```
+</div>
+
+<div class="alert alert-custom-red">
 
 ```{r, results = "asis"}
-base::cat(base::paste0("- Yellow: RNA's with an **adjusted p-value** smaller than of 0.01 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_1% in the tables.'")
+base::cat(base::paste0("Red: RNA's with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
 ```
+
+</div>
+
+<div class="alert alert-custom-yellow">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Yellow: RNA's with an **adjusted p-value** smaller than 0.05 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
+
+<div class="alert alert-custom-green">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Green: RNA's with an **adjusted p-value** smaller than 0.01 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
 
 ```{r, eval = contrasts_chunk_eval$contrast_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
@@ -2387,24 +2426,40 @@ base::cat("These plots plot the negative log of the p-value against the log fold
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc, " are plotted here."))
+base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " are plotted here."))
 ```
 
-```{r, results = "asis"}
-base::cat(base::paste0("- Grey: RNA's with an **adjusted p-value** greater than of 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'greater_than_10% in the tables.'")
-```
+<div class="alert alert-custom-blue">
 
 ```{r, results = "asis"}
-base::cat(base::paste0("- Red: RNA's with an **adjusted p-value** smaller than of 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_10% in the tables.'")
+base::cat(base::paste0("Blue: RNA's with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
 ```
 
-```{r, results = "asis"}
-base::cat(base::paste0("- Orange: RNA's with an **adjusted p-value** smaller than of 0.05 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_5% in the tables.'")
-```
+</div>
+
+<div class="alert alert-custom-red">
 
 ```{r, results = "asis"}
-base::cat(base::paste0("- Yellow: RNA's with an **adjusted p-value** smaller than of 0.01 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc), ". These RNA's are marked as 'significant_1% in the tables.'")
+base::cat(base::paste0("Red: RNA's with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
 ```
+
+</div>
+
+<div class="alert alert-custom-yellow">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Yellow: RNA's with an **adjusted p-value** smaller than 0.05 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
+
+<div class="alert alert-custom-green">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Green: RNA's with an **adjusted p-value** smaller than 0.01 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
 
 ```{r, eval = contrasts_chunk_eval$contrast_1, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
@@ -2835,7 +2890,7 @@ deseq_diff_expr_results %>%
 ### Results
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc, " for the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
+base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " for the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
 ```
 
 ```{r, results = "asis"}
@@ -2851,7 +2906,7 @@ base::cat(base::paste0(" - 'significant_10%' means the RNA meets the logFC thres
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0(" - 'greater_than_10%' means the RNA meets the logFC threshold and has an **adjusted p-value** greater than 0.10"))
+base::cat(base::paste0(" - 'greater_than_10%' means the RNA meets the logFC threshold and has an **adjusted p-value** smaller than 0.10"))
 ```
 
 ```{r, out.width = "100%"}
@@ -2942,7 +2997,7 @@ diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, b
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater than ", config$min_lfc, " or a log fold change smaller than -", config$min_lfc, " for both the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
+base::cat(base::paste0("RNA's with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " for both the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
 ```
 
 ```{r, results = "asis"}
@@ -2958,7 +3013,7 @@ base::cat(base::paste0(" - 'significant_10%' means the RNA meets the logFC thres
 ```
 
 ```{r, results = "asis"}
-base::cat(base::paste0(" - 'greater_than_10%' means the RNA meets the logFC threshold and has an **adjusted p-value** greater than 0.10"))
+base::cat(base::paste0(" - 'greater_than_10%' means the RNA meets the logFC threshold and has an **adjusted p-value** smaller than 0.10"))
 ```
 
 ```{r, out.width = "100%"}

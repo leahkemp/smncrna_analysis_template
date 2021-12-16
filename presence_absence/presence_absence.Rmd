@@ -4,13 +4,25 @@ author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
 date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
 output:
-  html_document:
-    code_download: true
-    toc: false
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
   editor_options: 
     chunk_output_type: console
 ---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
@@ -25,6 +37,9 @@ library(plotly)
 library(gtools)
 library(DT)
 
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
 # read in pre-prepared count data
 counts <- utils::read.csv("../prepare_counts/counts.csv")
 
@@ -33,6 +48,51 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(file.path(config$metadata))
+
+# subset all count data to the count data specified to be analysed by the user in the config file
+# this will remove rows of data matching the said conditions
+
+if(config$mirna_smrnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "smrnaseq")))
+  
+}
+
+if(config$mirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$pirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "pirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$trna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "trna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$circrna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "circrna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$gencode_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "gencode") & (pipeline == "excerpt")))
+  
+}
 
 # make a little true/false vector that defines whether or not to evaluate rmarkdown chunks based on the number of treatments in the metadata file (up to 6 treatments)
 treatments_eval <- rep(TRUE, length(unique(metadata$treatment)))
@@ -91,9 +151,9 @@ n_samples_by_treatment <- metadata %>%
 base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
 ```
 
-# {.tabset .tabset-fade}
+## Presence/absence {.tabset .tabset-fade}
 
-## smrnaseq
+### smrnaseq
 
 ```{r}
 # filter so looking at the data from one pipeline (smrnaseq)
@@ -187,7 +247,7 @@ all_data <- dplyr::full_join(presence, absence, by = "rna")
 create_dt(all_data)
 ```
 
-## excerpt
+### excerpt
 
 ```{r}
 # filter so looking at the data from one pipeline (excerpt)
