@@ -16,6 +16,51 @@ config <- yaml::yaml.load_file("./config/config.yaml")
 # read in metadata
 metadata <- utils::read.csv(config$metadata_path)
 
+# subset all count data to the count data specified to be analysed by the user in the config file
+# this will remove rows of data matching the said conditions
+
+if(config$mirna_smrnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "smrnaseq")))
+  
+}
+
+if(config$mirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "mirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$pirna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "pirna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$trna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "trna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$circrna_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "circrna") & (pipeline == "excerpt")))
+  
+}
+
+if(config$gencode_excerpt == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((rna_species == "gencode") & (pipeline == "excerpt")))
+  
+}
+
 # calculate PCA
 pca <- counts %>%
   dplyr::filter(pipeline == "excerpt") %>%
