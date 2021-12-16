@@ -69,6 +69,10 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
 # replace "." with "-" so RNA names are the same
 base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
 
+# remove weird tRNA row
+trna_excerpt_data <- trna_excerpt_data %>%
+  dplyr::filter(!(rownames(trna_excerpt_data) == "tRNA"))
+
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
                        "mirna_excerpt",
