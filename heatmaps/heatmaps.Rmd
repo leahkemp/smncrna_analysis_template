@@ -218,9 +218,11 @@ log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
 )
 
 # setup a string that scales the widths of the subplots for each heatmap based on the number of treatment groups
-num_treatments <- base::length(base::unique(metadata$treatment))
-widths <- 1/num_treatments
-all_widths <- base::rep(widths, num_treatments)
+all_widths <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n()) %>%
+  dplyr::mutate(n_samples = n_samples/base::length(metadata$treatment)) %>%
+  dplyr::pull(n_samples)
 
 # set heatmap figure heights to automatically scale to how many rows are present in the data
 fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$mirna_smrnaseq) / 6
