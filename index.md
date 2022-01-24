@@ -35,7 +35,8 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 ## RNA composition
 
-- [RNA species composition](./example_webpage/rna_species_composition.html)
+- [RNA species composition - samples](./example_webpage/rna_species_composition_samples.html)
+- [RNA species composition - treatments](./example_webpage/rna_species_composition_treatments.html)
   
 ## Differential expression
 
