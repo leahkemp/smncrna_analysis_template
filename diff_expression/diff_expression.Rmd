@@ -121,7 +121,7 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
   # make all count data numeric
   dplyr::mutate_all(as.numeric)
 
-  # replace "." with "-" so RNA names are the same
+# replace "." with "-" so RNA names are the same
 base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
 
 # remove weird tRNA row
@@ -256,7 +256,7 @@ ordered_treatments <- treatments %>%
 
 # make sure the samples (columns) in all the datasets are in the same order for specifying the treatments downstream
 # (that depends on the columns being in the correct order)  (loop over all count datasets)
-count_datasets<- base::lapply(count_datasets, function(x) {
+count_datasets <- base::lapply(count_datasets, function(x) {
   
   x[ , gtools::mixedsort(names(x))]
   
