@@ -121,8 +121,12 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
   # make all count data numeric
   dplyr::mutate_all(as.numeric)
 
-  # replace "." with "-" so RNA names are the same
+# replace "." with "-" so RNA names are the same
 base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
+
+# remove weird tRNA row
+trna_excerpt_data <- trna_excerpt_data %>%
+  dplyr::filter(!(rownames(trna_excerpt_data) == "tRNA"))
 
 # create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
 to_eval_chunk <- config[c("mirna_smrnaseq",
@@ -132,6 +136,9 @@ to_eval_chunk <- config[c("mirna_smrnaseq",
                           "circrna_excerpt",
                           "gencode_excerpt")] %>%
   rep(times = 6)
+  
+# make everything true before conditionally making false
+to_eval_chunk <- base::replace(to_eval_chunk, 1:base::length(to_eval_chunk), TRUE)
 
 names(to_eval_chunk)[1:6] <- paste(names(to_eval_chunk)[1:6], "1", sep = "_")
 names(to_eval_chunk)[7:12] <- paste(names(to_eval_chunk)[7:12], "2", sep = "_")
@@ -140,7 +147,7 @@ names(to_eval_chunk)[19:24] <- paste(names(to_eval_chunk)[19:24], "4", sep = "_"
 names(to_eval_chunk)[25:30] <- paste(names(to_eval_chunk)[25:30], "5", sep = "_")
 names(to_eval_chunk)[31:36] <- paste(names(to_eval_chunk)[31:36], "6", sep = "_")
 
-n_contrasts <- length(config$contrasts)
+n_contrasts <- base::length(config$contrasts)
 
 to_eval_chunk <- if(n_contrasts == 1) {
   replace(to_eval_chunk, 7:36, FALSE)
@@ -249,7 +256,7 @@ ordered_treatments <- treatments %>%
 
 # make sure the samples (columns) in all the datasets are in the same order for specifying the treatments downstream
 # (that depends on the columns being in the correct order)  (loop over all count datasets)
-count_datasets<- base::lapply(count_datasets, function(x) {
+count_datasets <- base::lapply(count_datasets, function(x) {
   
   x[ , gtools::mixedsort(names(x))]
   
@@ -279,7 +286,7 @@ plotSA_interactive <- function(data) {
     y[allzero] <- NA
   }
   
-  if (length(data$df.prior) > 1L) {
+  if (base::length(data$df.prior) > 1L) {
     df2 <- base::max(data$df.prior)
     s2 <- data$sigma^2/fit$s2.prior
     pdn <- stats::pf(s2, df1 = data$df.residual, df2 = df2)
@@ -432,7 +439,7 @@ base::cat(base::paste0("- ", config$contrasts, "\n"))
 
 ```{r, results = "asis"}
 # print the number of samples analysed
-base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+base::cat(base::paste0("Total number of samples: ", base::length(base::unique(metadata$sample))))
 ```
 
 Number of samples in each treatment group:
@@ -449,7 +456,7 @@ base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_b
 ## limma/voom
 
 ```{r, results = "asis"}
-base::cat(base::paste0("The data was filtered using the [filterByExpr](https://rdrr.io/bioc/edgeR/man/filterByExpr.html) function. The filtering keeps RNA's that have count-per-million (CPM) above min.count (", config$min_count, ")", " in n samples (", length(unique(metadata$sample)), "). In addition, each kept RNA is required to have at least min.total.count reads (", config$min_total_count, ") across all the samples. From a statistical point of view, removing low count RNA's allows the mean-variance relationship in the data to be estimated with greater reliability ([Law et al., (2018)](https://f1000research.com/articles/5-1408))."))
+base::cat(base::paste0("The data was filtered using the [filterByExpr](https://rdrr.io/bioc/edgeR/man/filterByExpr.html) function. The filtering keeps RNA's that have count-per-million (CPM) above min.count (", config$min_count, ")", " in n samples (", base::length(base::unique(metadata$sample)), "). In addition, each kept RNA is required to have at least min.total.count reads (", config$min_total_count, ") across all the samples. From a statistical point of view, removing low count RNA's allows the mean-variance relationship in the data to be estimated with greater reliability ([Law et al., (2018)](https://f1000research.com/articles/5-1408))."))
 ```
 
 ```{r, results = "asis"}

@@ -59,8 +59,17 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 metadata <- utils::read.csv(file.path(config$metadata))
 
 # read in differential expression results
-diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv",
+diff_expr_results_model_1 <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results_model_1.tsv",
                                        header = TRUE)
+
+diff_expr_results_model_2 <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results_model_2.tsv",
+                                       header = TRUE)
+
+diff_expr_results <- rbind(diff_expr_results_model_1, diff_expr_results_model_2)
+
+# write differential expression results to file
+diff_expr_results %>%
+  utils::write.table(file = "../diff_expression/diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
 
 # load all the count datasets
 mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
@@ -121,6 +130,10 @@ mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
 
   # replace "." with "-" so RNA names are the same
 base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
+
+# remove weird tRNA row
+trna_excerpt_data <- trna_excerpt_data %>%
+  dplyr::filter(!(rownames(trna_excerpt_data) == "tRNA"))
 
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
@@ -205,17 +218,26 @@ log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
 )
 
 # setup a string that scales the widths of the subplots for each heatmap based on the number of treatment groups
-num_treatments <- base::length(base::unique(metadata$treatment))
-widths <- 1/num_treatments
-all_widths <- base::rep(widths, num_treatments)
+all_widths <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n()) %>%
+  dplyr::mutate(n_samples = n_samples/base::length(metadata$treatment)) %>%
+  dplyr::pull(n_samples)
 
 # set heatmap figure heights to automatically scale to how many rows are present in the data
-fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$mirna_smrnaseq) / 2
-fig_height_mirna_excerpt <- base::nrow(log_counts_per_million$mirna_excerpt) / 2
-fig_height_pirna_excerpt <- base::nrow(log_counts_per_million$pirna_excerpt) / 2
-fig_height_trna_excerpt <- base::nrow(log_counts_per_million$trna_excerpt) / 2
-fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$circrna_excerpt) / 2
-fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$gencode_excerpt) / 2
+fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$mirna_smrnaseq) / 6
+fig_height_mirna_excerpt <- base::nrow(log_counts_per_million$mirna_excerpt) / 6
+fig_height_pirna_excerpt <- base::nrow(log_counts_per_million$pirna_excerpt) / 6
+fig_height_trna_excerpt <- base::nrow(log_counts_per_million$trna_excerpt) / 6
+fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$circrna_excerpt) / 6
+fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$gencode_excerpt) / 6
+
+fig_height_mirna_smrnaseq_free <- base::nrow(log_counts_per_million$mirna_smrnaseq) / 4
+fig_height_mirna_excerpt_free <- base::nrow(log_counts_per_million$mirna_excerpt) / 4
+fig_height_pirna_excerpt_free <- base::nrow(log_counts_per_million$pirna_excerpt) / 4
+fig_height_trna_excerpt_free <- base::nrow(log_counts_per_million$trna_excerpt) / 4
+fig_height_circrna_excerpt_free <- base::nrow(log_counts_per_million$circrna_excerpt) / 4
+fig_height_gencode_excerpt_free <- base::nrow(log_counts_per_million$gencode_excerpt) / 4
 
 # need to set the figure height to NOT ZERO when the figure height ends up being less than 1 so rmarkdown doesn't error out on knitting
 fig_height_mirna_smrnaseq[fig_height_mirna_smrnaseq <1 ] <- 1
@@ -225,6 +247,13 @@ fig_height_trna_excerpt[fig_height_trna_excerpt <1 ] <- 1
 fig_height_circrna_excerpt[fig_height_circrna_excerpt <1 ] <- 1
 fig_height_gencode_excerpt[fig_height_gencode_excerpt <1 ] <- 1
 
+fig_height_mirna_smrnaseq_free[fig_height_mirna_smrnaseq_free <1 ] <- 1
+fig_height_mirna_excerpt_free[fig_height_mirna_excerpt_free <1 ] <- 1
+fig_height_pirna_excerpt_free[fig_height_pirna_excerpt_free <1 ] <- 1
+fig_height_trna_excerpt_free[fig_height_trna_excerpt_free <1 ] <- 1
+fig_height_circrna_excerpt_free[fig_height_circrna_excerpt_free <1 ] <- 1
+fig_height_gencode_excerpt_free[fig_height_gencode_excerpt_free <1 ] <- 1
+
 # also need to set the figure height to NOT ZERO when there are no rows of data so rmarkdown doesn't error out on knitting
 fig_height_mirna_smrnaseq[is.na(fig_height_mirna_smrnaseq[1])] <- 1
 fig_height_mirna_excerpt[is.na(fig_height_mirna_excerpt[1])] <- 1
@@ -232,6 +261,13 @@ fig_height_pirna_excerpt[is.na(fig_height_pirna_excerpt[1])] <- 1
 fig_height_trna_excerpt[is.na(fig_height_trna_excerpt[1])] <- 1
 fig_height_circrna_excerpt[is.na(fig_height_circrna_excerpt[1])] <- 1
 fig_height_gencode_excerpt[is.na(fig_height_gencode_excerpt[1])] <- 1
+
+fig_height_mirna_smrnaseq_free[is.na(fig_height_mirna_smrnaseq_free[1])] <- 1
+fig_height_mirna_excerpt_free[is.na(fig_height_mirna_excerpt_free[1])] <- 1
+fig_height_pirna_excerpt_free[is.na(fig_height_pirna_excerpt_free[1])] <- 1
+fig_height_trna_excerpt_free[is.na(fig_height_trna_excerpt_free[1])] <- 1
+fig_height_circrna_excerpt_free[is.na(fig_height_circrna_excerpt_free[1])] <- 1
+fig_height_gencode_excerpt_free[is.na(fig_height_gencode_excerpt_free[1])] <- 1
 
 # specify treatments by creating a string of conditions that match the order of the columns/samples in the count data
 # get the treatments and samples names from the metadata file
@@ -259,11 +295,18 @@ base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
                        " - gencode excerpt: ", config$gencode_excerpt, "\n"))
 ```
 
-Treatment comparisons: 
+Treatment comparisons (model 1): 
 
 ```{r, results = "asis"}
 # print the treatment group comparisons the user has chosen to analyse
-base::cat(base::paste0("- ", config$contrasts, "\n"))
+base::cat(base::paste0("- ", config$contrasts_model_1, "\n"))
+```
+
+Treatment comparisons (model 2): 
+
+```{r, results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("- ", config$contrasts_model_2, "\n"))
 ```
 
 ```{r, results = "asis"}
@@ -911,7 +954,7 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3 &
 base::cat("#### miRNA's (smrnaseq)")
 ```
 
-```{r, eval = config$mirna_smrnaseq, fig.height = fig_height_mirna_smrnaseq, out.width = "100%"}
+```{r, eval = config$mirna_smrnaseq, fig.height = fig_height_mirna_smrnaseq_free, out.width = "100%"}
 # extract datasets
 lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_smrnaseq
 
@@ -975,7 +1018,7 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "
 base::cat("#### miRNA's (excerpt)")
 ```
 
-```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt, out.width = "100%"}
+```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_mirna_excerpt <- log_counts_per_million$mirna_excerpt
 
@@ -1039,7 +1082,7 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mi
 base::cat("#### piRNA's (excerpt)")
 ```
 
-```{r, eval = config$pirna_excerpt, fig.height = fig_height_pirna_excerpt, out.width = "100%"}
+```{r, eval = config$pirna_excerpt, fig.height = fig_height_pirna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
 
@@ -1103,7 +1146,7 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pi
 base::cat("#### tRNA's (excerpt)")
 ```
 
-```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt, out.width = "100%"}
+```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_trna_excerpt <- log_counts_per_million$trna_excerpt
 
@@ -1167,7 +1210,7 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna
 base::cat("#### circRNA's (excerpt)")
 ```
 
-```{r, eval = config$circrna_excerpt, fig.height = fig_height_circrna_excerpt, out.width = "100%"}
+```{r, eval = config$circrna_excerpt, fig.height = fig_height_circrna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
 
@@ -1231,7 +1274,7 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 &
 base::cat("#### gencode's (excerpt)")
 ```
 
-```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt, out.width = "100%"}
+```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_gencode_excerpt <- log_counts_per_million$gencode_excerpt
 
