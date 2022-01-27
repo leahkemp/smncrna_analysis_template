@@ -12,11 +12,6 @@ output:
     chunk_output_type: console
 ---
 
-```{r setup, include=FALSE}
-# setup default chunk settings
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
-```
-
 ## Setup
 
 Restore the [renv](https://rstudio.github.io/renv/) to install all of the packages as declared in the lockfile, ie. get all the software needed for this template
