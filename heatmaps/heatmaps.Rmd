@@ -59,13 +59,8 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 metadata <- utils::read.csv(file.path(config$metadata))
 
 # read in differential expression results
-diff_expr_results_model_1 <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results_model_1.tsv",
+diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv",
                                        header = TRUE)
-
-diff_expr_results_model_2 <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results_model_2.tsv",
-                                       header = TRUE)
-
-diff_expr_results <- rbind(diff_expr_results_model_1, diff_expr_results_model_2)
 
 # write differential expression results to file
 diff_expr_results %>%
@@ -295,18 +290,11 @@ base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
                        " - gencode excerpt: ", config$gencode_excerpt, "\n"))
 ```
 
-Treatment comparisons (model 1): 
+Treatment comparisons: 
 
 ```{r, results = "asis"}
 # print the treatment group comparisons the user has chosen to analyse
-base::cat(base::paste0("- ", config$contrasts_model_1, "\n"))
-```
-
-Treatment comparisons (model 2): 
-
-```{r, results = "asis"}
-# print the treatment group comparisons the user has chosen to analyse
-base::cat(base::paste0("- ", config$contrasts_model_2, "\n"))
+base::cat(base::paste0("- ", config$contrasts, "\n"))
 ```
 
 ```{r, results = "asis"}
