@@ -136,9 +136,6 @@ to_eval_chunk <- config[c("mirna_smrnaseq",
                           "circrna_excerpt",
                           "gencode_excerpt")] %>%
   rep(times = 6)
-  
-# make everything true before conditionally making false
-to_eval_chunk <- base::replace(to_eval_chunk, 1:base::length(to_eval_chunk), TRUE)
 
 names(to_eval_chunk)[1:6] <- paste(names(to_eval_chunk)[1:6], "1", sep = "_")
 names(to_eval_chunk)[7:12] <- paste(names(to_eval_chunk)[7:12], "2", sep = "_")
