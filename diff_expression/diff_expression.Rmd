@@ -884,9 +884,6 @@ limma_voom_results_4 <- limma_voom_results_4 %>%
 ```
 
 ```{r, eval = contrasts[5]}
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
 # extract the results of the limma/voom differential expression analysis (fifth contrast) (loop over all efit datasets)
 limma_voom_results_5 <- base::lapply(efit, function(x) {
   
