@@ -13,6 +13,9 @@ counts <- utils::read.csv("./prepare_counts/counts.csv")
 # read in yaml config file
 config <- yaml::yaml.load_file("./config/config.yaml")
 
+# create output directory
+dir.create("./expression_plotting/expr_plotting_results/", showWarnings = FALSE)
+
 # subset all count data to the count data specified to be analysed by the user in the config file
 # this will remove rows of data matching the said conditions
 
@@ -145,21 +148,21 @@ sig_diff_expr_data_10 <- sig_diff_expr_data_10 %>%
 #################################################################
 
 # differential expression data
-utils::write.csv(diff_expr_data, file = "./expression_plotting/master_diff_expr_data.csv", row.names = FALSE)
-utils::write.csv(sig_diff_expr_data_1, file = "./expression_plotting/master_sig_diff_expr_data_1.csv", row.names = FALSE)
-utils::write.csv(sig_diff_expr_data_5, file = "./expression_plotting/master_sig_diff_expr_data_5.csv", row.names = FALSE)
-utils::write.csv(sig_diff_expr_data_10, file = "./expression_plotting/master_sig_diff_expr_data_10.csv", row.names = FALSE)
+utils::write.csv(diff_expr_data, file = "./expression_plotting/expr_plotting_results/master_diff_expr_data.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_1, file = "./expression_plotting/expr_plotting_results/master_sig_diff_expr_data_1.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_5, file = "./expression_plotting/expr_plotting_results/master_sig_diff_expr_data_5.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_10, file = "./expression_plotting/expr_plotting_results/master_sig_diff_expr_data_10.csv", row.names = FALSE)
 
 # write the config file needed for app to file within this project directory
 # so it can be sent to shinyappsio and used
-yaml::write_yaml(config, "./expression_plotting/config.yaml")
+yaml::write_yaml(config, "./expression_plotting/expr_plotting_results/config.yaml")
 
 # count data
 # this data was written to an sql lite database
 # this significantly speeds up the app compared to reading a csv file of the data and filtering/subsetting the data
 
 # initialise a database
-db <- DBI::dbConnect(RSQLite::SQLite(), "./expression_plotting/master-count.sqlite")
+db <- DBI::dbConnect(RSQLite::SQLite(), "./expression_plotting/expr_plotting_results/master-count.sqlite")
 
 # get all unique rna species
 species_choices <- base::data.frame(base::unique(base::as.character(counts$rna_species)))

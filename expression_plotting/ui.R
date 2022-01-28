@@ -10,9 +10,9 @@ library(dbplyr)
 library(DT)
 
 # load significant differential expression data
-sig_diff_expr_data_1 <- utils::read.csv("./master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_5 <- utils::read.csv("./master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_10 <- utils::read.csv("./master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_1 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_5 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_10 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # define UI for app ----
 ui <- shiny::fluidPage(
