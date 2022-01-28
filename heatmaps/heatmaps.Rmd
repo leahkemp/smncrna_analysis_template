@@ -66,69 +66,20 @@ diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/dif
 diff_expr_results %>%
   utils::write.table(file = "../diff_expression/diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
 
-# load all the count datasets
-mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                        "exceRpt_miRNA_ReadCounts.txt"),
-                                        header = TRUE,
-                                        stringsAsFactors = FALSE,
-                                        check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub(".fastq", "", .))
+# load all the count datasets (premade rds objects)
+raw_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds"))
+raw_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds"))
+raw_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_pirna_excerpt_counts.rds"))
+raw_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_trna_excerpt_counts.rds"))
+raw_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_circrna_excerpt_counts.rds"))
+raw_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gencode_excerpt_counts.rds"))
 
-pirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                        "exceRpt_piRNA_ReadCounts.txt"),
-                                        header = TRUE,
-                                        stringsAsFactors = FALSE,
-                                        check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub(".fastq", "", .))
-
-trna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                       "exceRpt_tRNA_ReadCounts.txt"),
-                                       header = TRUE,
-                                       stringsAsFactors = FALSE,
-                                       check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub(".fastq", "", .))
-
-circrna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                          "exceRpt_circularRNA_ReadCounts.txt"),
-                                          header = TRUE,
-                                          stringsAsFactors = FALSE,
-                                          comment.char = "") %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub(".fastq", "", .))
-
-gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                          "exceRpt_gencode_ReadCounts.txt"),
-                                          header = TRUE,
-                                          stringsAsFactors = FALSE,
-                                          check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub(".fastq", "", .))
-
-mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
-                                                         "/mirtop/mirtop.tsv"),
-                                                         header = TRUE) %>%
-  # get only the count data
-  dplyr::select(-c("UID", "Read", "Variant", "iso_5p", "iso_3p", "iso_add3p", "iso_snp", "iso_5p_nt", "iso_3p_nt", "iso_add3p_nt", "iso_snp_nt")) %>%
-  # "squash" out the isoform info (of the mirtop from smrnaseq pipeline)
-  dplyr::group_by(miRNA) %>%
-  dplyr::summarise_each(sum) %>%
-  # convert column to rowname so the data can be normalised later
-  tibble::column_to_rownames(var="miRNA")
-
-# formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
-mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
-  # make all count data numeric
-  dplyr::mutate_all(as.numeric)
-
-  # replace "." with "-" so RNA names are the same
-base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
-
-# remove weird tRNA row
-trna_excerpt_data <- trna_excerpt_data %>%
-  dplyr::filter(!(rownames(trna_excerpt_data) == "tRNA"))
+lcpm_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_mirna_smrnaseq_counts.rds"))
+lcpm_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_mirna_excerpt_counts.rds"))
+lcpm_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_pirna_excerpt_counts.rds"))
+lcpm_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_trna_excerpt_counts.rds"))
+lcpm_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_circrna_excerpt_counts.rds"))
+lcpm_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_gencode_excerpt_counts.rds"))
 
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
@@ -156,15 +107,23 @@ diff_expr_analysed <- diff_expr_results %>%
 diff_expr_analysed <- unique(diff_expr_analysed$dataset)
 
 # set up a vector of all the possible datasets to analyse
-count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
-                             mirna_excerpt = mirna_excerpt_data,
-                             pirna_excerpt = pirna_excerpt_data,
-                             trna_excerpt = trna_excerpt_data,
-                             circrna_excerpt = circrna_excerpt_data,
-                             gencode_excerpt = gencode_excerpt_data)
+raw_datasets  <- base::list(mirna_smrnaseq = raw_mirna_smrnaseq_data,
+                            mirna_excerpt = raw_mirna_excerpt_data,
+                            pirna_excerpt = raw_pirna_excerpt_data,
+                            trna_excerpt = raw_trna_excerpt_data,
+                            circrna_excerpt = raw_circrna_excerpt_data,
+                            gencode_excerpt = raw_gencode_excerpt_data)
+
+lcpm_datasets  <- base::list(mirna_smrnaseq = lcpm_mirna_smrnaseq_data,
+                             mirna_excerpt = lcpm_mirna_excerpt_data,
+                             pirna_excerpt = lcpm_pirna_excerpt_data,
+                             trna_excerpt = lcpm_trna_excerpt_data,
+                             circrna_excerpt = lcpm_circrna_excerpt_data,
+                             gencode_excerpt = lcpm_gencode_excerpt_data)
 
 # filter all possible datasets by the datasets the user has specified to analyse
-count_datasets <- count_datasets[to_analyse]
+raw_datasets <- raw_datasets[to_analyse]
+lcpm_datasets <- lcpm_datasets[to_analyse]
 
 # get a list of RNA's that were found to be significantly differentially expressed by at least one differential expression method
 # (based on the user threshold of "significant)
@@ -175,17 +134,8 @@ sig_rnas <- diff_expr_results %>%
 # stop scientific notation
 options(scipen=999)
 
-# convert datasets to matrices and calculate log counts per million (loop over all count datasets)
-log_counts_per_million <- base::lapply(count_datasets, function(x)
-  
-  x %>%
-    base::as.matrix() %>%
-    edgeR::cpm(log = TRUE)
-
-)
-
-# get the significantly differentially expressed RNA's
-log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
+# get the significantly differentially expressed RNA's (loop over all count datasets)
+log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
   
   x %>%
     base::as.data.frame() %>%
@@ -204,7 +154,7 @@ log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
   
 )
 
-# sort columns so all samples
+# sort columns
 log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
   
   x[ , gtools::mixedsort(names(x))] %>%
