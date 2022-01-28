@@ -260,5 +260,25 @@ base::saveRDS(cpm_trna_excerpt_data, file = "./prepare_counts/rds_objects/cpm_tr
 base::saveRDS(cpm_circrna_excerpt_data, file = "./prepare_counts/rds_objects/cpm_circrna_excerpt_counts.rds")
 base::saveRDS(cpm_gencode_excerpt_data, file = "./prepare_counts/rds_objects/cpm_gencode_excerpt_counts.rds")
 
+lcpm_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  edgeR::cpm(log = TRUE)
+lcpm_mirna_excerpt_data <- raw_mirna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+lcpm_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+lcpm_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+lcpm_circrna_excerpt_data <- raw_circrna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+lcpm_gencode_excerpt_data <- raw_gencode_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+  
+base::saveRDS(lcpm_mirna_smrnaseq_data, file = "./prepare_counts/rds_objects/lcpm_mirna_smrnaseq_counts.rds")
+base::saveRDS(lcpm_mirna_excerpt_data, file = "./prepare_counts/rds_objects/lcpm_mirna_excerpt_counts.rds")
+base::saveRDS(lcpm_pirna_excerpt_data, file = "./prepare_counts/rds_objects/lcpm_pirna_excerpt_counts.rds")
+base::saveRDS(lcpm_trna_excerpt_data, file = "./prepare_counts/rds_objects/lcpm_trna_excerpt_counts.rds")
+base::saveRDS(lcpm_circrna_excerpt_data, file = "./prepare_counts/rds_objects/lcpm_circrna_excerpt_counts.rds")
+base::saveRDS(lcpm_gencode_excerpt_data, file = "./prepare_counts/rds_objects/lcpm_gencode_excerpt_counts.rds")
+
 # clean up
 rm(list = ls())
