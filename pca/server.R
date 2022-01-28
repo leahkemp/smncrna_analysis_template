@@ -15,7 +15,7 @@ library(gtools)
 # load data ----
 
 # scree plot data 
-scree <- utils::read.csv("./scree.csv", header = TRUE, stringsAsFactors = FALSE)
+scree <- utils::read.csv("./pca_results/scree.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # individuals (RNA's)
 individuals_1_2 <- utils::read.csv("./pca_results/individuals_1_2.csv", header = TRUE, stringsAsFactors = FALSE)
