@@ -118,6 +118,7 @@ server <- function(input, output, session) {
                                "RNA species",
                                "Treatment comparison",
                                "Pipeline",
+                               "Differential expression method",
                                "Log fold change",
                                "p-value",
                                "Adjusted p-value",
