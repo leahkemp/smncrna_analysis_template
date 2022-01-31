@@ -65,10 +65,10 @@ ui <- shiny::fluidPage(
                             options = list(maxItems = 10)),
       
       # user input to choose the main variable of interest to compare ----
-      shiny::selectInput("variable_of_interest",
-                         h4("Select the main variable of interest to compare:"),
-                         choices = c("Treatment"),
-                         selected = "Treatment"),
+      shiny::selectizeInput("main_variable",
+                            h4("Select the main variable of interest to compare:"),
+                            choices = NULL,
+                            options = list(maxItems = 1)),
       
       # add help text that reminds the user that all this differential expression data is based on
       # on only one of the variables they can choose to explore

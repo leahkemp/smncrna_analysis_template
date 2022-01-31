@@ -6,12 +6,16 @@
 library(dplyr)
 library(DBI)
 library(yaml)
+library(stringr)
 
 # read in processed count data (processed in the differential expression document)
 counts <- utils::read.csv("./prepare_counts/counts.csv")
 
 # read in yaml config file
 config <- yaml::yaml.load_file("./config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
 
 # create output directory
 dir.create("./expression_plotting/expr_plotting_results/", showWarnings = FALSE)
@@ -156,6 +160,10 @@ utils::write.csv(sig_diff_expr_data_10, file = "./expression_plotting/expr_plott
 # write the config file needed for app to file within this project directory
 # so it can be sent to shinyappsio and used
 yaml::write_yaml(config, "./expression_plotting/expr_plotting_results/config.yaml")
+
+# write the metadata file needed for app to file within this project directory
+# so it can be sent to shinyappsio and used
+utils::write.csv(metadata, file = "./expression_plotting/expr_plotting_results/metadata.csv", row.names = FALSE)
 
 # count data
 # this data was written to an sql lite database
