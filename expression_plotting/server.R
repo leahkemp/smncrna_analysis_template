@@ -24,7 +24,7 @@ sig_diff_expr_data_10 <- utils::read.csv("./expr_plotting_results/master_sig_dif
 # read in yaml config file
 config <- yaml::yaml.load_file("./expr_plotting_results/config.yaml")
 
-# read in yaml config file
+# read in metadata
 metadata <- utils::read.csv("./expr_plotting_results/metadata.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # get other variables in metadata file the user may wish to compare counts by
