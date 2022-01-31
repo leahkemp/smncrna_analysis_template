@@ -8,6 +8,7 @@ library(shinycssloaders)
 library(DBI)
 library(dbplyr)
 library(DT)
+library(stringr)
 
 # load database data
 db <- DBI::dbConnect(RSQLite::SQLite(), "./expr_plotting_results/master-count.sqlite")
@@ -78,8 +79,14 @@ server <- function(input, output, session) {
     counts %>%
       dplyr::filter(rna_species==!!input$rna_species_choice & rna %in% !!input$rna_choice) %>%
       dplyr::collect() %>%
-      # order the levels of the data so they plot in a sensible order on the xaxes of the plots, user specifies in configuration file
-      dplyr::mutate(treatment = factor(treatment, levels = c(config$treatment_order))) %>%
+      # make variables factors so they plot correctly (all columns except several aforementioned columns)
+      dplyr::mutate(across(!rna &
+                             !rna_species &
+                             !sample &
+                             !low_sequencing_read_count &
+                             !raw_read_count_fastq_file &
+                             !raw_counts &
+                             !counts_per_million, factor)) %>%
       # also format logical variable so it renders properly
       dplyr::mutate(low_sequencing_read_count = as.logical(low_sequencing_read_count))
   })
@@ -188,7 +195,7 @@ server <- function(input, output, session) {
     shiny::validate(need(subset_count_data()$counts_per_million, "Count per million data could not be calculated for this RNA"))
     
     subset_count_data() %>%
-      base::split(base::list(subset_count_data() %>% dplyr::pull(input$main_variable), subset_count_data()$rna)) %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(get(input$main_variable)), subset_count_data()$rna)) %>%
       base::lapply(function(x) {
         plotly::plot_ly(data = x,
                         x = x$sample,
@@ -200,15 +207,16 @@ server <- function(input, output, session) {
                         mode  = "markers",
                         marker = base::list(opacity = 0.5),
                         hoverinfo = "text",
-                        text = ~paste("</br> Counts per million:",base::format(counts_per_million, big.mark = ",", scientific = FALSE, digits = 2),
+                        text = ~paste("<b>", input$rna_choice,"</b>",
+                                      "</br><i>", stringr::str_to_title(input$main_variable), ": ", get(input$main_variable), "</i>",
+                                      "</br><br> Counts per million:", base::format(counts_per_million, big.mark = ",", scientific = FALSE, digits = 2),
                                       "</br> Sample:", x$sample,
-                                      "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
                                       "</br> Low sequencing read count:", low_sequencing_read_count,
                                       "</br> Sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2))) %>%
           plotly::layout(yaxis = base::list(title = "Counts per million"),
-                         xaxis = base::list(title = "", tickangle = 270, type = "category"))
-      }) %>% plotly::subplot(shareY = TRUE)
+                         xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
+      plotly::subplot(shareY = TRUE)
   })
   
   # generate boxplot of raw counts for all samples in the levels/groups of the main variable of interest the user chooses to view
@@ -231,21 +239,22 @@ server <- function(input, output, session) {
   output$scatterplot_raw_by_sample <- plotly::renderPlotly({
     
     subset_count_data() %>%
-      base::split(base::list(subset_count_data() %>% dplyr::pull(input$main_variable), subset_count_data()$rna)) %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(get(input$main_variable)), subset_count_data()$rna)) %>%
       base::lapply(function(x) {
         plotly::plot_ly(data = x,
                         x = x$sample,
                         y = ~raw_counts,
                         split = ~pipeline,
-                        color = ~input$main_variable,
+                        color = ~get(input$main_variable),
                         colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                         type = "scatter",
                         mode  = "markers",
                         marker = base::list(opacity = 0.5),
                         hoverinfo = "text",
-                        text = ~paste("</br> Raw count:", base::format(raw_counts, big.mark = ",", scientific = FALSE, digits = 2),
+                        text = ~paste("<b>", input$rna_choice,"</b>",
+                                      "</br><i>", stringr::str_to_title(input$main_variable), ": ", get(input$main_variable), "</i>",
+                                      "</br><br> Raw count:", base::format(raw_counts, big.mark = ",", scientific = FALSE, digits = 2),
                                       "</br> Sample:", x$sample,
-                                      "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
                                       "</br> Low sequencing read count:", low_sequencing_read_count,
                                       "</br> Sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2))) %>%
