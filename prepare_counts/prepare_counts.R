@@ -91,11 +91,11 @@ to_analyse <- config[c("mirna_smrnaseq",
   base::as.data.frame() %>%
   base::t() %>%
   base::as.data.frame() %>%
-  tibble::rownames_to_column("rna_species") %>%
+  tibble::rownames_to_column("dataset") %>%
   dplyr::rename("analyse" = "V1") %>%
-  tidyr::separate(rna_species, c("rna_species", "pipeline")) %>%
+  tidyr::separate(dataset, c("dataset", "pipeline")) %>%
   dplyr::filter(analyse == TRUE) %>%
-  dplyr::mutate(dataset_name = base::paste0(rna_species, "_", pipeline)) %>%
+  dplyr::mutate(dataset_name = base::paste0(dataset, "_", pipeline)) %>%
   dplyr::pull(dataset_name)
 
 # set up a vector of all the possible datasets to analyse
@@ -110,7 +110,7 @@ count_datasets <- base::list(mirna_smrnaseq = raw_mirna_smrnaseq_data,
 count_datasets <- count_datasets[to_analyse]
 
 # calculate counts per million (loop over all the count datasets the user has specified)
-counts_cpm <- base::lapply(base::seq_along(count_datasets), function(y, pipeline, rna_species, i){
+counts_cpm <- base::lapply(base::seq_along(count_datasets), function(y, pipeline, dataset, i){
   
   # calculate counts per million for all datasets in the list
   edgeR::cpm(y[[i]]) %>%
@@ -121,21 +121,21 @@ counts_cpm <- base::lapply(base::seq_along(count_datasets), function(y, pipeline
     tibble::rownames_to_column("rna") %>%
     # make data long
     tidyr::pivot_longer(-rna, names_to = "sample", values_to = "counts_per_million") %>%
-    # create a column that has defines the rna_species the data has come from
+    # create a column that has defines the dataset the data has come from
     # based on the names of the "count_dataset" list, grab everything BEFORE 
     # the underscore
-    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    dplyr::mutate(dataset = dataset[[i]]) %>%
     # also create a column that defines the pipeline the data has come from
     # based on the names of the "count_dataset" list, grab everything AFTER
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-rna_species=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
+dataset=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
 pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
 )
 
 # calculate log counts per million (loop over all the count datasets the user has specified)
-counts_lcpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+counts_lcpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, dataset, i){
   
   # calculate log counts per million for all datasets in the list
   edgeR::cpm(y[[i]], log = TRUE) %>%
@@ -146,21 +146,21 @@ counts_lcpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna
     tibble::rownames_to_column("rna") %>%
     # make data long
     tidyr::pivot_longer(-rna, names_to = "sample", values_to = "log_counts_per_million") %>%
-    # create a column that has defines the rna_species the data has come from
+    # create a column that has defines the dataset the data has come from
     # based on the names of the "count_dataset" list, grab everything BEFORE 
     # the underscore
-    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    dplyr::mutate(dataset = dataset[[i]]) %>%
     # also create a column that defines the pipeline the data has come from
     # based on the names of the "count_dataset" list, grab everything AFTER
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-rna_species=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
+dataset=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
 pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
 )
 
 # prepare raw counts (loop over all the count datasets the user has specified)
-counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, dataset, i){
   
   # prepare raw counts for all datasets in the list
   y[[i]] %>%
@@ -171,16 +171,16 @@ counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_
     tibble::rownames_to_column("rna") %>%
     # make data long
     tidyr::pivot_longer(-rna, names_to = "sample", values_to = "raw_counts") %>%
-    # create a column that has defines the rna_species the data has come from
+    # create a column that has defines the dataset the data has come from
     # based on the names of the "count_dataset" list, grab everything BEFORE 
     # the underscore
-    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    dplyr::mutate(dataset = dataset[[i]]) %>%
     # also create a column that defines the pipeline the data has come from
     # based on the names of the "count_dataset" list, grab everything AFTER
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-rna_species=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
+dataset=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
 pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
 )
 
@@ -190,16 +190,16 @@ counts_lcpm <- base::Reduce(rbind, counts_lcpm)
 counts_raw <- base::Reduce(rbind, counts_raw)
 
 # join all three dataframes into one large dataframe of all count data!
-counts <- dplyr::full_join(counts_cpm, counts_lcpm, by = c("rna", "sample", "pipeline", "rna_species")) 
-counts <- dplyr::full_join(counts, counts_raw, by = c("rna", "sample", "pipeline", "rna_species")) 
+counts <- dplyr::full_join(counts_cpm, counts_lcpm, by = c("rna", "sample", "pipeline", "dataset")) 
+counts <- dplyr::full_join(counts, counts_raw, by = c("rna", "sample", "pipeline", "dataset")) 
 
 # further split the gencode data into different RNA categories
 # (I'll put into a new column)
-# overwrite the rna_species_2 column with a partial string from the rna column (for the gencode data)
-# otherwise overwrite the rna_species_2 column with what is already in the rna_species_2 column
-counts <- dplyr::mutate(counts, rna_species_2 = rna_species)
-counts <- dplyr::mutate(counts, rna_species_2 = dplyr::case_when(rna_species_2 == "gencode" ~ base::sub('.*:', '', counts$rna),
-                                                                 rna_species_2 != "gencode" ~ counts$rna_species_2
+# overwrite the dataset_2 column with a partial string from the rna column (for the gencode data)
+# otherwise overwrite the dataset_2 column with what is already in the dataset_2 column
+counts <- dplyr::mutate(counts, dataset_2 = dataset)
+counts <- dplyr::mutate(counts, dataset_2 = dplyr::case_when(dataset_2 == "gencode" ~ base::sub('.*:', '', counts$rna),
+                                                             dataset_2 != "gencode" ~ counts$dataset_2
 ))
 
 # fix for css highlighting in expression plotting shiny app not working for rnas/rows with ":", "|" or "."
@@ -211,11 +211,11 @@ counts <- counts %>%
   dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
   dplyr::mutate(rna = base::gsub("\\.", "_", rna))
 
-# rename mirna (from rna_species_2") so that it matches up with miRNA and gets put in the same group in downstream analyses
+# rename mirna (from dataset_2") so that it matches up with miRNA and gets put in the same group in downstream analyses
 counts <- counts %>%
-  dplyr::mutate(rna_species_2 = dplyr::case_when(
-    rna_species_2 == "miRNA" ~ "mirna", 
-    TRUE ~ rna_species_2))
+  dplyr::mutate(dataset_2 = dplyr::case_when(
+    dataset_2 == "miRNA" ~ "mirna", 
+    TRUE ~ dataset_2))
 
 # write the data to a csv file so I can use it in other documents
 utils::write.csv(counts, "./prepare_counts/counts.csv", row.names = FALSE)
