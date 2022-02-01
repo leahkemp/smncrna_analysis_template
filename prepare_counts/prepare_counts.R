@@ -194,6 +194,15 @@ counts <- dplyr::mutate(counts, rna_species_2 = dplyr::case_when(rna_species_2 =
                                                                  rna_species_2 != "gencode" ~ counts$rna_species_2
 ))
 
+# fix for css highlighting in expression plotting shiny app not working for rnas/rows with ":", "|" or "."
+# doing this here so the genes/transcripts are named consitantly throughout all documents
+# | needed to be escaped with \\ in order to be interpreted correctly
+# also need to use gsub instead of sub to replace all occurrences instead of just the first one
+counts <- counts %>%
+  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\.", "_", rna))
+
 # rename mirna (from rna_species_2") so that it matches up with miRNA and gets put in the same group in downstream analyses
 counts <- counts %>%
   dplyr::mutate(rna_species_2 = dplyr::case_when(

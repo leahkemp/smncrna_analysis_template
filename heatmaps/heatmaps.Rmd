@@ -276,9 +276,6 @@ base::cat("#### miRNA's (smrnaseq)")
 # extract datasets
 lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_smrnaseq
 
-# shorten miRNA names for plotting sakes
-base::rownames(lcpm_mirna_smrnaseq) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_mirna_smrnaseq))
-
 # setup for heatmap plotting
 # get the number of unique treatments
 N <- base::nlevels(base::factor(metadata$treatment))
@@ -378,9 +375,6 @@ base::cat("#### miRNA's (excerpt)")
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt, out.width = "100%"}
 # extract datasets
 lcpm_mirna_excerpt <- log_counts_per_million$mirna_excerpt
-
-# shorten miRNA names for plotting sakes
-base::rownames(lcpm_mirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_mirna_excerpt))
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -482,9 +476,6 @@ base::cat("#### piRNA's (excerpt)")
 # extract datasets
 lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
 
-# shorten pirna names for plotting sakes
-base::rownames(lcpm_pirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_pirna_excerpt))
-
 # setup for heatmap plotting
 # get the number of unique treatments
 N <- base::nlevels(base::factor(metadata$treatment))
@@ -584,9 +575,6 @@ base::cat("#### tRNA's (excerpt)")
 ```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt, out.width = "100%"}
 # extract datasets
 lcpm_trna_excerpt <- log_counts_per_million$trna_excerpt
-
-# shorten trna names for plotting sakes
-base::rownames(lcpm_trna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_trna_excerpt))
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -688,9 +676,6 @@ base::cat("#### circRNA's (excerpt)")
 # extract datasets
 lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
 
-# shorten circrna names for plotting sakes
-base::rownames(lcpm_circrna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_circrna_excerpt))
-
 # setup for heatmap plotting
 # get the number of unique treatments
 N <- base::nlevels(base::factor(metadata$treatment))
@@ -790,9 +775,6 @@ base::cat("#### gencode's (excerpt)")
 ```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt, out.width = "100%"}
 # extract datasets
 lcpm_gencode_excerpt <- log_counts_per_million$gencode_excerpt
-
-# shorten gencode names for plotting sakes
-base::rownames(lcpm_gencode_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_gencode_excerpt))
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -896,9 +878,6 @@ base::cat("#### miRNA's (smrnaseq)")
 # extract datasets
 lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_smrnaseq
 
-# shorten miRNA names for plotting sakes
-base::rownames(lcpm_mirna_smrnaseq) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_mirna_smrnaseq))
-
 # get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_mirna_smrnaseq))
 
@@ -959,9 +938,6 @@ base::cat("#### miRNA's (excerpt)")
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_mirna_excerpt <- log_counts_per_million$mirna_excerpt
-
-# shorten miRNA names for plotting sakes
-base::rownames(lcpm_mirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_mirna_excerpt))
 
 # get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_mirna_excerpt))
@@ -1024,9 +1000,6 @@ base::cat("#### piRNA's (excerpt)")
 # extract datasets
 lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
 
-# shorten piRNA names for plotting sakes
-base::rownames(lcpm_pirna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_pirna_excerpt))
-
 # get the max RNA count in all datasets (over all pirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_pirna_excerpt))
 
@@ -1087,9 +1060,6 @@ base::cat("#### tRNA's (excerpt)")
 ```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_trna_excerpt <- log_counts_per_million$trna_excerpt
-
-# shorten tRNA names for plotting sakes
-base::rownames(lcpm_trna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_trna_excerpt))
 
 # get the max RNA count in all datasets (over all trnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_trna_excerpt))
@@ -1152,9 +1122,6 @@ base::cat("#### circRNA's (excerpt)")
 # extract datasets
 lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
 
-# shorten circrna names for plotting sakes
-base::rownames(lcpm_circrna_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_circrna_excerpt))
-
 # get the max RNA count in all datasets (over all circrnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_circrna_excerpt))
 
@@ -1215,9 +1182,6 @@ base::cat("#### gencode's (excerpt)")
 ```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_gencode_excerpt <- log_counts_per_million$gencode_excerpt
-
-# shorten gencode names for plotting sakes
-base::rownames(lcpm_gencode_excerpt) <- base::gsub("\\|.*", " etc.", base::rownames(lcpm_gencode_excerpt))
 
 # get the max RNA count in all datasets (over all gencodes) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_gencode_excerpt))
