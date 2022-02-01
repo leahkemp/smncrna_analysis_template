@@ -73,6 +73,14 @@ base::row.names(raw_mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.n
 raw_trna_excerpt_data <- raw_trna_excerpt_data %>%
   dplyr::filter(!(rownames(raw_trna_excerpt_data) == "tRNA"))
 
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_mirna_smrnaseq_data <- raw_mirna_excerpt_data[rowSums(raw_mirna_smrnaseq_data[])>0,]
+raw_mirna_excerpt_data <- raw_mirna_excerpt_data[rowSums(raw_mirna_excerpt_data[])>0,]
+raw_pirna_excerpt_data <- raw_pirna_excerpt_data[rowSums(raw_pirna_excerpt_data[])>0,]
+raw_trna_excerpt_data <- raw_pirna_excerpt_data[rowSums(raw_trna_excerpt_data[])>0,]
+raw_circrna_excerpt_data <- raw_pirna_excerpt_data[rowSums(raw_circrna_excerpt_data[])>0,]
+raw_gencode_excerpt_data <- raw_pirna_excerpt_data[rowSums(raw_gencode_excerpt_data[])>0,]
+
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("mirna_smrnaseq",
                        "mirna_excerpt",
