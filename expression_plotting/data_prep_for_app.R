@@ -122,30 +122,35 @@ sig_diff_expr_data_10 <- diff_expr_data %>%
 ##                   Fix for CSS highlighting                   ##
 ##################################################################
 
-# fix for css highlighting in shiny app not working for rnas/rows with ":" or "|"
+# fix for css highlighting in shiny app not working for rnas/rows with ":", "|" or "."
 
 # | needed to be escaped with \\ in order to be interpreted correctly
 # also need to use gsub instead of sub to replace all occurrences instead of just the first one
 
 counts <- counts %>%
   dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\.", "_", rna))
 
 diff_expr_data <- diff_expr_data %>%
   dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\.", "_", rna))
 
 sig_diff_expr_data_1 <- sig_diff_expr_data_1 %>%
   dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\.", "_", rna))
 
 sig_diff_expr_data_5 <- sig_diff_expr_data_5 %>%
   dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\.", "_", rna))
 
 sig_diff_expr_data_10 <- sig_diff_expr_data_10 %>%
   dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
+  dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
+  dplyr::mutate(rna = base::gsub("\\.", "_", rna))
 
 #################################################################
 ##                        Write to file                        ##
