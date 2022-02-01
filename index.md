@@ -2,7 +2,7 @@
 
 ## Overview of the analysis
 
-The small RNA-seq data was analysed with [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0) and [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2). The outputs of these pipelines were then analysed with the [smncrna_analysis_template 2.1.1](https://github.com/leahkemp/smncrna_analysis_template/releases/tag/2.1.1). The following treatment groups were compared for analysis:
+The small RNA-seq data was analysed with [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0) and [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2). The outputs of these pipelines were then analysed with the [smncrna_analysis_template 3.0.0](https://github.com/leahkemp/smncrna_analysis_template/releases/tag/3.0.0). The following treatment groups were compared for analysis:
 
 - treatment1 vs. treatment2
 - treatment1 vs. treatment3

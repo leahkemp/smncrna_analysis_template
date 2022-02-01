@@ -68,14 +68,3 @@ min_lfc: "log2(1.1)"
 
 # p-value cutoff to consider an RNA significantly differentially expressed
 pvalue_cutoff: 0.1
-
-#################################################
-#####       EXPRESSION PLOTTING APP        ######
-#################################################
-
-# specify how you'd like to order the treatments for plotting
-# namely the expression plotting app
-treatment_order:
-- "treatment1"
-- "treatment2"
-- "treatment3"

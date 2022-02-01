@@ -102,9 +102,13 @@ Required columns:
 - "treatment"
   - must be titled "treatment"
 
+Additional columns:
+
+- you can include additional columns with categorical variables beyond the "treatment" column
+- these columns will be used in the [expression_plotting](./expression_plotting/) app so the user can explore raw counts and counts per million by "treatment" or by these additional variables
+
 Other notes:
 
-- you can have additional columns
 - you can't have any duplicate column names eg. two columns named "sample" and "Sample"
 - make sure every sample in the fastq directory to be analysed is included in the metadata file and is associated with a treatment group
 

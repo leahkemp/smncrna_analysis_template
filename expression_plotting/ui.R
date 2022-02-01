@@ -10,18 +10,18 @@ library(dbplyr)
 library(DT)
 
 # load significant differential expression data
-sig_diff_expr_data_1 <- utils::read.csv("./master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_5 <- utils::read.csv("./master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_10 <- utils::read.csv("./master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_1 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_5 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_10 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
 
-# define UI for app ----
+# define UI for app
 ui <- shiny::fluidPage(
   
-  # app theme ----
+  # app theme
   theme = shinythemes::shinytheme("yeti"),
   
   # css to highlight the RNAs in the drop down box (defined by rna_choice) that were found to be significantly differentially expressed
-  # a different highlight is used for the three significance levels (1%, 5%, 10%) ----
+  # a different highlight is used for the three significance levels (1%, 5%, 10%)
   tags$head(
     base::lapply(sig_diff_expr_data_1, function(x){
       tags$style(HTML(
@@ -46,29 +46,29 @@ ui <- shiny::fluidPage(
     })
   ),
   
-  # define page layout ----
+  # define page layout
   shiny::verticalLayout(
     
-    # render user options panel ----
+    # render user options panel
     shiny::wellPanel(
       
-      # user input to choose RNA species/group of interest to plot ----
+      # user input to choose RNA species/group of interest to plot
       shiny::selectizeInput("rna_species_choice",
                             h4("Select/search for an RNA species:"),
                             choices = NULL,
                             options = list(maxItems = 1)),
       
-      # user input to choose RNA of interest to plot (options dependent on the first input - rna_species_choice) ----
+      # user input to choose RNA of interest to plot (options dependent on the first input - rna_species_choice)
       shiny::selectizeInput("rna_choice",
                             h4("Select/search for an RNA:"),
                             choices = NULL,
-                            options = list(maxItems = 10)),
+                            options = list(maxItems = 1)),
       
-      # user input to choose the main variable of interest to compare ----
-      shiny::selectInput("variable_of_interest",
-                         h4("Select the main variable of interest to compare:"),
-                         choices = c("Treatment"),
-                         selected = "Treatment"),
+      # user input to choose the main variable of interest to compare
+      shiny::selectizeInput("main_variable",
+                            h4("Select the main variable of interest to compare:"),
+                            choices = NULL,
+                            options = list(maxItems = 1)),
       
       # add help text that reminds the user that all this differential expression data is based on
       # on only one of the variables they can choose to explore
@@ -76,7 +76,7 @@ ui <- shiny::fluidPage(
         h5("Explore the differential expression results, raw counts and counts per million by RNA. RNA's highlighted in green, yellow and red were found to be significantly differentially expressed by at least one differential expression analysis.")))
     ),
     
-    # plot all the tables and boxplots ----        
+    # plot all the tables and boxplots        
     shiny::wellPanel(
       
       # plot differential expression table

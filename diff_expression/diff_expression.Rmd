@@ -64,69 +64,13 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 # read in metadata
 metadata <- utils::read.csv(base::file.path(config$metadata))
 
-# load all the count datasets
-mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                        "exceRpt_miRNA_ReadCounts.txt"),
-                                        header = TRUE,
-                                        stringsAsFactors = FALSE,
-                                        check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-
-pirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                        "exceRpt_piRNA_ReadCounts.txt"),
-                                        header = TRUE,
-                                        stringsAsFactors = FALSE,
-                                        check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-
-trna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                       "exceRpt_tRNA_ReadCounts.txt"),
-                                       header = TRUE,
-                                       stringsAsFactors = FALSE,
-                                       check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-
-circrna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                          "exceRpt_circularRNA_ReadCounts.txt"),
-                                          header = TRUE,
-                                          stringsAsFactors = FALSE,
-                                          comment.char = "") %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-
-gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
-                                                          "exceRpt_gencode_ReadCounts.txt"),
-                                          header = TRUE,
-                                          stringsAsFactors = FALSE,
-                                          check.names = FALSE) %>%
-  # remove S*_R1.fastq suffix from the sample/column names
-  dplyr::rename_with(~ base::sub("[_][S]\\d+[_]R1.fastq", "", .))
-
-mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
-                                                         "/mirtop/mirtop.tsv"),
-                                                         header = TRUE) %>%
-  # get only the count data
-  dplyr::select(-c("UID", "Read", "Variant", "iso_5p", "iso_3p", "iso_add3p", "iso_snp", "iso_5p_nt", "iso_3p_nt", "iso_add3p_nt", "iso_snp_nt")) %>%
-  # "squash" out the isoform info (of the mirtop from smrnaseq pipeline)
-  dplyr::group_by(miRNA) %>%
-  dplyr::summarise_each(sum) %>%
-  # convert column to rowname so the data can be normalised later
-  tibble::column_to_rownames(var="miRNA")
-
-# formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
-mirna_smrnaseq_data <- mirna_smrnaseq_data %>%
-  # make all count data numeric
-  dplyr::mutate_all(as.numeric)
-
-# replace "." with "-" so RNA names are the same
-base::row.names(mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(mirna_smrnaseq_data))
-
-# remove weird tRNA row
-trna_excerpt_data <- trna_excerpt_data %>%
-  dplyr::filter(!(rownames(trna_excerpt_data) == "tRNA"))
+# load all the count datasets (premade rds objects)
+raw_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds"))
+raw_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds"))
+raw_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_pirna_excerpt_counts.rds"))
+raw_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_trna_excerpt_counts.rds"))
+raw_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_circrna_excerpt_counts.rds"))
+raw_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gencode_excerpt_counts.rds"))
 
 # create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
 to_eval_chunk <- config[c("mirna_smrnaseq",
@@ -136,9 +80,6 @@ to_eval_chunk <- config[c("mirna_smrnaseq",
                           "circrna_excerpt",
                           "gencode_excerpt")] %>%
   rep(times = 6)
-  
-# make everything true before conditionally making false
-to_eval_chunk <- base::replace(to_eval_chunk, 1:base::length(to_eval_chunk), TRUE)
 
 names(to_eval_chunk)[1:6] <- paste(names(to_eval_chunk)[1:6], "1", sep = "_")
 names(to_eval_chunk)[7:12] <- paste(names(to_eval_chunk)[7:12], "2", sep = "_")
@@ -203,12 +144,12 @@ to_analyse <- config[c("mirna_smrnaseq",
   dplyr::pull(dataset_name)
 
 # set up a vector of all the possible datasets to analyse
-count_datasets <- base::list(mirna_smrnaseq = mirna_smrnaseq_data,
-                             mirna_excerpt = mirna_excerpt_data,
-                             pirna_excerpt = pirna_excerpt_data,
-                             trna_excerpt = trna_excerpt_data,
-                             circrna_excerpt = circrna_excerpt_data,
-                             gencode_excerpt = gencode_excerpt_data)
+count_datasets <- base::list(mirna_smrnaseq = raw_mirna_smrnaseq_data,
+                             mirna_excerpt = raw_mirna_excerpt_data,
+                             pirna_excerpt = raw_pirna_excerpt_data,
+                             trna_excerpt = raw_trna_excerpt_data,
+                             circrna_excerpt = raw_circrna_excerpt_data,
+                             gencode_excerpt = raw_gencode_excerpt_data)
 
 # filter all possible datasets by the datasets the user has specified to analyse
 count_datasets <- count_datasets[to_analyse]
@@ -375,7 +316,7 @@ volcano_interactive <- function(data_frame) {
               y = ~adj_p_value,
               type = "scatter",
               marker = list(color = "#85C659", opacity = 0.7)) %>%
-
+    
     # formatting
     plotly::layout(xaxis = base::list(title = "Log fold change"),
                    yaxis = base::list(title = "-log10 adjusted p-value",
@@ -483,7 +424,7 @@ dge <- base::lapply(count_datasets, function(x) {
 keep <- base::lapply(dge, function(x) {
   
   edgeR::filterByExpr(x, group=ordered_treatments, min.count = config$min_count, min.total.count = config$min_total_count)
-
+  
 })
 ```
 
@@ -887,9 +828,6 @@ limma_voom_results_4 <- limma_voom_results_4 %>%
 ```
 
 ```{r, eval = contrasts[5]}
-# make a list of all the efit objects in the global environment
-efit <- base::do.call("list", base::mget(base::grep("_efit", base::names(.GlobalEnv), value=TRUE)))
-
 # extract the results of the limma/voom differential expression analysis (fifth contrast) (loop over all efit datasets)
 limma_voom_results_5 <- base::lapply(efit, function(x) {
   

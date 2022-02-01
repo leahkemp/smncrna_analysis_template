@@ -8,35 +8,73 @@ library(shinycssloaders)
 library(DBI)
 library(dbplyr)
 library(DT)
+library(stringr)
 
-# load database data ----
-db <- DBI::dbConnect(RSQLite::SQLite(), "./master-count.sqlite")
+# load database data
+db <- DBI::dbConnect(RSQLite::SQLite(), "./expr_plotting_results/master-count.sqlite")
 counts <- dplyr::tbl(db, "counts")
 species <- dplyr::tbl(db, "species")
 rna_species_pairs <- dplyr::tbl(db, "rna_choices")
 
-# load differential expression data ----
-diff_expr_data <- utils::read.csv("./master_diff_expr_data.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_1 <- utils::read.csv("./master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_5 <- utils::read.csv("./master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
-sig_diff_expr_data_10 <- utils::read.csv("./master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
+# load differential expression data
+diff_expr_data <- utils::read.csv("./expr_plotting_results/master_diff_expr_data.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_1 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_1.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_5 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_5.csv", header = TRUE, stringsAsFactors = FALSE)
+sig_diff_expr_data_10 <- utils::read.csv("./expr_plotting_results/master_sig_diff_expr_data_10.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # read in yaml config file
-config <- yaml::yaml.load_file("config.yaml")
+config <- yaml::yaml.load_file("./expr_plotting_results/config.yaml")
 
-# get list of rna_species ----
+# read in metadata
+metadata <- utils::read.csv("./expr_plotting_results/metadata.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# get list of rna_species
 rna_species_choices <- species %>%
   dplyr::distinct() %>%
   dplyr::pull()
 
-# define server logic for app ----
+# get list of variables of possible interest to plot by
+variables_of_interest <- metadata %>%
+  dplyr::select(-sample) %>%
+  base::colnames()
+
+# split the metadata columns into a list
+# do for all the columns/variables in the metadata that will be used (everything except the sample column)
+metadata_split <- metadata %>%
+  select(-sample) %>%
+  as.list()
+
+# for each value in list (originally metadata columns)...
+widths <- lapply(metadata_split, function(x)
+  
+  # ...get number of observations of unique values...
+  base::table(x) %>%
+    base::as.data.frame() %>%
+    # ...and divide this by the length of the list
+    dplyr::pull(Freq)/base::length(x)
+  
+)
+
+# define server logic for app
 server <- function(input, output, session) {
   
-  # get the current rna species the user has chosen ----
-  shiny::updateSelectizeInput(session, "rna_species_choice", choices = rna_species_choices, selected = "mirna", server = TRUE)
+  observe({
+    
+    # get the current rna species the user has chosen
+    shiny::updateSelectizeInput(session, "rna_species_choice", choices = rna_species_choices, selected = "mirna", server = TRUE)
+    
+  })
   
-  # return rnas available for the user to choose from (depends on the users choice of rna species) ----
+  observe({
+    
+    # create a user input switch that will let the user view the data based on their main variable of interest
+    shiny::updateSelectizeInput(session, "main_variable", choices = variables_of_interest, selected = "treatment", server = TRUE)
+    
+  })
+  
+  # return rnas available for the user to choose from (depends on the users choice of rna species)
   rna_choices <- shiny::reactive({
+    
     if(base::is.null(input$rna_species_choice)){
       return(rna_species_pairs) %>%
         dplyr::distinct() %>%
@@ -49,12 +87,15 @@ server <- function(input, output, session) {
       dplyr::pull()
   })
   
-  # get the current rna the user has chosen ----
+  
+  # get the current rna the user has chosen
   observe({
+    
     shiny::updateSelectizeInput(session, "rna_choice", choices = rna_choices(), server=TRUE)
+    
   })
   
-  # subset count data based on the user choice of rna_species and rna ----
+  # subset count data based on the user choice of rna_species and rna
   # the dplyr::collect() function is required to force evaluation of "input$rna_choice" and "input$rna_species_choice" - otherwise is does lazy evaluation
   # the !! syntax is required to force dplyr to evaluate the user inputs (eg. input$rna_species_choice) before operating on it (eg. dplyr::filter())
   subset_count_data <- shiny::reactive({
@@ -64,13 +105,20 @@ server <- function(input, output, session) {
     counts %>%
       dplyr::filter(rna_species==!!input$rna_species_choice & rna %in% !!input$rna_choice) %>%
       dplyr::collect() %>%
-      # order the levels of the data so they plot in a sensible order on the xaxes of the plots, user specifies in configuration file
-      dplyr::mutate(treatment = factor(treatment, levels = c(config$treatment_order))) %>%
+      # make variables factors so they plot correctly (all columns except several aforementioned columns)
+      dplyr::mutate(across(!rna &
+                             !rna_species &
+                             !sample &
+                             !low_sequencing_read_count &
+                             !raw_read_count_fastq_file &
+                             !raw_counts &
+                             !counts_per_million, factor)) %>%
       # also format logical variable so it renders properly
       dplyr::mutate(low_sequencing_read_count = as.logical(low_sequencing_read_count))
+    
   })
   
-  # subset differential expression data based on the user choice of rna_species and rna ----
+  # subset differential expression data based on the user choice of rna_species and rna
   # the dplyr::collect() function is required to force evaluation of "input$rna_choice" and "input$rna_species_choice" - otherwise is does lazy evaluation
   # the !! syntax is required to force dplyr to evaluate the user inputs (eg. input$rna_species_choice) before operating on it (eg. dplyr::filter())
   subset_diff_expr_data <- shiny::reactive({
@@ -80,15 +128,17 @@ server <- function(input, output, session) {
     diff_expr_data %>% 
       dplyr::filter(rna_species==!!input$rna_species_choice & rna %in% !!input$rna_choice) %>%
       dplyr::collect()
+    
   })
   
-  # create a user input switch that will let the user view the data based on their main variable of interest ----
-  main_variable <- shiny::reactive({
-    base::switch(input$variable_of_interest,
-                 "Treatment" = "treatment")
+  # setup a reactive function that grabs the plot widths based on the current main variable the user has selected to view
+  subplot_width <- shiny::reactive({
+    
+    widths[[input$main_variable]]
+    
   })
   
-  # create interactive table of the users current selection of rna and rna_species that show differential expressions results ----
+  # create interactive table of the users current selection of rna and rna_species that show differential expressions results
   output$table_diff_expr <- DT::renderDataTable({
     
     DT::datatable(subset_diff_expr_data() %>%
@@ -118,6 +168,7 @@ server <- function(input, output, session) {
                                "RNA species",
                                "Treatment comparison",
                                "Pipeline",
+                               "Differential expression method",
                                "Log fold change",
                                "p-value",
                                "Adjusted p-value",
@@ -137,30 +188,21 @@ server <- function(input, output, session) {
                                             buttons = c("csv", "excel", "pdf"),
                                             text = "Download"),
                                  I("colvis")))) %>%
-      # Highlight the rnas/rows that are of possible interest from the presence/absence analysis
-      # This matches the css highlighting in the RNA drop down box
-      # DT::formatStyle("presence_absence",
-      #             target = "row",
-      #             backgroundColor = styleEqual(c("in_majority_of_one_group_not_in_several_of_another_group"),
-      #                                          c("#bad9f5"))) %>%
       # Highlight the rnas/rows that are significantly differentially expressed
       # A different highlight is used for the three significance levels (1%, 5%, 10%)
       # This matches the css highlighting in the RNA drop down box
-      # This highlighting was done last so the differential expression results "trump"
-      # when an RNA is both significantly differentially expressed and of interest in the
-    # presence/absence analysis
-    DT::formatStyle("significance",
-                    target = "row",
-                    backgroundColor = styleEqual(c("significant_1%",
-                                                   "significant_5%",
-                                                   "significant_10%"),
-                                                 c("#85C659",
-                                                   "#febf2a",
-                                                   "#ec1515")))
+      DT::formatStyle("significance",
+                      target = "row",
+                      backgroundColor = styleEqual(c("significant_1%",
+                                                     "significant_5%",
+                                                     "significant_10%"),
+                                                   c("#85C659",
+                                                     "#febf2a",
+                                                     "#ec1515")))
     
   })
   
-  # generate boxplot of normalised counts per million averaged over samples in the levels/groups of the main variable of interest the user chooses to view ----
+  # generate boxplot of normalised counts per million averaged over samples in the levels/groups of the main variable of interest the user chooses to view
   output$box_plot_cpm <- plotly::renderPlotly({
     
     # print a message if the user hasn't yet selected an RNA
@@ -169,92 +211,102 @@ server <- function(input, output, session) {
     # print a message if no count per million data could be calculated for this data
     shiny::validate(need(subset_count_data()$counts_per_million, "Count per million data could not be calculated for this RNA - the counts were too small"))
     
-    plotly::plot_ly(data = (subset_count_data()),
-                    x = ~interaction(get(main_variable()), rna),
+    subset_count_data() %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(get(input$main_variable)), subset_count_data()$rna)) %>%
+      base::lapply(function(x) {
+        plotly::plot_ly(data = x,
+                    x = ~interaction(get(input$main_variable), rna),
                     y = ~counts_per_million,
                     split = ~pipeline,
-                    color = ~get(main_variable()),
+                    color = ~get(input$main_variable),
                     colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
-                    type = "box") %>%
-      plotly::layout(yaxis = base::list(title = "Counts per million"),
-                     xaxis = base::list(title = "", tickangle = 270),
-                     margin = base::list(b = 200))
+                    type = "box",
+                    hoverinfo = "y") %>%
+          plotly::layout(yaxis = base::list(title = "Raw counts"),
+                         xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
+      plotly::subplot(shareY = TRUE, widths = c(subplot_width()))
   })
   
-  # generate scatterplot of normalised counts per million for all samples in the levels/groups of the main variable of interest the user chooses to view ----
+  # generate scatterplot of normalised counts per million for all samples in the levels/groups of the main variable of interest the user chooses to view
   output$scatterplot_cpm_by_sample <- plotly::renderPlotly({
     
     # print a message if no count per million data could be calculated for this data
     shiny::validate(need(subset_count_data()$counts_per_million, "Count per million data could not be calculated for this RNA"))
     
     subset_count_data() %>%
-      base::split(base::list(subset_count_data() %>% dplyr::pull(!!main_variable()), subset_count_data()$rna)) %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(get(input$main_variable)), subset_count_data()$rna)) %>%
       base::lapply(function(x) {
         plotly::plot_ly(data = x,
                         x = x$sample,
                         y = ~counts_per_million,
                         split = ~pipeline,
-                        color = ~get(main_variable()),
+                        color = ~get(input$main_variable),
                         colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                         type = "scatter",
                         mode  = "markers",
                         marker = base::list(opacity = 0.5),
                         hoverinfo = "text",
-                        text = ~paste("</br> Counts per million:",base::format(counts_per_million, big.mark = ",", scientific = FALSE, digits = 2),
+                        text = ~paste("<b>", input$rna_choice,"</b>",
+                                      "</br><i>", stringr::str_to_title(input$main_variable), ": ", get(input$main_variable), "</i>",
+                                      "</br><br> Counts per million:", base::format(counts_per_million, big.mark = ",", scientific = FALSE, digits = 2),
                                       "</br> Sample:", x$sample,
-                                      "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
                                       "</br> Low sequencing read count:", low_sequencing_read_count,
                                       "</br> Sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2))) %>%
           plotly::layout(yaxis = base::list(title = "Counts per million"),
-                         xaxis = base::list(title = "", tickangle = 270, type = "category"))
-      }) %>% plotly::subplot(shareY = TRUE)
+                         xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
+      plotly::subplot(shareY = TRUE, widths = c(subplot_width()))
   })
   
-  # generate boxplot of raw counts for all samples in the levels/groups of the main variable of interest the user chooses to view ----
+  # generate boxplot of raw counts for all samples in the levels/groups of the main variable of interest the user chooses to view
   output$box_plot_raw <- plotly::renderPlotly({
     
-    # generate boxplot of raw counts per averaged over samples in the levels/groups of the main variable of interest the user chooses to view ----
-    plotly::plot_ly(data = (subset_count_data()),
-                    x = ~interaction(get(main_variable()), rna),
-                    y = ~raw_counts,
-                    split = ~pipeline,
-                    color = ~get(main_variable()),
-                    colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
-                    type = "box") %>%
-      plotly::layout(yaxis = base::list(title = "Raw counts"),
-                     xaxis = base::list(title = "", tickangle = 270),
-                     margin = base::list(b = 200))
+    # generate boxplot of raw counts per averaged over samples in the levels/groups of the main variable of interest the user chooses to view
+    subset_count_data() %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(get(input$main_variable)), subset_count_data()$rna)) %>%
+      base::lapply(function(x) {
+        plotly::plot_ly(data = x,
+                        x = ~interaction(get(input$main_variable), rna),
+                        y = ~raw_counts,
+                        split = ~pipeline,
+                        color = ~get(input$main_variable),
+                        colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
+                        type = "box",
+                        hoverinfo = "y") %>%
+          plotly::layout(yaxis = base::list(title = "Raw counts"),
+                         xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
+      plotly::subplot(shareY = TRUE, widths = c(subplot_width()))
   })
   
-  # generate scatterplot of raw counts for all sample in the levels/groups of the main variable of interest the user chooses to view ----
+  # generate scatterplot of raw counts for all sample in the levels/groups of the main variable of interest the user chooses to view
   output$scatterplot_raw_by_sample <- plotly::renderPlotly({
     
     subset_count_data() %>%
-      base::split(base::list(subset_count_data() %>% dplyr::pull(!!main_variable()), subset_count_data()$rna)) %>%
+      base::split(base::list(subset_count_data() %>% dplyr::pull(get(input$main_variable)), subset_count_data()$rna)) %>%
       base::lapply(function(x) {
         plotly::plot_ly(data = x,
                         x = x$sample,
                         y = ~raw_counts,
                         split = ~pipeline,
-                        color = ~get(main_variable()),
+                        color = ~get(input$main_variable),
                         colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                         type = "scatter",
                         mode  = "markers",
                         marker = base::list(opacity = 0.5),
                         hoverinfo = "text",
-                        text = ~paste("</br> Raw count:", base::format(raw_counts, big.mark = ",", scientific = FALSE, digits = 2),
+                        text = ~paste("<b>", input$rna_choice,"</b>",
+                                      "</br><i>", stringr::str_to_title(input$main_variable), ": ", get(input$main_variable), "</i>",
+                                      "</br><br> Raw count:", base::format(raw_counts, big.mark = ",", scientific = FALSE, digits = 2),
                                       "</br> Sample:", x$sample,
-                                      "</br> Treatment:", treatment,
                                       "</br> Pipeline:", pipeline,
                                       "</br> Low sequencing read count:", low_sequencing_read_count,
                                       "</br> Sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2))) %>%
           plotly::layout(yaxis = base::list(title = "Raw counts"),
                          xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
-      plotly::subplot(shareY = TRUE)
+      plotly::subplot(shareY = TRUE, widths = c(subplot_width()))
   })
   
-  # create interactive table of the users current selection of rna and rna_species that includes rna counts etc ----
+  # create interactive table of the users current selection of rna and rna_species that includes rna counts etc
   output$table <- DT::renderDataTable({
     
     DT::datatable(subset_count_data() %>% dplyr::select(rna,

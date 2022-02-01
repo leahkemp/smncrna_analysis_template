@@ -16,6 +16,9 @@ config <- yaml::yaml.load_file("./config/config.yaml")
 # read in metadata
 metadata <- utils::read.csv(config$metadata_path)
 
+# create output directory
+dir.create("./pca/pca_results/", showWarnings = FALSE)
+
 # subset all count data to the count data specified to be analysed by the user in the config file
 # this will remove rows of data matching the said conditions
 
@@ -230,31 +233,31 @@ variables_4_5 <- variables_data %>%
 #################################################################
 
 # scree data
-utils::write.csv(scree_data, "./pca/scree.csv", row.names = FALSE)
+utils::write.csv(scree_data, "./pca/pca_results/scree.csv", row.names = FALSE)
 
 # individuals (rna) data
-utils::write.csv(individuals_1_2, "./pca/individuals_1_2.csv", row.names = FALSE)
-utils::write.csv(individuals_1_3, "./pca/individuals_1_3.csv", row.names = FALSE)
-utils::write.csv(individuals_1_4, "./pca/individuals_1_4.csv", row.names = FALSE)
-utils::write.csv(individuals_1_5, "./pca/individuals_1_5.csv", row.names = FALSE)
-utils::write.csv(individuals_2_3, "./pca/individuals_2_3.csv", row.names = FALSE)
-utils::write.csv(individuals_2_4, "./pca/individuals_2_4.csv", row.names = FALSE)
-utils::write.csv(individuals_2_5, "./pca/individuals_2_5.csv", row.names = FALSE)
-utils::write.csv(individuals_3_4, "./pca/individuals_3_4.csv", row.names = FALSE)
-utils::write.csv(individuals_3_5, "./pca/individuals_3_5.csv", row.names = FALSE)
-utils::write.csv(individuals_4_5, "./pca/individuals_4_5.csv", row.names = FALSE)
+utils::write.csv(individuals_1_2, "./pca/pca_results/individuals_1_2.csv", row.names = FALSE)
+utils::write.csv(individuals_1_3, "./pca/pca_results/individuals_1_3.csv", row.names = FALSE)
+utils::write.csv(individuals_1_4, "./pca/pca_results/individuals_1_4.csv", row.names = FALSE)
+utils::write.csv(individuals_1_5, "./pca/pca_results/individuals_1_5.csv", row.names = FALSE)
+utils::write.csv(individuals_2_3, "./pca/pca_results/individuals_2_3.csv", row.names = FALSE)
+utils::write.csv(individuals_2_4, "./pca/pca_results/individuals_2_4.csv", row.names = FALSE)
+utils::write.csv(individuals_2_5, "./pca/pca_results/individuals_2_5.csv", row.names = FALSE)
+utils::write.csv(individuals_3_4, "./pca/pca_results/individuals_3_4.csv", row.names = FALSE)
+utils::write.csv(individuals_3_5, "./pca/pca_results/individuals_3_5.csv", row.names = FALSE)
+utils::write.csv(individuals_4_5, "./pca/pca_results/individuals_4_5.csv", row.names = FALSE)
 
 # variables (samples) data
-utils::write.csv(variables_1_2, "./pca/variables_1_2.csv", row.names = FALSE)
-utils::write.csv(variables_1_3, "./pca/variables_1_3.csv", row.names = FALSE)
-utils::write.csv(variables_1_4, "./pca/variables_1_4.csv", row.names = FALSE)
-utils::write.csv(variables_1_5, "./pca/variables_1_5.csv", row.names = FALSE)
-utils::write.csv(variables_2_3, "./pca/variables_2_3.csv", row.names = FALSE)
-utils::write.csv(variables_2_4, "./pca/variables_2_4.csv", row.names = FALSE)
-utils::write.csv(variables_2_5, "./pca/variables_2_5.csv", row.names = FALSE)
-utils::write.csv(variables_3_4, "./pca/variables_3_4.csv", row.names = FALSE)
-utils::write.csv(variables_3_5, "./pca/variables_3_5.csv", row.names = FALSE)
-utils::write.csv(variables_4_5, "./pca/variables_4_5.csv", row.names = FALSE)
+utils::write.csv(variables_1_2, "./pca/pca_results/variables_1_2.csv", row.names = FALSE)
+utils::write.csv(variables_1_3, "./pca/pca_results/variables_1_3.csv", row.names = FALSE)
+utils::write.csv(variables_1_4, "./pca/pca_results/variables_1_4.csv", row.names = FALSE)
+utils::write.csv(variables_1_5, "./pca/pca_results/variables_1_5.csv", row.names = FALSE)
+utils::write.csv(variables_2_3, "./pca/pca_results/variables_2_3.csv", row.names = FALSE)
+utils::write.csv(variables_2_4, "./pca/pca_results/variables_2_4.csv", row.names = FALSE)
+utils::write.csv(variables_2_5, "./pca/pca_results/variables_2_5.csv", row.names = FALSE)
+utils::write.csv(variables_3_4, "./pca/pca_results/variables_3_4.csv", row.names = FALSE)
+utils::write.csv(variables_3_5, "./pca/pca_results/variables_3_5.csv", row.names = FALSE)
+utils::write.csv(variables_4_5, "./pca/pca_results/variables_4_5.csv", row.names = FALSE)
 
 # clean up
 rm(list = ls())
