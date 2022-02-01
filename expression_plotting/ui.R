@@ -62,7 +62,7 @@ ui <- shiny::fluidPage(
       shiny::selectizeInput("rna_choice",
                             h4("Select/search for an RNA:"),
                             choices = NULL,
-                            options = list(maxItems = 10)),
+                            options = list(maxItems = 1)),
       
       # user input to choose the main variable of interest to compare
       shiny::selectizeInput("main_variable",
