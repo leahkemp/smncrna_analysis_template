@@ -207,9 +207,7 @@ counts <- dplyr::mutate(counts, rna_species_2 = dplyr::case_when(rna_species_2 =
 # | needed to be escaped with \\ in order to be interpreted correctly
 # also need to use gsub instead of sub to replace all occurrences instead of just the first one
 counts <- counts %>%
-  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\.", "_", rna))
+  dplyr::mutate(rna = base::gsub(":|\\||\\.", "_", rna))
 
 # rename mirna (from rna_species_2") so that it matches up with miRNA and gets put in the same group in downstream analyses
 counts <- counts %>%
@@ -224,40 +222,30 @@ utils::write.csv(counts, "./prepare_counts/counts.csv", row.names = FALSE)
 dir.create("./prepare_counts/rds_objects/", showWarnings = FALSE)
 
 raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
-  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
 raw_mirna_excerpt_data <- raw_mirna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
-  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
 raw_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
-  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
 raw_trna_excerpt_data <- raw_trna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
-  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
 raw_circrna_excerpt_data <- raw_circrna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
-  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
 raw_gencode_excerpt_data <- raw_gencode_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
-  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
-  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_mirna_smrnaseq_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_mirna_smrnaseq_data))
+rownames(raw_mirna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_mirna_excerpt_data))
+rownames(raw_pirna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_pirna_excerpt_data))
+rownames(raw_trna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_trna_excerpt_data))
+rownames(raw_circrna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_circrna_excerpt_data))
+rownames(raw_gencode_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_gencode_excerpt_data))
 
 base::saveRDS(raw_mirna_smrnaseq_data, file = "./prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds")
 base::saveRDS(raw_mirna_excerpt_data, file = "./prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds")
