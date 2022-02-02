@@ -224,17 +224,40 @@ utils::write.csv(counts, "./prepare_counts/counts.csv", row.names = FALSE)
 dir.create("./prepare_counts/rds_objects/", showWarnings = FALSE)
 
 raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+
 raw_mirna_excerpt_data <- raw_mirna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+
 raw_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+
 raw_trna_excerpt_data <- raw_trna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+
 raw_circrna_excerpt_data <- raw_circrna_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
+
 raw_gencode_excerpt_data <- raw_gencode_excerpt_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+  dplyr::mutate(gene_transcript = base::gsub(":", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\|", "_", gene_transcript)) %>%
+  dplyr::mutate(gene_transcript = base::gsub("\\.", "_", gene_transcript))
 
 base::saveRDS(raw_mirna_smrnaseq_data, file = "./prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds")
 base::saveRDS(raw_mirna_excerpt_data, file = "./prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds")
