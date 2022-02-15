@@ -36,7 +36,7 @@ General info:
 - *Colour ranges are relative within each RNA species*
 - *Only the RNA's that were found to be significantly differentially expressed by at least one differential expression method are plotted here*
 
-```{r, fig.height = 90, out.width = "100%", results = FALSE}
+```{r, results = FALSE}
 # load libraries
 library(dplyr)
 library(plotly)
