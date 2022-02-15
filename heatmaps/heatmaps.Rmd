@@ -125,14 +125,10 @@ lcpm_datasets  <- base::list(mirna_smrnaseq = lcpm_mirna_smrnaseq_data,
 raw_datasets <- raw_datasets[to_analyse]
 lcpm_datasets <- lcpm_datasets[to_analyse]
 
-# get a list of RNA's that were found to be significantly differentially expressed by at least one differential expression method
-# (based on the user threshold of "significant)
+# get a list of genes/transcripts that were found to be significantly differentially expressed by at least one differential expression method
 sig_rnas <- diff_expr_results %>%
-  dplyr::filter(adj_p_value <= config$pvalue_cutoff) %>%
-  dplyr::pull(unique(rna))
-
-# stop scientific notation
-options(scipen=999)
+  dplyr::filter(significance %in% c("significant_1%")) %>%
+  dplyr::pull(base::unique(rna))
 
 # get the significantly differentially expressed RNA's (loop over all count datasets)
 log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
