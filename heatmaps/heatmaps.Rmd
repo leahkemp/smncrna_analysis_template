@@ -127,8 +127,201 @@ lcpm_datasets <- lcpm_datasets[to_analyse]
 
 # get a list of RNA's that were found to be significantly differentially expressed by at least one differential expression method
 sig_rnas <- diff_expr_results %>%
-  dplyr::filter(significance %in% c("significant_1%", "significant_5%", "significant_10%")) %>%
-  dplyr::pull(base::unique(rna))
+  dplyr::filter(significance %in% c("significant_1%", "significant_5%", "significant_10%"))
+
+# extract significant rna data into separate dataframes
+sig_mirna_smrnaseq <- sig_rnas %>%
+  dplyr::filter(pipeline == "smrnaseq") %>%
+  dplyr::filter(rna_species == "mirna")
+
+sig_mirna_excerpt <- sig_rnas %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "mirna")
+
+sig_pirna_excerpt <- sig_rnas %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "pirna")
+
+sig_trna_excerpt <- sig_rnas %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "trna")
+
+sig_circrna_excerpt <- sig_rnas %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "circrna")
+
+sig_gencode_excerpt <- sig_rnas %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::filter(rna_species == "gencode")
+
+# create a true/false strings that defines if there are more than 300 significant genes/transcripts for plotting
+too_many_mirna_smrnaseq <- nrow(sig_mirna_smrnaseq) > 300
+too_many_mirna_excerpt <- nrow(sig_mirna_excerpt) > 300
+too_many_pirna_excerpt <- nrow(sig_pirna_excerpt) > 300
+too_many_trna_excerpt <- nrow(sig_trna_excerpt) > 300
+too_many_circrna_excerpt <- nrow(sig_circrna_excerpt) > 300
+too_many_gencode_excerpt <- nrow(sig_gencode_excerpt) > 300
+
+# if there ARE too many significant RNA's (more than 300)
+# subset to 300 with the greatest log fold change
+# if the AREN'T too many significant RNA's, just pull the RNA list
+if(too_many_mirna_smrnaseq == TRUE) {
+  
+  sig_mirna_smrnaseq <- sig_mirna_smrnaseq %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+  # get top 300 RNA's
+  sig_mirna_smrnaseq <- sig_mirna_smrnaseq[1:300]
+  
+} else if(too_many_mirna_smrnaseq == FALSE) {
+  
+  sig_mirna_smrnaseq <- sig_mirna_smrnaseq %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+}
+
+if(too_many_mirna_excerpt == TRUE) {
+  
+  sig_mirna_excerpt <- sig_mirna_excerpt %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+  # get top 300 RNA's
+  sig_mirna_excerpt <- sig_mirna_excerpt[1:300]
+  
+} else if(too_many_mirna_excerpt == FALSE) {
+  
+  sig_mirna_excerpt <- sig_mirna_excerpt %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+}
+
+if(too_many_pirna_excerpt == TRUE) {
+  
+  sig_pirna_excerpt <- sig_pirna_excerpt %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+  # get top 300 RNA's
+  sig_pirna_excerpt <- sig_pirna_excerpt[1:300]
+  
+} else if(too_many_pirna_excerpt == FALSE) {
+  
+  sig_pirna_excerpt <- sig_pirna_excerpt %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+}
+
+if(too_many_trna_excerpt == TRUE) {
+  
+  sig_trna_excerpt <- sig_trna_excerpt %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+  # get top 300 RNA's
+  sig_trna_excerpt <- sig_trna_excerpt[1:300]
+  
+} else if(too_many_trna_excerpt == FALSE) {
+  
+  sig_trna_excerpt <- sig_trna_excerpt %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+}
+
+if(too_many_circrna_excerpt == TRUE) {
+  
+  sig_circrna_excerpt <- sig_circrna_excerpt %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+  # get top 300 RNA's
+  sig_circrna_excerpt <- sig_circrna_excerpt[1:300]
+  
+} else if(too_many_circrna_excerpt == FALSE) {
+  
+  sig_circrna_excerpt <- sig_circrna_excerpt %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+}
+
+if(too_many_gencode_excerpt == TRUE) {
+  
+  sig_gencode_excerpt <- sig_gencode_excerpt %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+  # get top 300 RNA's
+  sig_gencode_excerpt <- sig_gencode_excerpt[1:300]
+  
+} else if(too_many_gencode_excerpt == FALSE) {
+  
+  sig_gencode_excerpt <- sig_gencode_excerpt %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique RNA's (since there can be multiple rows for a given gene)
+    base::unique()
+  
+}
+
+# merge RNA lists back together
+sig_rnas <- c(sig_mirna_smrnaseq,
+              sig_mirna_excerpt,
+              sig_pirna_excerpt,
+              sig_trna_excerpt,
+              sig_circrna_excerpt,
+              sig_gencode_excerpt)
 
 # get the significantly differentially expressed RNA's (loop over all count datasets)
 log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
@@ -268,6 +461,10 @@ base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_b
 base::cat("#### miRNA's (smrnaseq)")
 ```
 
+```{r, eval = too_many_mirna_smrnaseq, results = "asis"}
+base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 miRNA's with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$mirna_smrnaseq, fig.height = fig_height_mirna_smrnaseq, out.width = "100%"}
 # extract datasets
 lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_smrnaseq
@@ -366,6 +563,10 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "
 ```{r, eval = config$mirna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = too_many_mirna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 miRNA's with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt, out.width = "100%"}
@@ -468,6 +669,10 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mi
 base::cat("#### piRNA's (excerpt)")
 ```
 
+```{r, eval = too_many_pirna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant piRNA's to plot. Plotting only 300 piRNA's with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$pirna_excerpt, fig.height = fig_height_pirna_excerpt, out.width = "100%"}
 # extract datasets
 lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
@@ -566,6 +771,10 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pi
 ```{r, eval = config$trna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = too_many_trna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant tRNA's to plot. Plotting only 300 tRNA's with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt, out.width = "100%"}
@@ -668,6 +877,10 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna
 base::cat("#### circRNA's (excerpt)")
 ```
 
+```{r, eval = too_many_circrna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant circRNA's to plot. Plotting only 300 circRNA's with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$circrna_excerpt, fig.height = fig_height_circrna_excerpt, out.width = "100%"}
 # extract datasets
 lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
@@ -766,6 +979,10 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 &
 ```{r, eval = config$gencode_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### gencode's (excerpt)")
+```
+
+```{r, eval = too_many_gencode_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant gencode's to plot. Plotting only 300 gencode's with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt, out.width = "100%"}
@@ -870,6 +1087,10 @@ if (all(is.na(lcpm_gencode_excerpt)) == FALSE & nrow(lcpm_gencode_excerpt) > 3 &
 base::cat("#### miRNA's (smrnaseq)")
 ```
 
+```{r, eval = too_many_mirna_smrnaseq, results = "asis"}
+base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 miRNA's with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$mirna_smrnaseq, fig.height = fig_height_mirna_smrnaseq_free, out.width = "100%"}
 # extract datasets
 lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_smrnaseq
@@ -929,6 +1150,10 @@ if (all(is.na(lcpm_mirna_smrnaseq)) == FALSE & nrow(lcpm_mirna_smrnaseq) > 3 & "
 ```{r, eval = config$mirna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = too_many_mirna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 miRNA's with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt_free, out.width = "100%"}
@@ -992,6 +1217,10 @@ if (all(is.na(lcpm_mirna_excerpt)) == FALSE & nrow(lcpm_mirna_excerpt) > 3 & "mi
 base::cat("#### piRNA's (excerpt)")
 ```
 
+```{r, eval = too_many_pirna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant piRNA's to plot. Plotting only 300 piRNA's with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$pirna_excerpt, fig.height = fig_height_pirna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
@@ -1051,6 +1280,10 @@ if (all(is.na(lcpm_pirna_excerpt)) == FALSE & nrow(lcpm_pirna_excerpt) > 3 & "pi
 ```{r, eval = config$trna_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = too_many_trna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant tRNA's to plot. Plotting only 300 tRNA's with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt_free, out.width = "100%"}
@@ -1114,6 +1347,10 @@ if (all(is.na(lcpm_trna_excerpt)) == FALSE & nrow(lcpm_trna_excerpt) > 3 & "trna
 base::cat("#### circRNA's (excerpt)")
 ```
 
+```{r, eval = too_many_circrna_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant circRNA's to plot. Plotting only 300 circRNA's with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$circrna_excerpt, fig.height = fig_height_circrna_excerpt_free, out.width = "100%"}
 # extract datasets
 lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
@@ -1173,6 +1410,10 @@ if (all(is.na(lcpm_circrna_excerpt)) == FALSE & nrow(lcpm_circrna_excerpt) > 3 &
 ```{r, eval = config$gencode_excerpt, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### gencode's (excerpt)")
+```
+
+```{r, eval = too_many_gencode_excerpt, results = "asis"}
+base::cat(base::paste0("Too many significant gencode's to plot. Plotting only 300 gencode's with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt_free, out.width = "100%"}
