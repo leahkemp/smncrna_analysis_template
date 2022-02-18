@@ -20,6 +20,22 @@ Restore the [renv](https://rstudio.github.io/renv/) to install all of the packag
 renv::restore()
 ```
 
+## Sanity check config/metadata
+
+*This will check for some common issues in the input configuration/metadata files. Please address any issues flagged in the output html file (./sanity_check_inputs/sanity_check_config_metadata.html) before continuing.*
+
+```{r}
+rmarkdown::render("./sanity_check_inputs/sanity_check_config_metadata.Rmd")
+```
+
+## Sanity check raw count data
+
+*This will check for some common issues in the input raw count data. Please address any issues flagged in the output html file (./sanity_check_inputs/sanity_check_raw_counts.html) before continuing.*
+
+```{r}
+rmarkdown::render("./sanity_check_inputs/sanity_check_raw_counts.Rmd")
+```
+
 ## Summarise the read counts/mapping rates for both pipelines
 
 *This will output a csv file with various mapping/read count metrics for all samples from the smrnaseq/excerpt pipeline outputs as well as the raw fastq files (./mapping_rates/mapping_rates.csv)*
