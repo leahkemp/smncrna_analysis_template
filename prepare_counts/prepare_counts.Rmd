@@ -169,8 +169,8 @@ counts_cpm <- base::lapply(base::seq_along(count_datasets), function(y, pipeline
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-rna_species=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
-pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
+rna_species=base::gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", base::paste(base::names(count_datasets)))
 )
 
 # calculate log counts per million (loop over all the count datasets the user has specified)
@@ -194,8 +194,8 @@ counts_lcpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-rna_species=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
-pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
+rna_species=base::gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", base::paste(base::names(count_datasets)))
 )
 
 # prepare raw counts (loop over all the count datasets the user has specified)
@@ -219,8 +219,8 @@ counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-rna_species=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
-pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
+rna_species=base::gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", base::paste(base::names(count_datasets)))
 )
 
 # collapse my list of dataframes into single dataframes
