@@ -289,7 +289,7 @@ if (gencode_excerpt_enough_rows == FALSE) {
 # make a list of all the count datasets in the global environment
 count_datasets <- base::do.call("list", base::mget(base::grep("_data", base::names(.GlobalEnv), value=TRUE)))
 
-# evalutate/setup minimum logFC threshold
+# evaluate/setup minimum logFC threshold
 min_logfc <- base::eval(base::parse(text = config$min_lfc))
 
 # specify treatments by creating a string of conditions that match the order of the columns/samples in the count data
