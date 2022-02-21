@@ -203,7 +203,7 @@ counts <- dplyr::mutate(counts, rna_species_2 = dplyr::case_when(rna_species_2 =
 ))
 
 # fix for css highlighting in expression plotting shiny app not working for rnas/rows with ":", "|" or "."
-# doing this here so the genes/transcripts are named consitantly throughout all documents
+# doing this here so the genes/transcripts are named consistently throughout all documents
 # | needed to be escaped with \\ in order to be interpreted correctly
 # also need to use gsub instead of sub to replace all occurrences instead of just the first one
 counts <- counts %>%
