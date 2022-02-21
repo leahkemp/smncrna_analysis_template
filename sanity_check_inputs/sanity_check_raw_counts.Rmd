@@ -340,7 +340,7 @@ keep <- base::lapply(dge, function(x) {
 
 ```{r, eval = mirna_smrnaseq_enough_rows}
 # apply filtering
-dge_mirna_smrnaseq_filtered <- dge$mirna_smrnaseq_data[keep$mirna_smrnaseq_data,, keep.lib.sizes=FALSE]
+dge_mirna_smrnaseq_filtered <- dge$mirna_smrnaseq_data[keep$raw_mirna_smrnaseq_data,, keep.lib.sizes=FALSE]
 
 # establish if there are 2 or more rows of data in the count dataset
 mirna_smrnaseq_enough_rows_after_filtering <- nrow(dge_mirna_smrnaseq_filtered$counts) >=2
@@ -348,7 +348,7 @@ mirna_smrnaseq_enough_rows_after_filtering <- nrow(dge_mirna_smrnaseq_filtered$c
 
 ```{r, eval = mirna_excerpt_enough_rows}
 # apply filtering
-dge_mirna_excerpt_filtered <- dge$mirna_excerpt_data[keep$mirna_excerpt_data,, keep.lib.sizes=FALSE]
+dge_mirna_excerpt_filtered <- dge$mirna_excerpt_data[keep$raw_mirna_excerpt_data,, keep.lib.sizes=FALSE]
 
 # establish if there are 2 or more rows of data in the count dataset
 mirna_excerpt_enough_rows_after_filtering <- nrow(dge_mirna_excerpt_filtered$counts) >=2
@@ -356,7 +356,7 @@ mirna_excerpt_enough_rows_after_filtering <- nrow(dge_mirna_excerpt_filtered$cou
 
 ```{r, eval = pirna_excerpt_enough_rows}
 # apply filtering
-dge_pirna_excerpt_filtered <- dge$pirna_excerpt_data[keep$pirna_excerpt_data,, keep.lib.sizes=FALSE]
+dge_pirna_excerpt_filtered <- dge$pirna_excerpt_data[keep$raw_pirna_excerpt_data,, keep.lib.sizes=FALSE]
 
 # establish if there are 2 or more rows of data in the count dataset
 pirna_excerpt_enough_rows_after_filtering <- nrow(dge_pirna_excerpt_filtered$counts) >=2
@@ -364,7 +364,7 @@ pirna_excerpt_enough_rows_after_filtering <- nrow(dge_pirna_excerpt_filtered$cou
 
 ```{r, eval = trna_excerpt_enough_rows}
 # apply filtering
-dge_trna_excerpt_filtered <- dge$trna_excerpt_data[keep$trna_excerpt_data,, keep.lib.sizes=FALSE]
+dge_trna_excerpt_filtered <- dge$trna_excerpt_data[keep$raw_trna_excerpt_data,, keep.lib.sizes=FALSE]
 
 # establish if there are 2 or more rows of data in the count dataset
 trna_excerpt_enough_rows_after_filtering <- nrow(dge_trna_excerpt_filtered$counts) >=2
@@ -372,7 +372,7 @@ trna_excerpt_enough_rows_after_filtering <- nrow(dge_trna_excerpt_filtered$count
 
 ```{r, eval = circrna_excerpt_enough_rows}
 # apply filtering
-dge_circrna_excerpt_filtered <- dge$circrna_excerpt[keep$circrna_excerpt_data,, keep.lib.sizes=FALSE]
+dge_circrna_excerpt_filtered <- dge$circrna_excerpt[keep$raw_circrna_excerpt_data,, keep.lib.sizes=FALSE]
 
 # establish if there are 2 or more rows of data in the count dataset
 circrna_excerpt_enough_rows_after_filtering <- nrow(dge_circrna_excerpt_filtered$counts) >=2
@@ -380,7 +380,7 @@ circrna_excerpt_enough_rows_after_filtering <- nrow(dge_circrna_excerpt_filtered
 
 ```{r, eval = gencode_excerpt_enough_rows}
 # apply filtering
-dge_gencode_excerpt_filtered <- dge$gencode_excerpt[keep$gencode_excerpt_data,, keep.lib.sizes=FALSE]
+dge_gencode_excerpt_filtered <- dge$gencode_excerpt[keep$raw_gencode_excerpt_data,, keep.lib.sizes=FALSE]
 
 # establish if there are 2 or more rows of data in the count dataset
 gencode_excerpt_enough_rows_after_filtering <- nrow(dge_gencode_excerpt_filtered$counts) >=2

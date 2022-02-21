@@ -49,9 +49,6 @@ library(textshape)
 # for icons at bottom of doc
 htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 
-# read in pre-prepared count data
-counts <- utils::read.csv("../prepare_counts/counts.csv")
-
 # read in yaml config file
 config <- yaml::yaml.load_file("../config/config.yaml")
 
@@ -66,38 +63,6 @@ diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/dif
 diff_expr_results %>%
   utils::write.table(file = "../diff_expression/diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
 
-# load all the count datasets (premade rds objects)
-raw_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds"))
-raw_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds"))
-raw_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_pirna_excerpt_counts.rds"))
-raw_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_trna_excerpt_counts.rds"))
-raw_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_circrna_excerpt_counts.rds"))
-raw_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gencode_excerpt_counts.rds"))
-
-lcpm_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_mirna_smrnaseq_counts.rds"))
-lcpm_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_mirna_excerpt_counts.rds"))
-lcpm_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_pirna_excerpt_counts.rds"))
-lcpm_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_trna_excerpt_counts.rds"))
-lcpm_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_circrna_excerpt_counts.rds"))
-lcpm_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_gencode_excerpt_counts.rds"))
-
-# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
-to_analyse <- config[c("mirna_smrnaseq",
-                       "mirna_excerpt",
-                       "pirna_excerpt",
-                       "trna_excerpt",
-                       "circrna_excerpt",
-                       "gencode_excerpt")] %>%
-  base::as.data.frame() %>%
-  base::t() %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna_species") %>%
-  dplyr::rename("analyse" = "V1") %>%
-  tidyr::separate(rna_species, c("rna_species", "pipeline")) %>%
-  dplyr::filter(analyse == TRUE) %>%
-  dplyr::mutate(dataset_name = base::paste0(rna_species, "_", pipeline)) %>%
-  dplyr::pull(dataset_name)
-
 # define which datasets/rna species were actually analysed in the differential expression analysis
 # to be used to flag the difference between "no significantly differentially expressed RNA's found"
 # and "RNA not analysed in differential expression anaysis
@@ -105,25 +70,6 @@ diff_expr_analysed <- diff_expr_results %>%
   dplyr::mutate(dataset = paste(rna_species, pipeline, sep = "_"))
 
 diff_expr_analysed <- unique(diff_expr_analysed$dataset)
-
-# set up a vector of all the possible datasets to analyse
-raw_datasets  <- base::list(mirna_smrnaseq = raw_mirna_smrnaseq_data,
-                            mirna_excerpt = raw_mirna_excerpt_data,
-                            pirna_excerpt = raw_pirna_excerpt_data,
-                            trna_excerpt = raw_trna_excerpt_data,
-                            circrna_excerpt = raw_circrna_excerpt_data,
-                            gencode_excerpt = raw_gencode_excerpt_data)
-
-lcpm_datasets  <- base::list(mirna_smrnaseq = lcpm_mirna_smrnaseq_data,
-                             mirna_excerpt = lcpm_mirna_excerpt_data,
-                             pirna_excerpt = lcpm_pirna_excerpt_data,
-                             trna_excerpt = lcpm_trna_excerpt_data,
-                             circrna_excerpt = lcpm_circrna_excerpt_data,
-                             gencode_excerpt = lcpm_gencode_excerpt_data)
-
-# filter all possible datasets by the datasets the user has specified to analyse
-raw_datasets <- raw_datasets[to_analyse]
-lcpm_datasets <- lcpm_datasets[to_analyse]
 
 # get a list of RNA's that were found to be significantly differentially expressed by at least one differential expression method
 sig_rnas <- diff_expr_results %>%
@@ -322,6 +268,41 @@ sig_rnas <- c(sig_mirna_smrnaseq,
               sig_trna_excerpt,
               sig_circrna_excerpt,
               sig_gencode_excerpt)
+```
+
+```{r, eval = config$mirna_smrnaseq}
+# load count dataset (premade rds objects)
+lcpm_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_mirna_smrnaseq_counts.rds"))
+```
+
+```{r, eval = config$mirna_excerpt}
+# load count dataset (premade rds objects)
+lcpm_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_mirna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$pirna_excerpt}
+# load count dataset (premade rds objects)
+lcpm_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_pirna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$trna_excerpt}
+# load count dataset (premade rds objects)
+lcpm_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_trna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$circrna_excerpt}
+# load count dataset (premade rds objects)
+lcpm_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_circrna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$gencode_excerpt}
+# load count dataset (premade rds objects)
+lcpm_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_gencode_excerpt_counts.rds"))
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+lcpm_datasets <- base::do.call("list", base::mget(base::grep("lcpm_", base::names(.GlobalEnv), value=TRUE)))
 
 # get the significantly differentially expressed RNA's (loop over all count datasets)
 log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
@@ -359,19 +340,19 @@ all_widths <- metadata %>%
   dplyr::pull(n_samples)
 
 # set heatmap figure heights to automatically scale to how many rows are present in the data
-fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$mirna_smrnaseq) / 6
-fig_height_mirna_excerpt <- base::nrow(log_counts_per_million$mirna_excerpt) / 6
-fig_height_pirna_excerpt <- base::nrow(log_counts_per_million$pirna_excerpt) / 6
+fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$lcpm_mirna_smrnaseq_data) / 6
+fig_height_mirna_excerpt <- base::nrow(log_counts_per_million$lcpm_mirna_excerpt_data) / 6
+fig_height_pirna_excerpt <- base::nrow(log_counts_per_million$lcpm_pirna_excerpt_data) / 6
 fig_height_trna_excerpt <- base::nrow(log_counts_per_million$trna_excerpt) / 6
-fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$circrna_excerpt) / 6
-fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$gencode_excerpt) / 6
+fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$lcpm_circrna_excerpt_data) / 6
+fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$lcpm_gencode_excerpt_data) / 6
 
-fig_height_mirna_smrnaseq_free <- base::nrow(log_counts_per_million$mirna_smrnaseq) / 4
-fig_height_mirna_excerpt_free <- base::nrow(log_counts_per_million$mirna_excerpt) / 4
-fig_height_pirna_excerpt_free <- base::nrow(log_counts_per_million$pirna_excerpt) / 4
+fig_height_mirna_smrnaseq_free <- base::nrow(log_counts_per_million$lcpm_mirna_smrnaseq_data) / 4
+fig_height_mirna_excerpt_free <- base::nrow(log_counts_per_million$lcpm_mirna_excerpt_data) / 4
+fig_height_pirna_excerpt_free <- base::nrow(log_counts_per_million$lcpm_pirna_excerpt_data) / 4
 fig_height_trna_excerpt_free <- base::nrow(log_counts_per_million$trna_excerpt) / 4
-fig_height_circrna_excerpt_free <- base::nrow(log_counts_per_million$circrna_excerpt) / 4
-fig_height_gencode_excerpt_free <- base::nrow(log_counts_per_million$gencode_excerpt) / 4
+fig_height_circrna_excerpt_free <- base::nrow(log_counts_per_million$lcpm_circrna_excerpt_data) / 4
+fig_height_gencode_excerpt_free <- base::nrow(log_counts_per_million$lcpm_gencode_excerpt_data) / 4
 
 # need to set the figure height to NOT ZERO when the figure height ends up being less than 1 so rmarkdown doesn't error out on knitting
 fig_height_mirna_smrnaseq[fig_height_mirna_smrnaseq <1 ] <- 1
@@ -467,7 +448,7 @@ base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 
 
 ```{r, eval = config$mirna_smrnaseq, fig.height = fig_height_mirna_smrnaseq, out.width = "100%"}
 # extract datasets
-lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_smrnaseq
+lcpm_mirna_smrnaseq <- log_counts_per_million$lcpm_mirna_smrnaseq_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -571,7 +552,7 @@ base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 
 
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt, out.width = "100%"}
 # extract datasets
-lcpm_mirna_excerpt <- log_counts_per_million$mirna_excerpt
+lcpm_mirna_excerpt <- log_counts_per_million$lcpm_mirna_excerpt_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -675,7 +656,7 @@ base::cat(base::paste0("Too many significant piRNA's to plot. Plotting only 300 
 
 ```{r, eval = config$pirna_excerpt, fig.height = fig_height_pirna_excerpt, out.width = "100%"}
 # extract datasets
-lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
+lcpm_pirna_excerpt <- log_counts_per_million$lcpm_pirna_excerpt_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -779,7 +760,7 @@ base::cat(base::paste0("Too many significant tRNA's to plot. Plotting only 300 t
 
 ```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt, out.width = "100%"}
 # extract datasets
-lcpm_trna_excerpt <- log_counts_per_million$trna_excerpt
+lcpm_trna_excerpt <- log_counts_per_million$lcpm_trna_excerpt_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -883,7 +864,7 @@ base::cat(base::paste0("Too many significant circRNA's to plot. Plotting only 30
 
 ```{r, eval = config$circrna_excerpt, fig.height = fig_height_circrna_excerpt, out.width = "100%"}
 # extract datasets
-lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
+lcpm_circrna_excerpt <- log_counts_per_million$lcpm_circrna_excerpt_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -987,7 +968,7 @@ base::cat(base::paste0("Too many significant gencode's to plot. Plotting only 30
 
 ```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt, out.width = "100%"}
 # extract datasets
-lcpm_gencode_excerpt <- log_counts_per_million$gencode_excerpt
+lcpm_gencode_excerpt <- log_counts_per_million$lcpm_gencode_excerpt_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -1093,7 +1074,7 @@ base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 
 
 ```{r, eval = config$mirna_smrnaseq, fig.height = fig_height_mirna_smrnaseq_free, out.width = "100%"}
 # extract datasets
-lcpm_mirna_smrnaseq <- log_counts_per_million$mirna_smrnaseq
+lcpm_mirna_smrnaseq <- log_counts_per_million$lcpm_mirna_smrnaseq_data
 
 # get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_mirna_smrnaseq))
@@ -1158,7 +1139,7 @@ base::cat(base::paste0("Too many significant miRNA's to plot. Plotting only 300 
 
 ```{r, eval = config$mirna_excerpt, fig.height = fig_height_mirna_excerpt_free, out.width = "100%"}
 # extract datasets
-lcpm_mirna_excerpt <- log_counts_per_million$mirna_excerpt
+lcpm_mirna_excerpt <- log_counts_per_million$lcpm_mirna_excerpt_data
 
 # get the max RNA count in all datasets (over all mirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_mirna_excerpt))
@@ -1223,7 +1204,7 @@ base::cat(base::paste0("Too many significant piRNA's to plot. Plotting only 300 
 
 ```{r, eval = config$pirna_excerpt, fig.height = fig_height_pirna_excerpt_free, out.width = "100%"}
 # extract datasets
-lcpm_pirna_excerpt <- log_counts_per_million$pirna_excerpt
+lcpm_pirna_excerpt <- log_counts_per_million$lcpm_pirna_excerpt_data
 
 # get the max RNA count in all datasets (over all pirnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_pirna_excerpt))
@@ -1288,7 +1269,7 @@ base::cat(base::paste0("Too many significant tRNA's to plot. Plotting only 300 t
 
 ```{r, eval = config$trna_excerpt, fig.height = fig_height_trna_excerpt_free, out.width = "100%"}
 # extract datasets
-lcpm_trna_excerpt <- log_counts_per_million$trna_excerpt
+lcpm_trna_excerpt <- log_counts_per_million$lcpm_trna_excerpt_data
 
 # get the max RNA count in all datasets (over all trnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_trna_excerpt))
@@ -1353,7 +1334,7 @@ base::cat(base::paste0("Too many significant circRNA's to plot. Plotting only 30
 
 ```{r, eval = config$circrna_excerpt, fig.height = fig_height_circrna_excerpt_free, out.width = "100%"}
 # extract datasets
-lcpm_circrna_excerpt <- log_counts_per_million$circrna_excerpt
+lcpm_circrna_excerpt <- log_counts_per_million$lcpm_circrna_excerpt_data
 
 # get the max RNA count in all datasets (over all circrnas) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_circrna_excerpt))
@@ -1418,7 +1399,7 @@ base::cat(base::paste0("Too many significant gencode's to plot. Plotting only 30
 
 ```{r, eval = config$gencode_excerpt, fig.height = fig_height_gencode_excerpt_free, out.width = "100%"}
 # extract datasets
-lcpm_gencode_excerpt <- log_counts_per_million$gencode_excerpt
+lcpm_gencode_excerpt <- log_counts_per_million$lcpm_gencode_excerpt_data
 
 # get the max RNA count in all datasets (over all gencodes) to scale the colour scale to
 maximum_rna_count <- base::max(c(lcpm_gencode_excerpt))
