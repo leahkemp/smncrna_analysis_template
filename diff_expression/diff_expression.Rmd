@@ -1711,8 +1711,8 @@ deseq_results_1 <- do.call(rbind, deseq_results_1)
 deseq_results_1 <- deseq_results_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1741,8 +1741,8 @@ deseq_results_2 <- do.call(rbind, deseq_results_2)
 deseq_results_2 <- deseq_results_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[2]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1771,8 +1771,8 @@ deseq_results_3 <- do.call(rbind, deseq_results_3)
 deseq_results_3 <- deseq_results_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[3]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1801,8 +1801,8 @@ deseq_results_4 <- do.call(rbind, deseq_results_4)
 deseq_results_4 <- deseq_results_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1831,8 +1831,8 @@ deseq_results_5 <- do.call(rbind, deseq_results_5)
 deseq_results_5 <- deseq_results_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[5]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1861,8 +1861,8 @@ deseq_results_6 <- do.call(rbind, deseq_results_6)
 deseq_results_6 <- deseq_results_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[6]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
