@@ -71,7 +71,7 @@ rmarkdown::render("./rna_species_composition/rna_species_composition_samples.Rmd
 
 ## MDS plots
 
-*This will output an interactive html document exploring the multidimentional scaling (MDS) of the RNA's (./mds/mds.html) as well as csv files with raw mds data (./mds/mds_results/)*
+*This will output an interactive html document exploring the multidimensional scaling (MDS) of the RNA's (./mds/mds.html) as well as csv files with raw mds data (./mds/mds_results/)*
 
 ```{r}
 rmarkdown::render("./mds/mds.Rmd")
