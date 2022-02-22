@@ -247,35 +247,35 @@ if (config$smrnaseq_results_dir != "none" & base::file.exists(base::file.path(co
 if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_miRNA_ReadCounts.txt")) == "FALSE") {
   
   issues_config <- c(issues_config, base::paste0("Unable to find the excerpt miRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
-                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_miRNA_ReadCounts.txt")))
+                                                 base::file.path(config$excerpt_merged_results_dir, "exceRpt_miRNA_ReadCounts.txt")))
   
 }
 
 if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_piRNA_ReadCounts.txt")) == "FALSE") {
   
   issues_config <- c(issues_config, base::paste0("Unable to find the excerpt piRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
-                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_piRNA_ReadCounts.txt")))
+                                                 base::file.path(config$excerpt_merged_results_dir, "exceRpt_piRNA_ReadCounts.txt")))
   
 }
 
 if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_tRNA_ReadCounts.txt")) == "FALSE") {
   
   issues_config <- c(issues_config, base::paste0("Unable to find the excerpt tRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
-                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_tRNA_ReadCounts.txt")))
+                                                 base::file.path(config$excerpt_merged_results_dir, "exceRpt_tRNA_ReadCounts.txt")))
   
 }
 
 if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_circularRNA_ReadCounts.txt")) == "FALSE") {
   
   issues_config <- c(issues_config, base::paste0("Unable to find the excerpt circularRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
-                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_circularRNA_ReadCounts.txt")))
+                                                 base::file.path(config$excerpt_merged_results_dir, "exceRpt_circularRNA_ReadCounts.txt")))
   
 }
 
 if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_gencode_ReadCounts.txt")) == "FALSE") {
   
   issues_config <- c(issues_config, base::paste0("Unable to find the excerpt gencode count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
-                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_gencode_ReadCounts.txt")))
+                                                 base::file.path(config$excerpt_merged_results_dir, "exceRpt_gencode_ReadCounts.txt")))
   
 }
 ```
