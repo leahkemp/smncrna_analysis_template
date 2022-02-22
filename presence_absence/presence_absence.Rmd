@@ -121,6 +121,14 @@ create_dt <- function(data) {
                                 text = "Download"),
                            I("colvis"))))
 }
+
+# create a vector to decide if the r chunks should be evaluated based on whether the dats from a given pipeline was analysed
+smrnaseq_chunk_eval <- config$mirna_smrnaseq
+excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
+                                              config$pirna_excerpt,
+                                              config$trna_excerpt,
+                                              config$circrna_excerpt,
+                                              config$gencode_excerpt))
 ```
 
 Datasets analysed:
@@ -153,9 +161,11 @@ base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_b
 
 ## Presence/absence {.tabset .tabset-fade}
 
-### smrnaseq
+```{r, eval = smrnaseq_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### smrnaseq"))
+```
 
-```{r}
+```{r, eval = smrnaseq_chunk_eval}
 # filter so looking at the data from one pipeline (smrnaseq)
 counts_smrnaseq <- counts %>%
   dplyr::filter(pipeline == "smrnaseq")
@@ -243,13 +253,15 @@ absence <- base::Reduce(function(d1, d2) merge(d1, d2, by = "rna"), absence)
 all_data <- dplyr::full_join(presence, absence, by = "rna")
 ```
 
-```{r}
+```{r, eval = smrnaseq_chunk_eval}
 create_dt(all_data)
 ```
 
-### excerpt
+```{r, eval = excerpt_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### excerpt"))
+```
 
-```{r}
+```{r, eval = excerpt_chunk_eval}
 # filter so looking at the data from one pipeline (excerpt)
 counts_excerpt <- counts %>%
   dplyr::filter(pipeline == "excerpt")
@@ -337,7 +349,7 @@ absence <- base::Reduce(function(d1, d2) merge(d1, d2, by = "rna"), absence)
 all_data <- dplyr::full_join(presence, absence, by = "rna")
 ```
 
-```{r}
+```{r, eval = excerpt_chunk_eval}
 create_dt(all_data)
 ```
 

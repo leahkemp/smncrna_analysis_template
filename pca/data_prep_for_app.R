@@ -66,7 +66,6 @@ if(config$gencode_excerpt == "FALSE") {
 
 # calculate PCA
 pca <- counts %>%
-  dplyr::filter(pipeline == "excerpt") %>%
   dplyr::select(sample, rna, counts_per_million) %>%
   tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
   textshape::column_to_rownames("rna") %>%

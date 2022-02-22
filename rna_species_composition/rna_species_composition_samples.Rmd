@@ -101,6 +101,13 @@ if(config$gencode_excerpt == "FALSE") {
   
 }
 
+# create a vector to decide if the r chunks should be evaluated based on whether the dats from a given pipeline was analysed
+smrnaseq_chunk_eval <- config$mirna_smrnaseq
+excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
+                                              config$pirna_excerpt,
+                                              config$trna_excerpt,
+                                              config$circrna_excerpt,
+                                              config$gencode_excerpt))
 ```
 
 Datasets analysed:
@@ -173,9 +180,11 @@ data %>%
                          I("colvis"))))
 ```
 
-### smrnaseq pipeline
+```{r, eval = smrnaseq_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### smrnaseq"))
+```
 
-```{r}
+```{r, eval = smrnaseq_chunk_eval, out.width = "100%"}
 # filter to get only the data for the smrnaseq pipeline
 data_smrnaseq <- data %>%
   dplyr::filter(pipeline == "smrnaseq")
@@ -292,9 +301,11 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$sam
 }))
 ```
 
-### excerpt pipeline
+```{r, eval = excerpt_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### excerpt"))
+```
 
-```{r}
+```{r, eval = excerpt_chunk_eval, out.width = "100%"}
 # filter to get only the data for the excerpt pipeline
 data_excerpt <- data %>%
   dplyr::filter(pipeline == "excerpt")
