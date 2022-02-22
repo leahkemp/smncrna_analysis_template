@@ -228,6 +228,56 @@ if (config$smrnaseq_results_dir == "none" & config$mirna_smrnaseq == "TRUE") {
   issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the smrnaseq pipeline output (by setting 'smrnaseq_results_dir' to 'none'), please also set 'mirna_smrnaseq' to FALSE."))
   
 }
+
+# check for the excerpt pipeline count datasets
+if (config$smrnaseq_results_dir == "none" & config$mirna_smrnaseq == "TRUE") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the smrnaseq pipeline output (by setting 'smrnaseq_results_dir' to 'none'), please also set 'mirna_smrnaseq' to FALSE."))
+  
+}
+
+# check the files the template will be grabbing exist
+if (config$smrnaseq_results_dir != "none" & base::file.exists(base::file.path(config$smrnaseq_results_dir, "/mirtop/mirtop.tsv")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the smrnaseq count dataset to be analysed based on the directory passed to 'smrnaseq_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$smrnaseq_results_dir, "/mirtop/mirtop.tsv")))
+  
+}
+
+if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_miRNA_ReadCounts.txt")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the excerpt miRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_miRNA_ReadCounts.txt")))
+  
+}
+
+if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_piRNA_ReadCounts.txt")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the excerpt piRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_piRNA_ReadCounts.txt")))
+  
+}
+
+if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_tRNA_ReadCounts.txt")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the excerpt tRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_tRNA_ReadCounts.txt")))
+  
+}
+
+if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_circularRNA_ReadCounts.txt")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the excerpt circularRNA count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_circularRNA_ReadCounts.txt")))
+  
+}
+
+if (config$excerpt_merged_results_dir != "none" & base::file.exists(base::file.path(config$excerpt_merged_results_dir, "exceRpt_gencode_ReadCounts.txt")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the excerpt gencode count datasets to be analysed based on the directory passed to 'excerpt_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$excerpt_merged_results_dir,"exceRpt_gencode_ReadCounts.txt")))
+  
+}
 ```
 
 ```{r}
