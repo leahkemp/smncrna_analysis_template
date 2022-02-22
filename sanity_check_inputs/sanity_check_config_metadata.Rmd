@@ -372,6 +372,7 @@ if ((file.exists(config$metadata_path) == TRUE) & (any(metadata$sample %in% fast
 
 # get the number of samples per treatment group (based on the metadata file)
 samples_per_treatment <- metadata %>%
+  dplyr::filter(treatment %in% treatments_to_compare) %>%
   dplyr::group_by(treatment) %>%
   dplyr::summarise(n_samples = n()) %>%
   dplyr::pull(n_samples)
@@ -381,7 +382,7 @@ if ((file.exists(config$metadata_path) == TRUE) & (all(samples_per_treatment > 1
   
   issues_metadata <- c(issues_metadata, base::paste0("There appears to be treatment groups with less than 2 samples per treatment (no replicates) based on the metadata file at ",
                                                      config$metadata_path,
-                                                     " . Please ensure each treatment group contains 2 or more samples."))
+                                                     " . Please ensure that any treatment group used in the differential expression analysis (passed to contrasts in the configuration file) contains 2 or more samples."))
 }
 ```
 
