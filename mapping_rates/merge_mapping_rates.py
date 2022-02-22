@@ -113,7 +113,7 @@ if smrnaseq_results_dir != "none":
 
   # merge all the dataframes into a single dataframe
   # "axis=1" tells it to merge as columns
-  merged_df = pd.concat([sample_names, df9, df10, df11, df12, df13, df14, df15, df16, df17], axis=1)
+  merged_df = pd.concat([sample_names, df1, df9, df10, df11, df12, df13, df14, df15, df16, df17], axis=1)
 
 # if the user has chosen to analyse both pipeline outputs...
 if excerpt_results_dir != "none":
