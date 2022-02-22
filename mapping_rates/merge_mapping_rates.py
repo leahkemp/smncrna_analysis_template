@@ -17,6 +17,8 @@ with open("./config/config.yaml") as config:
 # extract the template dir and metadata_path parameters from the config file
 template_dir=config_dict["template_dir"]
 metadata_path=config_dict["metadata_path"]
+smrnaseq_results_dir=config_dict["smrnaseq_results_dir"]
+excerpt_results_dir=config_dict["excerpt_results_dir"]
 
 # sample names
 metadata = pd.read_csv(metadata_path)
@@ -27,75 +29,98 @@ with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/raw_re
     data=file.read().split('\n')
     df1=pd.DataFrame(data,columns=['raw_read_count_fastq_file'])
 
-# data from excerpt pipeline
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_clipped_read_count_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    df2=pd.DataFrame(data,columns=['excerpt_clipped_read_count_fastq_file'])
+# if the user has chosen to analyse the excerpt pipeline output.. 
+if excerpt_results_dir != "none":
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_clipped_trimmed_read_count_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    df3=pd.DataFrame(data,columns=['excerpt_clipped_trimmed_read_count_fastq_file'])
-    
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_clipped_trimmed_filtered_read_count_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    df4=pd.DataFrame(data,columns=['excerpt_clipped_trimmed_filtered_read_count_fastq_file'])
+  # data from excerpt pipeline
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_clipped_read_count_fastq_file.txt")) as file:
+      data=file.read().split('\n')
+      df2=pd.DataFrame(data,columns=['excerpt_clipped_read_count_fastq_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_clipped_trimmed_read_count_fastq_file.txt")) as file:
+      data=file.read().split('\n')
+      df3=pd.DataFrame(data,columns=['excerpt_clipped_trimmed_read_count_fastq_file'])
+      
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_clipped_trimmed_filtered_read_count_fastq_file.txt")) as file:
+      data=file.read().split('\n')
+      df4=pd.DataFrame(data,columns=['excerpt_clipped_trimmed_filtered_read_count_fastq_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_failed_quality_filter_read_count_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df5=pd.DataFrame(data,columns=['excerpt_failed_quality_filter_read_count_stats_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_failed_homopolymer_filter_read_count_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df6=pd.DataFrame(data,columns=['excerpt_failed_homopolymer_filter_read_count_stats_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_reads_used_for_alignment_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df7=pd.DataFrame(data,columns=['excerpt_reads_used_for_alignment_stats_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_not_mapped_to_genome_or_libs_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df8=pd.DataFrame(data,columns=['excerpt_not_mapped_to_genome_or_libs_stats_file'])
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_failed_quality_filter_read_count_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df5=pd.DataFrame(data,columns=['excerpt_failed_quality_filter_read_count_stats_file'])
+# if the user has chosen to analyse the smrnaseq pipeline output.. 
+if smrnaseq_results_dir != "none":
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_failed_homopolymer_filter_read_count_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df6=pd.DataFrame(data,columns=['excerpt_failed_homopolymer_filter_read_count_stats_file'])
+  # data from smrnaseq pipeline
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_raw_read_count_fastqc_file.txt")) as file:
+      data=file.read().split('\n')
+      df9=pd.DataFrame(data,columns=['smrnaseq_raw_read_count_fastqc_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_trimmed_read_count_fastq_file.txt")) as file:
+      data=file.read().split('\n')
+      df10=pd.DataFrame(data,columns=['smrnaseq_trimmed_read_count_fastq_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_qc_passed_read_count_fastq_file.txt")) as file:
+      data=file.read().split('\n')
+      df11=pd.DataFrame(data,columns=['smrnaseq_qc_passed_read_count_fastq_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_qc_passed_rna_type_unknown_read_count_fastq_file.txt")) as file:
+      data=file.read().split('\n')
+      df12=pd.DataFrame(data,columns=['smrnaseq_qc_passed_rna_type_unknown_read_count_fastq_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_mature_bowtie_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df13=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_mature_bowtie_stats_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_mature_bowtie_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df14=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_mature_bowtie_stats_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df15=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file.txt")) as file:
+      data=file.read().split('\n')
+      df16=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file'])
+  
+  with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_fastq_file.txt")) as file:
+      data=file.read().split('\n')
+      df17=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_fastq_file'])
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_reads_used_for_alignment_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df7=pd.DataFrame(data,columns=['excerpt_reads_used_for_alignment_stats_file'])
+# if the user has chosen to analyse both pipeline outputs...
+if smrnaseq_results_dir != "none" and excerpt_results_dir != "none":
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/excerpt_not_mapped_to_genome_or_libs_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df8=pd.DataFrame(data,columns=['excerpt_not_mapped_to_genome_or_libs_stats_file'])
+  # merge all the dataframes into a single dataframe
+  # "axis=1" tells it to merge as columns
+  merged_df = pd.concat([sample_names, df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11, df12, df13, df14, df15, df16, df17], axis=1)
 
-# data from smrnaseq pipeline
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_raw_read_count_fastqc_file.txt")) as file:
-    data=file.read().split('\n')
-    df9=pd.DataFrame(data,columns=['smrnaseq_raw_read_count_fastqc_file'])
+# if the user has chosen to analyse only the smrnaseq pipeline outputs...
+if smrnaseq_results_dir != "none":
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_trimmed_read_count_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    df10=pd.DataFrame(data,columns=['smrnaseq_trimmed_read_count_fastq_file'])
+  # merge all the dataframes into a single dataframe
+  # "axis=1" tells it to merge as columns
+  merged_df = pd.concat([sample_names, df9, df10, df11, df12, df13, df14, df15, df16, df17], axis=1)
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_qc_passed_read_count_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    df11=pd.DataFrame(data,columns=['smrnaseq_qc_passed_read_count_fastq_file'])
+# if the user has chosen to analyse both pipeline outputs...
+if excerpt_results_dir != "none":
 
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_qc_passed_rna_type_unknown_read_count_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    df12=pd.DataFrame(data,columns=['smrnaseq_qc_passed_rna_type_unknown_read_count_fastq_file'])
-
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_mature_bowtie_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df13=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_mature_bowtie_stats_file'])
-
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_mature_bowtie_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df14=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_mature_bowtie_stats_file'])
-
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df15=pd.DataFrame(data,columns=['smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file'])
-
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file.txt")) as file:
-    data=file.read().split('\n')
-    df16=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file'])
-
-with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_fastq_file.txt")) as file:
-    data=file.read().split('\n')
-    df17=pd.DataFrame(data,columns=['smrnaseq_reads_unmapped_to_hairpin_fastq_file'])
-
-# merge all the dataframes into a single dataframe
-# "axis=1" tells it to merge as columns
-merged_df = pd.concat([sample_names, df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11, df12, df13, df14, df15, df16, df17], axis=1)
+  # merge all the dataframes into a single dataframe
+  # "axis=1" tells it to merge as columns
+  merged_df = pd.concat([sample_names, df1, df2, df3, df4, df5, df6, df7, df8], axis=1)
 
 # write dataframe to file
 merged_df.to_csv((os.path.join(template_dir, "mapping_rates/mapping_rates.csv")), index = False)

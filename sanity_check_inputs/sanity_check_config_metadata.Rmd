@@ -160,21 +160,72 @@ if (file.exists(config$metadata_path) == FALSE) {
   
 }
 
-if (file.exists(config$smrnaseq_results_dir) == FALSE) {
+if (config$smrnaseq_results_dir != "none" & file.exists(config$smrnaseq_results_dir) == FALSE) {
   
   issues_config <- c(issues_config, base::paste0("Directory passed to 'smrnaseq_results_dir' in the configuration file doesn't exist."))
   
 }
 
-if (file.exists(config$excerpt_results_dir) == FALSE) {
+if (config$excerpt_results_dir != "none" & file.exists(config$excerpt_results_dir) == FALSE) {
   
-  issues_config <- c(issues_config, base::paste0("Directory passed to 'excerpt_results_dir' in the configuration file doesn't exist."))
+  issues_config <- c(issues_config, base::paste0("Directory passed to 'excerpt_results_dir' in the configuration file doesn't exist. Either pass a valid directory path, or set 'excerpt_results_dir' to 'none' if you wish to not analyse the excerpt pipeline output."))
   
 }
 
-if (file.exists(config$excerpt_merged_results_dir) == FALSE) {
+if (config$excerpt_merged_results_dir != "none" & file.exists(config$excerpt_merged_results_dir) == FALSE) {
   
-  issues_config <- c(issues_config, base::paste0("Directory passed to 'excerpt_merged_results_dir' in the configuration file doesn't exist."))
+  issues_config <- c(issues_config, base::paste0("Directory passed to 'excerpt_merged_results_dir' in the configuration file doesn't exist. Either pass a valid directory path, or set 'excerpt_merged_results_dir' to 'none' if you wish to not analyse the excerpt pipeline output."))
+  
+}
+
+# if the user chooses to NOT analyse the excerpt pipeline output (by setting the paths to the output to 'none'), ensure they set both excerpt pipeline output paths to 'none'
+if (config$excerpt_results_dir == "none" & config$excerpt_merged_results_dir != "none") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the excerpt pipeline output (by setting 'excerpt_results_dir' to 'none'), please also set 'excerpt_merged_results_dir' to 'none'."))
+  
+}
+
+if (config$excerpt_merged_results_dir == "none" & config$excerpt_results_dir != "none") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the excerpt pipeline output (by setting 'excerpt_merged_results_dir' to 'none'), please also set 'excerpt_results_dir' to 'none'."))
+  
+}
+
+# if the user chooses to NOT analyse the excerpt pipeline output (by setting the paths to the output to 'none'), ensure they set the appropriate datasets to NOT be analysed
+if ((config$excerpt_results_dir == "none" | config$excerpt_merged_results_dir == "none") & config$mirna_excerpt == "TRUE") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the excerpt pipeline output (by setting 'excerpt_results_dir' or 'excerpt_merged_results_dir' to 'none'), please also set 'mirna_excerpt' to FALSE."))
+  
+}
+
+if ((config$excerpt_results_dir == "none" | config$excerpt_merged_results_dir == "none") & config$pirna_excerpt == "TRUE") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the excerpt pipeline output (by setting 'excerpt_results_dir' or 'excerpt_merged_results_dir' to 'none'), please also set 'pirna_excerpt' to FALSE."))
+  
+}
+
+if ((config$excerpt_results_dir == "none" | config$excerpt_merged_results_dir == "none") & config$trna_excerpt == "TRUE") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the excerpt pipeline output (by setting 'excerpt_results_dir' or 'excerpt_merged_results_dir' to 'none'), please also set 'trna_excerpt' to FALSE."))
+  
+}
+
+if ((config$excerpt_results_dir == "none" | config$excerpt_merged_results_dir == "none") & config$circrna_excerpt == "TRUE") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the excerpt pipeline output (by setting 'excerpt_results_dir' or 'excerpt_merged_results_dir' to 'none'), please also set 'circrna_excerpt' to FALSE."))
+  
+}
+
+if ((config$excerpt_results_dir == "none" | config$excerpt_merged_results_dir == "none") & config$gencode_excerpt == "TRUE") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the excerpt pipeline output (by setting 'excerpt_results_dir' or 'excerpt_merged_results_dir' to 'none'), please also set 'gencode_excerpt' to FALSE."))
+  
+}
+
+# if the user chooses to NOT analyse smrnaseq pipeline output (by setting the path to the output to 'none'), ensure they set the appropriate datasets to NOT be analysed
+if (config$smrnaseq_results_dir == "none" & config$mirna_smrnaseq == "TRUE") {
+  
+  issues_config <- c(issues_config, base::paste0("You've indicated that you do not wish to analyse the smrnaseq pipeline output (by setting 'smrnaseq_results_dir' to 'none'), please also set 'mirna_smrnaseq' to FALSE."))
   
 }
 ```
