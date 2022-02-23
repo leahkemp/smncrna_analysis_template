@@ -30,7 +30,7 @@ ui <- shiny::fluidPage(
       
       # add help text that reminds the user that this pca data is based on all datasets
       shiny::helpText(tags$i(
-        h5("Note. these plots explore all RNA identified in the samples. Box/lasso select data in the plots to view those data points in the table. Alternatively, click to select rows in the table to show that value in the plot. Hold the select key when selecting rows in tables or points in graphs for multiselect mode. Double click on a plot (in 'Box Select' or 'Lasso Select' mode) to reset selection. Zoom in on points in the PCA using the 'zoom' mode"))),
+        h5("Note. these plots explore all RNA identified in the samples. Box/lasso select data in the plots to view those data points in the table. Alternatively, click to select rows in the table to show that value in the plot. Hold the select key when selecting rows in tables or points in graphs for multiselect mode. Double click on a plot (in 'Box Select' or 'Lasso Select' mode) to reset selection. Zoom in on points in the PCA using the 'zoom' mode. Note. if both miRNA (smrnaseq) and miRNA (excerpt) datasets have been analysed, only the miRNA (smrnaseq) dataset is used in the PCA plot to avoid duplicate miRNA datapoints."))),
       
     ),
     

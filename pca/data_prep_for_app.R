@@ -64,8 +64,33 @@ if(config$gencode_excerpt == "FALSE") {
   
 }
 
+# create a vector to decide if the r chunks should be evaluated based on whether the dats from a given pipeline was analysed
+smrnaseq_chunk_eval <- config$mirna_smrnaseq
+excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
+                                              config$pirna_excerpt,
+                                              config$trna_excerpt,
+                                              config$circrna_excerpt,
+                                              config$gencode_excerpt))
+
 # calculate PCA
-pca <- counts %>%
+# if miRNA's are being analysed by both smrnaseq and excerpt pipelines, plot only the miRNA's from the smrnaseq pipeline in the MDS
+# this avoids the code erroring out having duplicate miRNA data
+if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == TRUE) == TRUE) {
+  
+  pca <- counts %>%
+    dplyr::filter(pipeline == "smrnaseq")
+  
+} else if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == FALSE) == TRUE) {
+  
+  pca <- counts
+  
+} else if ((smrnaseq_chunk_eval == FALSE & excerpt_chunk_eval == TRUE) == TRUE) {
+  
+  pca <- counts
+  
+}
+
+pca <- pca %>%
   dplyr::select(sample, rna, counts_per_million) %>%
   tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
   textshape::column_to_rownames("rna") %>%
