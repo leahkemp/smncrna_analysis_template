@@ -333,9 +333,9 @@ lcpm_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
   edgeR::cpm(log = TRUE)
 
 # save to file
-base::saveRDS(raw_mirna_excerpt_data, file = "./rds_objects/raw_mirna_excerpt_counts.rds")
-base::saveRDS(cpm_mirna_excerpt_data, file = "./rds_objects/cpm_mirna_excerpt_counts.rds")
-base::saveRDS(lcpm_mirna_excerpt_data, file = "./rds_objects/lcpm_mirna_excerpt_counts.rds")
+base::saveRDS(raw_pirna_excerpt_data, file = "./rds_objects/raw_pirna_excerpt_counts.rds")
+base::saveRDS(cpm_pirna_excerpt_data, file = "./rds_objects/cpm_pirna_excerpt_counts.rds")
+base::saveRDS(lcpm_pirna_excerpt_data, file = "./rds_objects/lcpm_pirna_excerpt_counts.rds")
 ```
 
 ```{r, eval = config$trna_excerpt}
