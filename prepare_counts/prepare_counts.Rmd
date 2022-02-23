@@ -248,6 +248,9 @@ counts <- dplyr::mutate(counts, rna_species_2 = dplyr::case_when(rna_species_2 =
 counts <- counts %>%
   dplyr::mutate(rna = base::gsub(":|\\||\\.", "_", rna))
 
+# shorten pirna names for plotting sakes
+counts$rna <- ifelse(counts$rna_species %in% c("pirna"), base::gsub("_(gb).*", " etc.", counts$rna), counts$rna)
+
 # rename mirna (from rna_species_2") so that it matches up with miRNA and gets put in the same group in downstream analyses
 counts <- counts %>%
   dplyr::mutate(rna_species_2 = dplyr::case_when(
@@ -323,6 +326,9 @@ raw_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
 
 # also apply changes to RNA names here
 rownames(raw_pirna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_pirna_excerpt_data))
+
+# shorten pirna names for plotting sakes
+rownames(raw_pirna_excerpt_data) <- base::gsub("_(gb).*", " etc.", rownames(raw_pirna_excerpt_data))
 
 # calculate counts per million
 cpm_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
