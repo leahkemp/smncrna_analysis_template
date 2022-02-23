@@ -343,14 +343,14 @@ all_widths <- metadata %>%
 fig_height_mirna_smrnaseq <- base::nrow(log_counts_per_million$lcpm_mirna_smrnaseq_data) / 5
 fig_height_mirna_excerpt <- base::nrow(log_counts_per_million$lcpm_mirna_excerpt_data) / 5
 fig_height_pirna_excerpt <- base::nrow(log_counts_per_million$lcpm_pirna_excerpt_data) / 5
-fig_height_trna_excerpt <- base::nrow(log_counts_per_million$trna_excerpt) / 5
+fig_height_trna_excerpt <- base::nrow(log_counts_per_million$lcpm_trna_excerpt_data) / 5
 fig_height_circrna_excerpt <- base::nrow(log_counts_per_million$lcpm_circrna_excerpt_data) / 5
 fig_height_gencode_excerpt <- base::nrow(log_counts_per_million$lcpm_gencode_excerpt_data) / 5
 
 fig_height_mirna_smrnaseq_free <- base::nrow(log_counts_per_million$lcpm_mirna_smrnaseq_data) / 4
 fig_height_mirna_excerpt_free <- base::nrow(log_counts_per_million$lcpm_mirna_excerpt_data) / 4
 fig_height_pirna_excerpt_free <- base::nrow(log_counts_per_million$lcpm_pirna_excerpt_data) / 4
-fig_height_trna_excerpt_free <- base::nrow(log_counts_per_million$trna_excerpt) / 4
+fig_height_trna_excerpt_free <- base::nrow(log_counts_per_million$lcpm_trna_excerpt_data) / 4
 fig_height_circrna_excerpt_free <- base::nrow(log_counts_per_million$lcpm_circrna_excerpt_data) / 4
 fig_height_gencode_excerpt_free <- base::nrow(log_counts_per_million$lcpm_gencode_excerpt_data) / 4
 
