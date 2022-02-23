@@ -372,7 +372,6 @@ if ((file.exists(config$metadata_path) == TRUE) & (any(metadata$sample %in% fast
 
 # get the number of samples per treatment group (based on the metadata file)
 samples_per_treatment <- metadata %>%
-  dplyr::filter(treatment %in% treatments_to_compare) %>%
   dplyr::group_by(treatment) %>%
   dplyr::summarise(n_samples = n()) %>%
   dplyr::pull(n_samples)
