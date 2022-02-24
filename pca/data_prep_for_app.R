@@ -78,7 +78,7 @@ excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
 if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == TRUE) == TRUE) {
   
   pca <- counts %>%
-    dplyr::filter(pipeline == "smrnaseq")
+    dplyr::filter(!(rna_species == "mirna" & pipeline == "excerpt"))
   
 } else if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == FALSE) == TRUE) {
   
