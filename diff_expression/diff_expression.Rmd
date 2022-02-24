@@ -33,14 +33,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 mkdir -p diff_expr_results/
 ```
 
-## Info
-
-General info:
-
-- Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
-- Some values have been rounded
-
-```{r, data_prep, results = "hide"}
+```{r}
 # load libraries
 library(dplyr)
 library(limma)
@@ -63,15 +56,28 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(base::file.path(config$metadata))
+```
 
-# load all the count datasets (premade rds objects)
-raw_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds"))
-raw_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds"))
-raw_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_pirna_excerpt_counts.rds"))
-raw_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_trna_excerpt_counts.rds"))
-raw_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_circrna_excerpt_counts.rds"))
-raw_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gencode_excerpt_counts.rds"))
+## Info
 
+General info:
+
+- Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
+- Some values have been rounded
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
+                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
+                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
+                       " - trna excerpt: ", config$trna_excerpt, "\n",
+                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
+                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+```{r, results = "hide"}
 # create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
 to_eval_chunk <- config[c("mirna_smrnaseq",
                           "mirna_excerpt",
@@ -126,49 +132,21 @@ contrasts_chunk_eval <- if(n_contrasts == 1) {
   contrasts_chunk_eval
 }
 
-# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
-to_analyse <- config[c("mirna_smrnaseq",
-                       "mirna_excerpt",
-                       "pirna_excerpt",
-                       "trna_excerpt",
-                       "circrna_excerpt",
-                       "gencode_excerpt")] %>%
-  base::as.data.frame() %>%
-  base::t() %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("rna_species") %>%
-  dplyr::rename("analyse" = "V1") %>%
-  tidyr::separate(rna_species, c("rna_species", "pipeline")) %>%
-  dplyr::filter(analyse == TRUE) %>%
-  dplyr::mutate(dataset_name = base::paste0(rna_species, "_", pipeline)) %>%
-  dplyr::pull(dataset_name)
-
-# set up a vector of all the possible datasets to analyse
-count_datasets <- base::list(mirna_smrnaseq = raw_mirna_smrnaseq_data,
-                             mirna_excerpt = raw_mirna_excerpt_data,
-                             pirna_excerpt = raw_pirna_excerpt_data,
-                             trna_excerpt = raw_trna_excerpt_data,
-                             circrna_excerpt = raw_circrna_excerpt_data,
-                             gencode_excerpt = raw_gencode_excerpt_data)
-
-# filter all possible datasets by the datasets the user has specified to analyse
-count_datasets <- count_datasets[to_analyse]
-
 # read in mapping rates info
-mapping_rates_data <- utils::read.csv("../mapping_rates/mapping_rates.csv")
+mapping_rates <- utils::read.csv("../mapping_rates/mapping_rates.csv")
 
 # tidy up sample names
-mapping_rates_data$sample <- base::gsub('(_*)_\\w+', '', mapping_rates_data$sample)
+mapping_rates$sample <- base::gsub('(_*)_\\w+', '', mapping_rates$sample)
 
 # remove empty rows
-mapping_rates_data <- mapping_rates_data %>%
+mapping_rates <- mapping_rates %>%
   tidyr::drop_na()
 
 # evalutate/setup minimum logFC threshold
 min_logfc <- base::eval(base::parse(text = config$min_lfc))
 
 # set up a flag for when the sequencing read counts for a sample is low (defined by the user in the config file)
-low_read_count_flag <- mapping_rates_data %>%
+low_read_count_flag <- mapping_rates %>%
   dplyr::filter(raw_read_count_fastq_file < config$low_sequencing_read_count) %>%
   dplyr::group_by(sample) %>%
   dplyr::summarise() %>%
@@ -176,7 +154,7 @@ low_read_count_flag <- mapping_rates_data %>%
 
 # make a TRUE/FALSE list that defines how many contrasts were analysed
 # a vector of up to 6 elements since this is the max number of contrasts I've accounted for in this document
-# will be used to conditionally include code chunks depending on how many contrasts/comparsions the user has chosen to analyse
+# will be used to conditionally include code chunks depending on how many contrasts/comparisons the user has chosen to analyse
 contrasts <- base::append(config$contrasts, rep.int(FALSE, times = 6))
 contrasts <- contrasts[1:6]
 contrasts[contrasts != FALSE] <- TRUE
@@ -194,6 +172,41 @@ treatments <- treatments[gtools::mixedorder(base::as.character(treatments$sample
 # extract only the conditions/groups and create a list out of it
 ordered_treatments <- treatments %>%
   dplyr::pull(treatment)
+```
+
+```{r, eval = config$mirna_smrnaseq}
+# load count dataset (premade rds objects)
+raw_mirna_smrnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_smrnaseq_counts.rds"))
+```
+
+```{r, eval = config$mirna_excerpt}
+# load count dataset (premade rds objects)
+raw_mirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_mirna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$pirna_excerpt}
+# load count dataset (premade rds objects)
+raw_pirna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_pirna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$trna_excerpt}
+# load count dataset (premade rds objects)
+raw_trna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_trna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$circrna_excerpt}
+# load count dataset (premade rds objects)
+raw_circrna_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_circrna_excerpt_counts.rds"))
+```
+
+```{r, eval = config$gencode_excerpt}
+# load count dataset (premade rds objects)
+raw_gencode_excerpt_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gencode_excerpt_counts.rds"))
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+count_datasets <- base::do.call("list", base::mget(base::grep("_data", base::names(.GlobalEnv), value=TRUE)))
 
 # make sure the samples (columns) in all the datasets are in the same order for specifying the treatments downstream
 # (that depends on the columns being in the correct order)  (loop over all count datasets)
@@ -431,42 +444,42 @@ keep <- base::lapply(dge, function(x) {
 ```{r, eval = config$mirna_smrnaseq}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_mirna_smrnaseq_filtered <- dge$mirna_smrnaseq[keep$mirna_smrnaseq,, keep.lib.sizes=FALSE] %>%
+dge_mirna_smrnaseq_filtered <- dge$raw_mirna_smrnaseq_data[keep$raw_mirna_smrnaseq_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
 ```{r, eval = config$mirna_excerpt}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_mirna_excerpt_filtered <- dge$mirna_excerpt[keep$mirna_excerpt,, keep.lib.sizes=FALSE] %>%
+dge_mirna_excerpt_filtered <- dge$raw_mirna_excerpt_data[keep$raw_mirna_excerpt_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
 ```{r, eval = config$pirna_excerpt}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_pirna_excerpt_filtered <- dge$pirna_excerpt[keep$pirna_excerpt,, keep.lib.sizes=FALSE] %>%
+dge_pirna_excerpt_filtered <- dge$raw_pirna_excerpt_data[keep$raw_pirna_excerpt_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
 ```{r, eval = config$trna_excerpt}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_trna_excerpt_filtered <- dge$trna_excerpt[keep$trna_excerpt,, keep.lib.sizes=FALSE] %>%
+dge_trna_excerpt_filtered <- dge$raw_trna_excerpt_data[keep$raw_trna_excerpt_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
 ```{r, eval = config$circrna_excerpt}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_circrna_excerpt_filtered <- dge$circrna_excerpt[keep$circrna_excerpt,, keep.lib.sizes=FALSE] %>%
+dge_circrna_excerpt_filtered <- dge$raw_circrna_excerpt_data[keep$raw_circrna_excerpt_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
 ```{r, eval = config$gencode_excerpt}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_gencode_excerpt_filtered <- dge$gencode_excerpt[keep$gencode_excerpt,, keep.lib.sizes=FALSE] %>%
+dge_gencode_excerpt_filtered <- dge$raw_gencode_excerpt_data[keep$raw_gencode_excerpt_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
@@ -503,7 +516,7 @@ base::cat("#### miRNA's (smrnaseq)")
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-mirna_smrnaseq_limmavoom_v <- limma::voom(dge_mirna_smrnaseq_filtered,  model_matrix$mirna_smrnaseq, plot=TRUE)
+mirna_smrnaseq_limmavoom_v <- limma::voom(dge_mirna_smrnaseq_filtered,  model_matrix$raw_mirna_smrnaseq_data, plot=TRUE)
 ```
 
 ```{r, eval = config$mirna_excerpt, results = "asis"}
@@ -513,7 +526,7 @@ base::cat("#### miRNA's (excerpt)")
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-mirna_excerpt_limmavoom_v <- limma::voom(dge_mirna_excerpt_filtered,  model_matrix$mirna_excerpt, plot=TRUE)
+mirna_excerpt_limmavoom_v <- limma::voom(dge_mirna_excerpt_filtered,  model_matrix$raw_mirna_excerpt_data, plot=TRUE)
 ```
 
 ```{r, eval = config$pirna_excerpt, results = "asis"}
@@ -523,7 +536,7 @@ base::cat("#### piRNA's (excerpt)")
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-pirna_excerpt_limmavoom_v <- limma::voom(dge_pirna_excerpt_filtered,  model_matrix$pirna_excerpt, plot=TRUE)
+pirna_excerpt_limmavoom_v <- limma::voom(dge_pirna_excerpt_filtered,  model_matrix$raw_pirna_excerpt_data, plot=TRUE)
 ```
 
 ```{r, eval = config$trna_excerpt, results = "asis"}
@@ -533,7 +546,7 @@ base::cat("#### tRNA's (excerpt)")
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-trna_excerpt_limmavoom_v <- limma::voom(dge_trna_excerpt_filtered,  model_matrix$trna_excerpt, plot=TRUE)
+trna_excerpt_limmavoom_v <- limma::voom(dge_trna_excerpt_filtered,  model_matrix$raw_trna_excerpt_data, plot=TRUE)
 ```
 
 ```{r, eval = config$circrna_excerpt, results = "asis"}
@@ -543,7 +556,7 @@ base::cat("#### circRNA's (excerpt)")
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-circrna_excerpt_limmavoom_v <- limma::voom(dge_circrna_excerpt_filtered,  model_matrix$circrna_excerpt, plot=TRUE)
+circrna_excerpt_limmavoom_v <- limma::voom(dge_circrna_excerpt_filtered,  model_matrix$raw_circrna_excerpt_data, plot=TRUE)
 ```
 
 ```{r, eval = config$gencode_excerpt, results = "asis"}
@@ -553,7 +566,7 @@ base::cat("#### gencodes (excerpt)")
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-gencode_excerpt_limmavoom_v <- limma::voom(dge_gencode_excerpt_filtered,  model_matrix$gencodes_excerpt, plot=TRUE)
+gencode_excerpt_limmavoom_v <- limma::voom(dge_gencode_excerpt_filtered,  model_matrix$raw_gencode_excerpt_data, plot=TRUE)
 ```
 
 ### Residual variances {.tabset .tabset-fade}
@@ -567,10 +580,10 @@ base::cat("#### miRNA's (smrnaseq)")
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
 # fit model to the expression values for each RNA
-mirna_smrnaseq_limmavoom_vfit <- limma::lmFit(mirna_smrnaseq_limmavoom_v, model_matrix$mirna_smrnaseq)
+mirna_smrnaseq_limmavoom_vfit <- limma::lmFit(mirna_smrnaseq_limmavoom_v, model_matrix$raw_mirna_smrnaseq_data)
 
 # estimate contrast for each miRNA
-mirna_smrnaseq_limmavoom_vfit <- limma::contrasts.fit(mirna_smrnaseq_limmavoom_vfit, contr_matrix$mirna_smrnaseq)
+mirna_smrnaseq_limmavoom_vfit <- limma::contrasts.fit(mirna_smrnaseq_limmavoom_vfit, contr_matrix$raw_mirna_smrnaseq_data)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 mirna_smrnaseq_limmavoom_efit <- limma::eBayes(mirna_smrnaseq_limmavoom_vfit)
@@ -586,10 +599,10 @@ base::cat("#### miRNA's (excerpt)")
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # fit model to the expression values for each RNA
-mirna_excerpt_limmavoom_vfit <- limma::lmFit(mirna_excerpt_limmavoom_v, model_matrix$mirna_excerpt)
+mirna_excerpt_limmavoom_vfit <- limma::lmFit(mirna_excerpt_limmavoom_v, model_matrix$raw_mirna_excerpt_data)
 
 # estimate contrast for each miRNA
-mirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(mirna_excerpt_limmavoom_vfit, contr_matrix$mirna_excerpt)
+mirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(mirna_excerpt_limmavoom_vfit, contr_matrix$raw_mirna_excerpt_data)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 mirna_excerpt_limmavoom_efit <- limma::eBayes(mirna_excerpt_limmavoom_vfit)
@@ -605,10 +618,10 @@ base::cat("#### piRNA's (excerpt)")
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # fit model to the expression values for each RNA
-pirna_excerpt_limmavoom_vfit <- limma::lmFit(pirna_excerpt_limmavoom_v, model_matrix$pirna_excerpt)
+pirna_excerpt_limmavoom_vfit <- limma::lmFit(pirna_excerpt_limmavoom_v, model_matrix$raw_pirna_excerpt_data)
 
 # estimate contrast for each miRNA
-pirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(pirna_excerpt_limmavoom_vfit, contr_matrix$pirna_excerpt)
+pirna_excerpt_limmavoom_vfit <- limma::contrasts.fit(pirna_excerpt_limmavoom_vfit, contr_matrix$raw_pirna_excerpt_data)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 pirna_excerpt_limmavoom_efit <- limma::eBayes(pirna_excerpt_limmavoom_vfit)
@@ -624,10 +637,10 @@ base::cat("#### tRNA's (excerpt)")
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
 # fit model to the expression values for each RNA
-trna_excerpt_limmavoom_vfit <- limma::lmFit(trna_excerpt_limmavoom_v, model_matrix$trna_excerpt)
+trna_excerpt_limmavoom_vfit <- limma::lmFit(trna_excerpt_limmavoom_v, model_matrix$raw_trna_excerpt_data)
 
 # estimate contrast for each miRNA
-trna_excerpt_limmavoom_vfit <- limma::contrasts.fit(trna_excerpt_limmavoom_vfit, contr_matrix$trna_excerpt)
+trna_excerpt_limmavoom_vfit <- limma::contrasts.fit(trna_excerpt_limmavoom_vfit, contr_matrix$raw_trna_excerpt_data)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 trna_excerpt_limmavoom_efit <- limma::eBayes(trna_excerpt_limmavoom_vfit)
@@ -643,10 +656,10 @@ base::cat("#### circRNA's (excerpt)")
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # fit model to the expression values for each RNA
-circrna_excerpt_limmavoom_vfit <- limma::lmFit(circrna_excerpt_limmavoom_v, model_matrix$circrna_excerpt)
+circrna_excerpt_limmavoom_vfit <- limma::lmFit(circrna_excerpt_limmavoom_v, model_matrix$raw_circrna_excerpt_data)
 
 # estimate contrast for each miRNA
-circrna_excerpt_limmavoom_vfit <- limma::contrasts.fit(circrna_excerpt_limmavoom_vfit, contr_matrix$circrna_excerpt)
+circrna_excerpt_limmavoom_vfit <- limma::contrasts.fit(circrna_excerpt_limmavoom_vfit, contr_matrix$raw_circrna_excerpt_data)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 circrna_excerpt_limmavoom_efit <- limma::eBayes(circrna_excerpt_limmavoom_vfit)
@@ -662,10 +675,10 @@ base::cat("#### gencodes (excerpt)")
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # fit model to the expression values for each RNA
-gencode_excerpt_limmavoom_vfit <- limma::lmFit(gencode_excerpt_limmavoom_v, model_matrix$gencode_excerpt)
+gencode_excerpt_limmavoom_vfit <- limma::lmFit(gencode_excerpt_limmavoom_v, model_matrix$raw_gencode_excerpt_data)
 
 # estimate contrast for each miRNA
-gencode_excerpt_limmavoom_vfit <- limma::contrasts.fit(gencode_excerpt_limmavoom_vfit, contr_matrix$gencode_excerpt)
+gencode_excerpt_limmavoom_vfit <- limma::contrasts.fit(gencode_excerpt_limmavoom_vfit, contr_matrix$raw_gencode_excerpt_data)
 
 # empirical Bayes moderation - obtain more precise estimates of miRNA-wise variability
 gencode_excerpt_limmavoom_efit <- limma::eBayes(gencode_excerpt_limmavoom_vfit)
@@ -699,8 +712,8 @@ limma_voom_results_1 <- base::do.call(rbind, limma_voom_results_1)
 limma_voom_results_1 <- limma_voom_results_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -736,8 +749,8 @@ limma_voom_results_2 <- base::do.call(rbind, limma_voom_results_2)
 limma_voom_results_2 <- limma_voom_results_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[2]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -773,8 +786,8 @@ limma_voom_results_3 <- base::do.call(rbind, limma_voom_results_3)
 limma_voom_results_3 <- limma_voom_results_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[3]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -810,8 +823,8 @@ limma_voom_results_4 <- base::do.call(rbind, limma_voom_results_4)
 limma_voom_results_4 <- limma_voom_results_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -847,8 +860,8 @@ limma_voom_results_5 <- base::do.call(rbind, limma_voom_results_5)
 limma_voom_results_5 <- limma_voom_results_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[5]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -884,8 +897,8 @@ limma_voom_results_6 <- base::do.call(rbind, limma_voom_results_6)
 limma_voom_results_6 <- limma_voom_results_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[6]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -1588,14 +1601,14 @@ base::cat("#### miRNA's (smrnaseq)")
 
 ```{r, eval = config$mirna_smrnaseq, out.width = "100%"}
 # plot
-data <- deseq_results_1$mirna_smrnaseq
+data <- deseq_results_1$raw_mirna_smrnaseq_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$mirna_smrnaseq)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_mirna_smrnaseq_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per RNA",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$mirna_smrnaseq)
+m <- base::ncol(deseq$raw_mirna_smrnaseq_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
@@ -1607,14 +1620,14 @@ base::cat("#### miRNA's (excerpt)")
 
 ```{r, eval = config$mirna_excerpt, out.width = "100%"}
 # plot
-data <- deseq_results_1$mirna_excerpt
+data <- deseq_results_1$raw_mirna_excerpt_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$mirna_excerpt)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_mirna_excerpt_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per RNA",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$mirna_excerpt)
+m <- base::ncol(deseq$raw_mirna_excerpt_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
@@ -1626,14 +1639,14 @@ base::cat("#### piRNA's (excerpt)")
 
 ```{r, eval = config$pirna_excerpt, out.width = "100%"}
 # plot
-data <- deseq_results_1$pirna_excerpt
+data <- deseq_results_1$raw_pirna_excerpt_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$pirna_excerpt)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_pirna_excerpt_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per RNA",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$pirna_excerpt)
+m <- base::ncol(deseq$raw_pirna_excerpt_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
@@ -1645,14 +1658,14 @@ base::cat("#### tRNA's (excerpt)")
 
 ```{r, eval = config$trna_excerpt, out.width = "100%"}
 # plot
-data <- deseq_results_1$trna_excerpt
+data <- deseq_results_1$raw_trna_excerpt_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$trna_excerpt)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_trna_excerpt_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per RNA",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$trna_excerpt)
+m <- base::ncol(deseq$raw_trna_excerpt_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
@@ -1664,14 +1677,14 @@ base::cat("#### circRNA's (excerpt)")
 
 ```{r, eval = config$circrna_excerpt, out.width = "100%"}
 # plot
-data <- deseq_results_1$circrna_excerpt
+data <- deseq_results_1$raw_circrna_excerpt_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$circrna_excerpt)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_circrna_excerpt_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per RNA",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$circrna_excerpt)
+m <- base::ncol(deseq$raw_circrna_excerpt_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
@@ -1683,14 +1696,14 @@ base::cat("#### gencodes (excerpt)")
 
 ```{r, eval = config$gencode_excerpt, out.width = "100%"}
 # plot
-data <- deseq_results_1$gencode_excerpt
+data <- deseq_results_1$raw_gencode_excerpt_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$gencode_excerpt)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_gencode_excerpt_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per RNA",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$gencode_excerpt)
+m <- base::ncol(deseq$raw_gencode_excerpt_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
@@ -1712,8 +1725,8 @@ deseq_results_1 <- do.call(rbind, deseq_results_1)
 deseq_results_1 <- deseq_results_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1742,8 +1755,8 @@ deseq_results_2 <- do.call(rbind, deseq_results_2)
 deseq_results_2 <- deseq_results_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[2]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1772,8 +1785,8 @@ deseq_results_3 <- do.call(rbind, deseq_results_3)
 deseq_results_3 <- deseq_results_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[3]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1802,8 +1815,8 @@ deseq_results_4 <- do.call(rbind, deseq_results_4)
 deseq_results_4 <- deseq_results_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1832,8 +1845,8 @@ deseq_results_5 <- do.call(rbind, deseq_results_5)
 deseq_results_5 <- deseq_results_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[5]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1862,8 +1875,8 @@ deseq_results_6 <- do.call(rbind, deseq_results_6)
 deseq_results_6 <- deseq_results_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[6]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -3033,6 +3046,27 @@ DT::datatable(diff_expr_results %>%
 # write differential expression results to file
 diff_expr_results %>%
   utils::write.table(file = "./diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
+
+# extract a list of the significant genes/transcripts (at three significance levels)
+sig_diff_expr_data_1 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_1%") %>%
+  dplyr::select(rna) %>%
+  dplyr::distinct(rna)
+
+sig_diff_expr_data_5 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_5%") %>%
+  dplyr::select(rna) %>%
+  dplyr::distinct(rna)
+
+sig_diff_expr_data_10 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_10%") %>%
+  dplyr::select(rna) %>%
+  dplyr::distinct(rna)
+
+# also write these to file
+utils::write.csv(sig_diff_expr_data_1, file = "./diff_expr_results/sig_diff_expr_results_1.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_5, file = "./diff_expr_results/sig_diff_expr_results_5.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_10, file = "./diff_expr_results/sig_diff_expr_results_10.csv", row.names = FALSE)
 ```
 
 ```{r, cleanup, results = "hide"}

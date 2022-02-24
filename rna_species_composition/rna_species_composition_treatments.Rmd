@@ -101,6 +101,48 @@ if(config$gencode_excerpt == "FALSE") {
   
 }
 
+# create a vector to decide if the r chunks should be evaluated based on whether the dats from a given pipeline was analysed
+smrnaseq_chunk_eval <- config$mirna_smrnaseq
+excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
+                                              config$pirna_excerpt,
+                                              config$trna_excerpt,
+                                              config$circrna_excerpt,
+                                              config$gencode_excerpt))
+
+# set up a colour list to colour RNA's by
+colors_list <- base::list(
+  "trna" = "#85C659",
+  "mirna" = "#0097db",
+  "pirna" = "#ec1515",
+  "protein_coding" = "#febf2a",
+  "Mt_rRNA" = "#784f96",
+  "misc_RNA" = "#1abcc1",
+  "retained_intron" = "#ffec8b",
+  "processed_transcript" = "#88d4c3",
+  "nonsense_mediated_decay" = "#1B9E77",
+  "lincRNA" = "#ff9457",
+  "antisense" = "#f190c1",
+  "processed_pseudogene" = "#27408b",
+  "snoRNA" = "#2b5540",
+  "snRNA" = "#a91e69",
+  "rRNA" = "#ff576e",
+  "unprocessed_pseudogene" = "#27408b",
+  "processed_transcript" = "#FAEBD7",
+  "Mt_tRNA" = "#A52A2A",
+  "TEC" = "#EE6A50",
+  "transcribed_processed_pseudogene" = "#FFF8DC",
+  "unitary_pseudogene" = "#8B8878",
+  "polymorphic_pseudogene" = "#FF6A6A",
+  "transcribed_unprocessed_pseudogene" = "#BA55D3",
+  "macro_lncRNA" = "#FFE4E1",
+  "non_coding" = "#8B7D7B",
+  "sense_overlapping" = "#DB7093",
+  "sense_intronic" = "#6C7B8B",
+  "scaRNA" = "#FFFF00",
+  "ribozyme" = "#EED2EE",
+  "non_stop_decay" = "#00FF7F",
+  "TR_J_gene" = "#FA8072"
+)
 ```
 
 Datasets analysed:
@@ -176,49 +218,17 @@ data %>%
                          I("colvis"))))
 ```
 
-### smrnaseq pipeline
+```{r, eval = smrnaseq_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### smrnaseq"))
+```
 
-```{r}
+```{r, eval = smrnaseq_chunk_eval, out.width = "100%"}
 # filter to get only the data for the smrnaseq pipeline
 data_smrnaseq <- data %>%
   dplyr::filter(pipeline == "smrnaseq")
 
 # hard code the colours (for the high abundance RNA's because they're the most visible in these plots) so they
 # are consistant between all the plots
-colors_list <- base::list(
-  "trna" = "#85C659",
-  "mirna" = "#0097db",
-  "pirna" = "#ec1515",
-  "protein_coding" = "#febf2a",
-  "Mt_rRNA" = "#784f96",
-  "misc_RNA" = "#1abcc1",
-  "retained_intron" = "#ffec8b",
-  "processed_transcript" = "#88d4c3",
-  "nonsense_mediated_decay" = "#1B9E77",
-  "lincRNA" = "#ff9457",
-  "antisense" = "#f190c1",
-  "processed_pseudogene" = "#27408b",
-  "snoRNA" = "#2b5540",
-  "snRNA" = "#a91e69",
-  "rRNA" = "#ff576e",
-  "unprocessed_pseudogene" = "#27408b",
-  "processed_transcript" = "#FAEBD7",
-  "Mt_tRNA" = "#A52A2A",
-  "TEC" = "#EE6A50",
-  "transcribed_processed_pseudogene" = "#FFF8DC",
-  "unitary_pseudogene" = "#8B8878",
-  "polymorphic_pseudogene" = "#FF6A6A",
-  "transcribed_unprocessed_pseudogene" = "#BA55D3",
-  "macro_lncRNA" = "#FFE4E1",
-  "non_coding" = "#8B7D7B",
-  "sense_overlapping" = "#DB7093",
-  "sense_intronic" = "#6C7B8B",
-  "scaRNA" = "#FFFF00",
-  "ribozyme" = "#EED2EE",
-  "non_stop_decay" = "#00FF7F",
-  "TR_J_gene" = "#FA8072"
-)
-
 data_smrnaseq$my_colour <- dplyr::recode(data_smrnaseq$rna_species_2, !!!colors_list)
 
 # get maximum RNA count to scale bar plots to
@@ -298,9 +308,11 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
 }))
 ```
 
-### excerpt pipeline
+```{r, eval = excerpt_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### excerpt"))
+```
 
-```{r, out.width = "100%"}
+```{r, eval = excerpt_chunk_eval, out.width = "100%"}
 # filter to get only the data for the smrnaseq pipeline
 data_excerpt <- data %>%
   dplyr::filter(pipeline == "excerpt")

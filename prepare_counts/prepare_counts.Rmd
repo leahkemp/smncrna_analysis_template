@@ -1,0 +1,422 @@
+---
+title: "Prepare counts"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+# load libraries
+library(dplyr)
+library(textshape)
+library(edgeR)
+library(tibble)
+library(gtools)
+library(janitor)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+```
+
+```{r, eval = config$mirna_smrnaseq}
+# load the count dataset
+raw_mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
+                                                             "/mirtop/mirtop.tsv"),
+                                             header = TRUE) %>%
+  # get only the count data
+  dplyr::select(-c("UID", "Read", "Variant", "iso_5p", "iso_3p", "iso_add3p", "iso_snp", "iso_5p_nt", "iso_3p_nt", "iso_add3p_nt", "iso_snp_nt")) %>%
+  # "squash" out the isoform info (of the mirtop from smrnaseq pipeline)
+  dplyr::group_by(miRNA) %>%
+  dplyr::summarise_each(sum) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::column_to_rownames(var="miRNA")
+
+# formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
+raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  # make all count data numeric
+  dplyr::mutate_all(as.numeric)
+
+# replace "." with "-" so RNA names are the same
+base::row.names(raw_mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(raw_mirna_smrnaseq_data))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data[rowSums(raw_mirna_smrnaseq_data[])>0,]
+```
+
+```{r, eval = config$mirna_excerpt}
+# load the count dataset
+raw_mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                            "exceRpt_miRNA_ReadCounts.txt"),
+                                            header = TRUE,
+                                            stringsAsFactors = FALSE,
+                                            check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_mirna_excerpt_data <- raw_mirna_excerpt_data[rowSums(raw_mirna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$pirna_excerpt}
+# load the count dataset
+raw_pirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                            "exceRpt_piRNA_ReadCounts.txt"),
+                                            header = TRUE,
+                                            stringsAsFactors = FALSE,
+                                            check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_pirna_excerpt_data <- raw_pirna_excerpt_data[rowSums(raw_pirna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$trna_excerpt}
+# load the count dataset
+raw_trna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                           "exceRpt_tRNA_ReadCounts.txt"),
+                                           header = TRUE,
+                                           stringsAsFactors = FALSE,
+                                           check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+
+# remove weird tRNA row
+raw_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  dplyr::filter(!(rownames(raw_trna_excerpt_data) == "tRNA"))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_trna_excerpt_data <- raw_trna_excerpt_data[rowSums(raw_trna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$circrna_excerpt}
+# load the count dataset
+raw_circrna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                              "exceRpt_circularRNA_ReadCounts.txt"),
+                                              header = TRUE,
+                                              stringsAsFactors = FALSE,
+                                              comment.char = "") %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_circrna_excerpt_data <- raw_circrna_excerpt_data[rowSums(raw_circrna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$gencode_excerpt}
+# load the count dataset
+raw_gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                              "exceRpt_gencode_ReadCounts.txt"),
+                                              header = TRUE,
+                                              stringsAsFactors = FALSE,
+                                              check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_gencode_excerpt_data <- raw_gencode_excerpt_data[rowSums(raw_gencode_excerpt_data[])>0,]
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+count_datasets <- base::do.call("list", base::mget(base::grep("_data", base::names(.GlobalEnv), value=TRUE)))
+
+# calculate counts per million (loop over all the count datasets the user has specified)
+counts_cpm <- base::lapply(base::seq_along(count_datasets), function(y, pipeline, rna_species, i){
+  
+  # calculate counts per million for all datasets in the list
+  edgeR::cpm(y[[i]]) %>%
+    base::as.data.frame() %>%
+    # sort all the columns in the different datasets so they are consistent among each other
+    # (important for specifying the treatment groups downstream)
+    dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+    tibble::rownames_to_column("rna") %>%
+    # make data long
+    tidyr::pivot_longer(-rna, names_to = "sample", values_to = "counts_per_million") %>%
+    # create a column that has defines the rna_species the data has come from
+    # based on the names of the "count_dataset" list, grab everything BEFORE 
+    # the underscore
+    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    # also create a column that defines the pipeline the data has come from
+    # based on the names of the "count_dataset" list, grab everything AFTER
+    # the underscore
+    dplyr::mutate(pipeline = pipeline[[i]])
+}, y=count_datasets,
+rna_species=base::gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", base::paste(base::names(count_datasets)))
+)
+
+# calculate log counts per million (loop over all the count datasets the user has specified)
+counts_lcpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+  
+  # calculate log counts per million for all datasets in the list
+  edgeR::cpm(y[[i]], log = TRUE) %>%
+    base::as.data.frame() %>%
+    # sort all the columns in the different datasets so they are consistent among each other
+    # (important for specifying the treatment groups downstream)
+    dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+    tibble::rownames_to_column("rna") %>%
+    # make data long
+    tidyr::pivot_longer(-rna, names_to = "sample", values_to = "log_counts_per_million") %>%
+    # create a column that has defines the rna_species the data has come from
+    # based on the names of the "count_dataset" list, grab everything BEFORE 
+    # the underscore
+    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    # also create a column that defines the pipeline the data has come from
+    # based on the names of the "count_dataset" list, grab everything AFTER
+    # the underscore
+    dplyr::mutate(pipeline = pipeline[[i]])
+}, y=count_datasets,
+rna_species=base::gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", base::paste(base::names(count_datasets)))
+)
+
+# prepare raw counts (loop over all the count datasets the user has specified)
+counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+  
+  # prepare raw counts for all datasets in the list
+  y[[i]] %>%
+    base::as.data.frame() %>%
+    # sort all the columns in the different datasets so they are consistent among each other
+    # (important for specifying the treatment groups downstream)
+    dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+    tibble::rownames_to_column("rna") %>%
+    # make data long
+    tidyr::pivot_longer(-rna, names_to = "sample", values_to = "raw_counts") %>%
+    # create a column that has defines the rna_species the data has come from
+    # based on the names of the "count_dataset" list, grab everything BEFORE 
+    # the underscore
+    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    # also create a column that defines the pipeline the data has come from
+    # based on the names of the "count_dataset" list, grab everything AFTER
+    # the underscore
+    dplyr::mutate(pipeline = pipeline[[i]])
+}, y=count_datasets,
+rna_species=base::gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", base::paste(base::names(count_datasets)))
+)
+
+# collapse my list of dataframes into single dataframes
+counts_cpm <- base::Reduce (rbind, counts_cpm)
+counts_lcpm <- base::Reduce(rbind, counts_lcpm)
+counts_raw <- base::Reduce(rbind, counts_raw)
+
+# join all three dataframes into one large dataframe of all count data!
+counts <- dplyr::full_join(counts_cpm, counts_lcpm, by = c("rna", "sample", "pipeline", "rna_species")) 
+counts <- dplyr::full_join(counts, counts_raw, by = c("rna", "sample", "pipeline", "rna_species")) 
+
+# further split the gencode data into different RNA categories
+# (I'll put into a new column)
+# overwrite the rna_species_2 column with a partial string from the rna column (for the gencode data)
+# otherwise overwrite the rna_species_2 column with what is already in the rna_species_2 column
+counts <- dplyr::mutate(counts, rna_species_2 = rna_species)
+counts <- dplyr::mutate(counts, rna_species_2 = dplyr::case_when(rna_species_2 == "gencode" ~ base::sub('.*:', '', counts$rna),
+                                                                 rna_species_2 != "gencode" ~ counts$rna_species_2
+))
+
+# fix for css highlighting in expression plotting shiny app not working for rnas/rows with ":", "|" or "."
+# doing this here so the genes/transcripts are named consistently throughout all documents
+# | needed to be escaped with \\ in order to be interpreted correctly
+# also need to use gsub instead of sub to replace all occurrences instead of just the first one
+counts <- counts %>%
+  dplyr::mutate(rna = base::gsub(":|\\||\\.", "_", rna))
+
+# shorten pirna names for plotting sakes
+counts$rna <- ifelse(counts$rna_species %in% c("pirna"), base::gsub("_(gb).*", "", counts$rna), counts$rna)
+
+# rename mirna (from rna_species_2") so that it matches up with miRNA and gets put in the same group in downstream analyses
+counts <- counts %>%
+  dplyr::mutate(rna_species_2 = dplyr::case_when(
+    rna_species_2 == "miRNA" ~ "mirna", 
+    TRUE ~ rna_species_2))
+
+# write the data to a csv file so I can use it in other documents
+utils::write.csv(counts, "./counts.csv", row.names = FALSE)
+```
+
+## csv file
+
+```{r, results = "asis"}
+base::cat(base::paste0("The following csv file with all count data has been created: ", "\n\n"))
+base::cat(base::paste0(base::list.files(".", pattern = "counts.csv"), sep = "\n\n"))
+```
+
+```{r}
+# also save some rds objects
+dir.create("./rds_objects/", showWarnings = FALSE)
+```
+
+## RDS objects
+
+```{r, eval = config$mirna_smrnaseq}
+# natural sorting of columns/sample names
+raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_mirna_smrnaseq_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_mirna_smrnaseq_data))
+
+# calculate counts per million
+cpm_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  edgeR::cpm()
+
+# calculate log counts per million
+lcpm_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  edgeR::cpm(log = TRUE)
+
+# save to file
+base::saveRDS(raw_mirna_smrnaseq_data, file = "./rds_objects/raw_mirna_smrnaseq_counts.rds")
+base::saveRDS(cpm_mirna_smrnaseq_data, file = "./rds_objects/cpm_mirna_smrnaseq_counts.rds")
+base::saveRDS(lcpm_mirna_smrnaseq_data, file = "./rds_objects/lcpm_mirna_smrnaseq_counts.rds")
+```
+
+```{r, eval = config$mirna_excerpt}
+# natural sorting of columns/sample names
+raw_mirna_excerpt_data <- raw_mirna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_mirna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_mirna_excerpt_data))
+
+# calculate counts per million
+cpm_mirna_excerpt_data <- raw_mirna_excerpt_data %>%
+  edgeR::cpm()
+
+# calculate log counts per million
+lcpm_mirna_excerpt_data <- raw_mirna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+
+# save to file
+base::saveRDS(raw_mirna_excerpt_data, file = "./rds_objects/raw_mirna_excerpt_counts.rds")
+base::saveRDS(cpm_mirna_excerpt_data, file = "./rds_objects/cpm_mirna_excerpt_counts.rds")
+base::saveRDS(lcpm_mirna_excerpt_data, file = "./rds_objects/lcpm_mirna_excerpt_counts.rds")
+```
+
+```{r, eval = config$pirna_excerpt}
+# natural sorting of columns/sample names
+raw_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_pirna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_pirna_excerpt_data))
+
+# shorten pirna names for plotting sakes
+rownames(raw_pirna_excerpt_data) <- base::gsub("_(gb).*", "", rownames(raw_pirna_excerpt_data))
+
+# calculate counts per million
+cpm_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
+  edgeR::cpm()
+
+# calculate log counts per million
+lcpm_pirna_excerpt_data <- raw_pirna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+
+# save to file
+base::saveRDS(raw_pirna_excerpt_data, file = "./rds_objects/raw_pirna_excerpt_counts.rds")
+base::saveRDS(cpm_pirna_excerpt_data, file = "./rds_objects/cpm_pirna_excerpt_counts.rds")
+base::saveRDS(lcpm_pirna_excerpt_data, file = "./rds_objects/lcpm_pirna_excerpt_counts.rds")
+```
+
+```{r, eval = config$trna_excerpt}
+# natural sorting of columns/sample names
+raw_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_trna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_trna_excerpt_data))
+
+# calculate counts per million
+cpm_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  edgeR::cpm()
+
+# calculate log counts per million
+lcpm_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+
+# save to file
+base::saveRDS(raw_trna_excerpt_data, file = "./rds_objects/raw_trna_excerpt_counts.rds")
+base::saveRDS(cpm_trna_excerpt_data, file = "./rds_objects/cpm_trna_excerpt_counts.rds")
+base::saveRDS(lcpm_trna_excerpt_data, file = "./rds_objects/lcpm_trna_excerpt_counts.rds")
+```
+
+```{r, eval = config$circrna_excerpt}
+# natural sorting of columns/sample names
+raw_circrna_excerpt_data <- raw_circrna_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_circrna_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_circrna_excerpt_data))
+
+# calculate counts per million
+cpm_circrna_excerpt_data <- raw_circrna_excerpt_data %>%
+  edgeR::cpm()
+
+# calculate log counts per million
+lcpm_circrna_excerpt_data <- raw_circrna_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+
+# save to file
+base::saveRDS(raw_circrna_excerpt_data, file = "./rds_objects/raw_circrna_excerpt_counts.rds")
+base::saveRDS(cpm_circrna_excerpt_data, file = "./rds_objects/cpm_circrna_excerpt_counts.rds")
+base::saveRDS(lcpm_circrna_excerpt_data, file = "./rds_objects/lcpm_circrna_excerpt_counts.rds")
+```
+
+```{r, eval = config$gencode_excerpt}
+# natural sorting of columns/sample names
+raw_gencode_excerpt_data <- raw_gencode_excerpt_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_gencode_excerpt_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_gencode_excerpt_data))
+
+# calculate counts per million
+cpm_gencode_excerpt_data <- raw_gencode_excerpt_data %>%
+  edgeR::cpm()
+
+# calculate log counts per million
+lcpm_gencode_excerpt_data <- raw_gencode_excerpt_data %>%
+  edgeR::cpm(log = TRUE)
+
+# save to file
+base::saveRDS(raw_gencode_excerpt_data, file = "./rds_objects/raw_gencode_excerpt_counts.rds")
+base::saveRDS(cpm_gencode_excerpt_data, file = "./rds_objects/cpm_gencode_excerpt_counts.rds")
+base::saveRDS(lcpm_gencode_excerpt_data, file = "./rds_objects/lcpm_gencode_excerpt_counts.rds")
+```
+
+```{r, results = "asis"}
+# return message to user
+base::cat(base::paste0("The following RDS objects have been created: ", "\n\n"))
+base::cat(base::paste0(base::list.files("./rds_objects/"), sep = "\n\n"))
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```

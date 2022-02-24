@@ -122,6 +122,14 @@ if(config$gencode_excerpt == "FALSE") {
     dplyr::filter(!((rna_species == "gencode") & (pipeline == "excerpt")))
   
 }
+
+# create a vector to decide if the r chunks should be evaluated based on whether the dats from a given pipeline was analysed
+smrnaseq_chunk_eval <- config$mirna_smrnaseq
+excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
+                                              config$pirna_excerpt,
+                                              config$trna_excerpt,
+                                              config$circrna_excerpt,
+                                              config$gencode_excerpt))
 ```
 
 ```{bash}
@@ -187,17 +195,54 @@ pipeline_pretty <- to_analyse_pretty %>%
   dplyr::pull(pipeline) %>%
   base::as.list()
 
+# if miRNA's are being analysed by both smrnaseq and excerpt pipelines, plot only the miRNA's from the smrnaseq pipeline in the MDS
+# this avoids the code erroring out having duplicate miRNA data
+if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == TRUE) == TRUE) {
+  
+  rna_species_pretty <- rna_species_pretty[-2]
+  pipeline_pretty <- pipeline_pretty[-2]
+  
+} else if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == FALSE) == TRUE) {
+  
+  rna_species_pretty <- rna_species_pretty
+  pipeline_pretty <- pipeline_pretty
+  
+} else if ((smrnaseq_chunk_eval == FALSE & excerpt_chunk_eval == TRUE) == TRUE) {
+  
+  rna_species_pretty <- rna_species_pretty
+  pipeline_pretty <- pipeline_pretty
+  
+}
+
 to_analyse_pretty <- base::paste0(rna_species_pretty, " ", pipeline_pretty, collapse = " ")
 
 # dynamically build up a header based on the rna species being analysed
 base::cat(base::paste0("### All RNA's analysed: ", to_analyse_pretty, " ", "{.tabset .tabset-fade}"))
 ```
 
+*Note. if both miRNA (smrnaseq) and miRNA (excerpt) datasets have been analysed, only the miRNA (smrnaseq) dataset is used in the "All RNA's analysed" MDS plot to avoid duplicate miRNA datapoints*
+
 ```{r, out.width = "100%"}
+# if miRNA's are being analysed by both smrnaseq and excerpt pipelines, plot only the miRNA's from the smrnaseq pipeline in the MDS
+# this avoids the code erroring out having duplicate miRNA data
+if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == TRUE) == TRUE) {
+  
+  mds <- counts %>%
+    dplyr::filter(pipeline == "smrnaseq")
+  
+} else if ((smrnaseq_chunk_eval == TRUE & excerpt_chunk_eval == FALSE) == TRUE) {
+  
+  mds <- counts
+  
+} else if ((smrnaseq_chunk_eval == FALSE & excerpt_chunk_eval == TRUE) == TRUE) {
+  
+  mds <- counts
+  
+}
+
 # calculate MDS
-mds <- counts %>%
-  dplyr::filter(pipeline == "excerpt") %>%
-  # analyse/plot only the rna species the user has specified to analyse
+# analyse/plot only the rna species the user has specified to analyse
+mds <- mds %>%
   dplyr::filter(rna_species %in% to_analyse_list) %>%
   dplyr::select(sample, rna, counts_per_million) %>%
   tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%

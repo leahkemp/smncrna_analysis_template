@@ -1,0 +1,562 @@
+---
+title: "Sanity check raw counts"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+# load libraries
+library(dplyr)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
+
+# create empty list to put all the results of the issues to later return to user
+issues_raw_counts <- base::list()
+```
+
+## Check raw count data
+
+```{r, eval = config$mirna_smrnaseq}
+# load the count dataset
+raw_mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
+                                                             "/mirtop/mirtop.tsv"),
+                                             header = TRUE) %>%
+  # get only the count data
+  dplyr::select(-c("UID", "Read", "Variant", "iso_5p", "iso_3p", "iso_add3p", "iso_snp", "iso_5p_nt", "iso_3p_nt", "iso_add3p_nt", "iso_snp_nt")) %>%
+  # "squash" out the isoform info (of the mirtop from smrnaseq pipeline)
+  dplyr::group_by(miRNA) %>%
+  dplyr::summarise_each(sum) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::column_to_rownames(var="miRNA")
+
+# formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
+raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  # make all count data numeric
+  dplyr::mutate_all(as.numeric)
+
+# replace "." with "-" so RNA names are the same
+base::row.names(raw_mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(raw_mirna_smrnaseq_data))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data[rowSums(raw_mirna_smrnaseq_data[])>0,]
+```
+
+```{r, eval = config$mirna_excerpt}
+# load the count dataset
+raw_mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                            "exceRpt_miRNA_ReadCounts.txt"),
+                                            header = TRUE,
+                                            stringsAsFactors = FALSE,
+                                            check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_mirna_excerpt_data <- raw_mirna_excerpt_data[rowSums(raw_mirna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$pirna_excerpt}
+# load the count dataset
+raw_pirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                            "exceRpt_piRNA_ReadCounts.txt"),
+                                            header = TRUE,
+                                            stringsAsFactors = FALSE,
+                                            check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_pirna_excerpt_data <- raw_pirna_excerpt_data[rowSums(raw_pirna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$trna_excerpt}
+# load the count dataset
+raw_trna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                           "exceRpt_tRNA_ReadCounts.txt"),
+                                           header = TRUE,
+                                           stringsAsFactors = FALSE,
+                                           check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+
+# remove weird tRNA row
+raw_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  dplyr::filter(!(rownames(raw_trna_excerpt_data) == "tRNA"))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_trna_excerpt_data <- raw_trna_excerpt_data[rowSums(raw_trna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$circrna_excerpt}
+# load the count dataset
+raw_circrna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                              "exceRpt_circularRNA_ReadCounts.txt"),
+                                              header = TRUE,
+                                              stringsAsFactors = FALSE,
+                                              comment.char = "") %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_circrna_excerpt_data <- raw_circrna_excerpt_data[rowSums(raw_circrna_excerpt_data[])>0,]
+```
+
+```{r, eval = config$gencode_excerpt}
+# load the count dataset
+raw_gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                              "exceRpt_gencode_ReadCounts.txt"),
+                                              header = TRUE,
+                                              stringsAsFactors = FALSE,
+                                              check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_gencode_excerpt_data <- raw_gencode_excerpt_data[rowSums(raw_gencode_excerpt_data[])>0,]
+```
+
+```{r, eval = config$mirna_smrnaseq}
+# establish if there are 2 or more rows of data in the count dataset
+mirna_smrnaseq_enough_rows <- nrow(raw_mirna_smrnaseq_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (mirna_smrnaseq_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (miRNA smrnaseq) available after filtering lowly expressed genes to carry out a differential expression analysis of the mirna_smrnaseq dataset. Please set 'mirna_smrnaseq' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = config$mirna_excerpt}
+# establish if there are 2 or more rows of data in the count dataset
+mirna_excerpt_enough_rows <- nrow(raw_mirna_excerpt_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (mirna_excerpt_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (miRNA's) to carry out a differential expression analysis of the mirna_excerpt dataset. Please set 'mirna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = config$pirna_excerpt}
+# establish if there are 2 or more rows of data in the count dataset
+pirna_excerpt_enough_rows <- nrow(raw_pirna_excerpt_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (pirna_excerpt_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (piRNA's) to carry out a differential expression analysis of the pirna_excerpt dataset. Please set 'pirna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = config$trna_excerpt}
+# establish if there are 2 or more rows of data in the count dataset
+trna_excerpt_enough_rows <- nrow(raw_trna_excerpt_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (trna_excerpt_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (tRNA's) to carry out a differential expression analysis of the trna_excerpt dataset. Please set 'trna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = config$circrna_excerpt}
+# establish if there are 2 or more rows of data in the count dataset
+circrna_excerpt_enough_rows <- nrow(raw_circrna_excerpt_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (circrna_excerpt_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (circRNA's) to carry out a differential expression analysis of the circrna_excerpt dataset. Please set 'circrna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = config$gencode_excerpt}
+# establish if there are 2 or more rows of data in the count dataset
+gencode_excerpt_enough_rows <- nrow(raw_gencode_excerpt_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (gencode_excerpt_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (gencode's) to carry out a differential expression analysis of the gencode_excerpt dataset. Please set 'gencode_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r}
+# also set any flags to not analyse downstream chunks to false if they aren't created
+if (base::exists("mirna_smrnaseq_enough_rows") == FALSE) {
+  mirna_smrnaseq_enough_rows <- FALSE
+}
+
+if (base::exists("mirna_excerpt_enough_rows") == FALSE) {
+  mirna_excerpt_enough_rows <- FALSE
+}
+
+if (base::exists("pirna_excerpt_enough_rows") == FALSE) {
+  pirna_excerpt_enough_rows <- FALSE
+}
+
+if (base::exists("trna_excerpt_enough_rows") == FALSE) {
+  trna_excerpt_enough_rows <- FALSE
+}
+
+if (base::exists("circrna_excerpt_enough_rows") == FALSE) {
+  circrna_excerpt_enough_rows <- FALSE
+}
+
+if (base::exists("gencode_excerpt_enough_rows") == FALSE) {
+  gencode_excerpt_enough_rows <- FALSE
+}
+
+# remove any datasets that don't have enough rows of data to continue downstream checks without these datasets erroring out
+if (mirna_smrnaseq_enough_rows == FALSE) {
+  base::rm(raw_mirna_smrnaseq_data)
+}
+
+if (mirna_excerpt_enough_rows == FALSE) {
+  base::rm(raw_mirna_excerpt_data)
+}
+
+if (pirna_excerpt_enough_rows == FALSE) {
+  base::rm(raw_pirna_excerpt_data)
+}
+
+if (trna_excerpt_enough_rows == FALSE) {
+  base::rm(raw_trna_excerpt_data)
+}
+
+if (circrna_excerpt_enough_rows == FALSE) {
+  base::rm(raw_circrna_excerpt_data)
+}
+
+if (gencode_excerpt_enough_rows == FALSE) {
+  base::rm(raw_gencode_excerpt_data)
+}
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+count_datasets <- base::do.call("list", base::mget(base::grep("_data", base::names(.GlobalEnv), value=TRUE)))
+
+# evaluate/setup minimum logFC threshold
+min_logfc <- base::eval(base::parse(text = config$min_lfc))
+
+# specify treatments by creating a string of conditions that match the order of the columns/samples in the count data
+# get the treatments and samples names from the metadata file
+treatments <- metadata %>%
+  dplyr::select(sample, treatment)
+
+# also sort by the sample column (important so it matches the order of the samples count datasets)
+# this is critical for DESeq2 - it assumes they are in the same order
+treatments <- treatments[gtools::mixedorder(base::as.character(treatments$sample)),]
+
+# extract only the conditions/groups and create a list out of it
+ordered_treatments <- treatments %>%
+  dplyr::pull(treatment)
+
+# make sure the samples (columns) in all the datasets are in the same order for specifying the treatments downstream
+# (that depends on the columns being in the correct order)  (loop over all count datasets)
+count_datasets <- base::lapply(count_datasets, function(x) {
+  
+  x[ , gtools::mixedsort(names(x))]
+  
+})
+
+# convert datasets to matrices (loop over all count datasets)
+# also round read counts to the nearest integer to avoid a downstream error with DESeqDataSetFromMatrix() (see this discussion https://www.biostars.org/p/368158/)
+count_datasets <- base::lapply(count_datasets, function(x) {
+  
+  x %>%
+    base::round() %>%
+    base::as.matrix(sep = "\t", row.names = "rna_id")
+  
+})
+
+# create DGEList objects for the datasets (loop over all count datasets)
+dge <- base::lapply(count_datasets, function(x) {
+  
+  edgeR::DGEList(counts = x, group = ordered_treatments)
+  
+})
+
+# filter lowly expressed RNA
+keep <- base::lapply(dge, function(x) {
+  
+  edgeR::filterByExpr(x, group=ordered_treatments, min.count = config$min_count, min.total.count = config$min_total_count)
+  
+})
+```
+
+```{r, eval = mirna_smrnaseq_enough_rows}
+# apply filtering
+dge_mirna_smrnaseq_filtered <- dge$raw_mirna_smrnaseq_data[keep$raw_mirna_smrnaseq_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+mirna_smrnaseq_enough_rows_after_filtering <- nrow(dge_mirna_smrnaseq_filtered$counts) >=2
+```
+
+```{r, eval = mirna_excerpt_enough_rows}
+# apply filtering
+dge_mirna_excerpt_filtered <- dge$raw_mirna_excerpt_data[keep$raw_mirna_excerpt_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+mirna_excerpt_enough_rows_after_filtering <- nrow(dge_mirna_excerpt_filtered$counts) >=2
+```
+
+```{r, eval = pirna_excerpt_enough_rows}
+# apply filtering
+dge_pirna_excerpt_filtered <- dge$raw_pirna_excerpt_data[keep$raw_pirna_excerpt_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+pirna_excerpt_enough_rows_after_filtering <- nrow(dge_pirna_excerpt_filtered$counts) >=2
+```
+
+```{r, eval = trna_excerpt_enough_rows}
+# apply filtering
+dge_trna_excerpt_filtered <- dge$raw_trna_excerpt_data[keep$raw_trna_excerpt_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+trna_excerpt_enough_rows_after_filtering <- nrow(dge_trna_excerpt_filtered$counts) >=2
+```
+
+```{r, eval = circrna_excerpt_enough_rows}
+# apply filtering
+dge_circrna_excerpt_filtered <- dge$raw_circrna_excerpt_data[keep$raw_circrna_excerpt_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+circrna_excerpt_enough_rows_after_filtering <- nrow(dge_circrna_excerpt_filtered$counts) >=2
+```
+
+```{r, eval = gencode_excerpt_enough_rows}
+# apply filtering
+dge_gencode_excerpt_filtered <- dge$raw_gencode_excerpt_data[keep$raw_gencode_excerpt_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+gencode_excerpt_enough_rows_after_filtering <- nrow(dge_gencode_excerpt_filtered$counts) >=2
+```
+
+```{r, eval = mirna_smrnaseq_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_mirna_smrnaseq_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw miRNA smrnaseq count data at ",
+                                                         base::file.path(config$smrnaseq_results_dir, "/mirtop/mirtop.tsv"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw miRNA smrnaseq count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (mirna_smrnaseq_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (miRNA smrnaseq) available after filtering lowly expressed genes to carry out a differential expression analysis of the mirna_smrnaseq dataset. Please set 'mirna_smrnaseq' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = mirna_excerpt_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_mirna_excerpt_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw miRNA excerpt count data at ",
+                                                         base::file.path(config$excerpt_results_dir, "exceRpt_miRNA_ReadCounts.txt"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw miRNA excerpt count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (mirna_excerpt_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (miRNA's) available after filtering lowly expressed RNA's to carry out a differential expression analysis of the mirna_excerpt dataset. Please set 'mirna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = pirna_excerpt_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_pirna_excerpt_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw piRNA excerpt count data at ",
+                                                         base::file.path(config$excerpt_results_dir, "exceRpt_piRNA_ReadCounts.txt"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw piRNA excerpt count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (pirna_excerpt_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (piRNA's) available after filtering lowly expressed RNA's to carry out a differential expression analysis of the pirna_excerpt dataset. Please set 'pirna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = trna_excerpt_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_trna_excerpt_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw tRNA excerpt count data at ",
+                                                         base::file.path(config$excerpt_results_dir, "exceRpt_tRNA_ReadCounts.txt"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw tRNA excerpt count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (trna_excerpt_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (tRNA's) available after filtering lowly expressed RNA's to carry out a differential expression analysis of the trna_excerpt dataset. Please set 'trna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = circrna_excerpt_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_circrna_excerpt_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw circRNA excerpt count data at ",
+                                                         base::file.path(config$excerpt_results_dir, "exceRpt_circularRNA_ReadCounts.txt"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw circRNA excerpt count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (circrna_excerpt_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (circRNA's) available after filtering lowly expressed RNA's to carry out a differential expression analysis of the circrna_excerpt dataset. Please set 'circrna_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = gencode_excerpt_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_gencode_excerpt_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw gencode excerpt count data at ",
+                                                         base::file.path(config$excerpt_results_dir, "exceRpt_gencode_ReadCounts.txt"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw gencode excerpt count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (gencode_excerpt_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (gencode's) available after filtering lowly expressed RNA's to carry out a differential expression analysis of the gencode_excerpt dataset. Please set 'gencode_excerpt' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r}
+# return the list of issues identified
+# send message when no issues found or list of issues identified
+if (base::length(issues_raw_counts) == 0) {
+  
+  message_for_user <- "No issues identified in the input raw count files! Woohoo!"
+  
+}
+
+if (base::length(issues_raw_counts) >= 1) {
+  
+  message_for_user <- issues_raw_counts
+  
+}
+```
+
+```{r, results = "asis"}
+# return message to user
+base::cat(base::paste0(message_for_user), sep = "\n\n")
+```
+
+```{r}
+# clean up
+rm(list = ls())
+```

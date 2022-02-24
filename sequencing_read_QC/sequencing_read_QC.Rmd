@@ -33,10 +33,6 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 
 Explore the number of raw sequencing reads and the number of aligned/unaligned reads for each pipeline run
 
-## Alignment rates {.tabset .tabset-fade}
-
-### smrnaseq
-
 ```{r, out.width = "100%"}
 # load libraries
 library(dplyr)
@@ -75,6 +71,22 @@ mapping_rates_data <- mapping_rates_data %>%
 # join metadata with mapping rates data
 mapping_rates_data <- dplyr::left_join(mapping_rates_data, metadata, by = "sample")
 
+# create a vector to decide if the r chunks should be evaluated based on whether the dats from a given pipeline was analysed
+smrnaseq_chunk_eval <- config$mirna_smrnaseq
+excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
+                                              config$pirna_excerpt,
+                                              config$trna_excerpt,
+                                              config$circrna_excerpt,
+                                              config$gencode_excerpt))
+```
+
+## Alignment rates {.tabset .tabset-fade}
+
+```{r, eval = smrnaseq_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### smrnaseq"))
+```
+
+```{r, eval = smrnaseq_chunk_eval, out.width = "100%"}
 # create a bar chart of the raw read counts
 mapping_rates_data %>%
   plotly::plot_ly(x = ~sample,
@@ -155,7 +167,7 @@ mapping_rates_data %>%
                  yaxis = list(title = "Read count"))
 ```
 
-```{r, out.width = "100%"}
+```{r, eval = smrnaseq_chunk_eval, out.width = "100%"}
 # create datatable to explore the RNA's that are found in the media
 DT::datatable(mapping_rates_data %>%
                 dplyr::mutate(across(c("sample",
@@ -201,9 +213,11 @@ DT::datatable(mapping_rates_data %>%
                        I("colvis"))))
 ```
 
-### excerpt
+```{r, eval = excerpt_chunk_eval, results = 'asis'}
+base::cat(base::paste0("### excerpt"))
+```
 
-```{r, out.width = "100%"}
+```{r, eval = excerpt_chunk_eval, out.width = "100%"}
 # create a bar chart of the raw read counts
 mapping_rates_data %>%
   plotly::plot_ly(x = ~sample,
@@ -256,7 +270,7 @@ mapping_rates_data %>%
                  yaxis = list(title = "Read count"))
 ```
 
-```{r, out.width = "100%"}
+```{r, eval = excerpt_chunk_eval, out.width = "100%"}
 # create datatable to explore the RNA's that are found in the media
 DT::datatable(mapping_rates_data %>%
                 dplyr::mutate(across(c("sample",

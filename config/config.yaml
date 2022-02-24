@@ -12,12 +12,15 @@ template_dir: "/my_project/smncrna_analysis_template/"
 metadata_path: "/my_project/smncrna_analysis_template/config/metadata.csv"
 
 # set the path to your smrnaseq pipeline run results directory
+# (set to 'none' if you do not wish to analyse the smrnaseq pipeline output)
 smrnaseq_results_dir: "/my_project/smncrna_analysis_template/test/smrnaseq_pipeline_run/results/"
 
 # set the path to your excerpt pipeline run results directory
+# (set to 'none' if you do not wish to analyse the excerpt pipeline output)
 excerpt_results_dir: "/my_project/smncrna_analysis_template/test/excerpt_pipeline_run/exceRpt_output/"
 
 # set the path to your merged excerpt pipeline run results directory (sample merged output)
+# (set to 'none' if you do not wish to analyse the excerpt pipeline output)
 excerpt_merged_results_dir: "/my_project/smncrna_analysis_template/test/excerpt_pipeline_run/merged/"
 
 # set the low sequencing read count flag, the number of reads at which you consider the sequencing read count
@@ -25,10 +28,6 @@ excerpt_merged_results_dir: "/my_project/smncrna_analysis_template/test/excerpt_
 low_sequencing_read_count: 5000000
 
 # choose the count datasets you wish to analyse
-# note. sometimes the cpm function can't be carried out on some of these count datasets since their counts are
-# too low you'll hit an error such as "Error in cpm.default(x) : library sizes should be finite and non-negative"
-# or "Need at least two genes to fit a mean-variance trend"
-# set the offending datasets to false here so the analysis can continue without these datasets
 mirna_smrnaseq: true
 mirna_excerpt: true
 pirna_excerpt: true
@@ -65,6 +64,3 @@ min_total_count: 15
 # see more info about this function/flag here: https://rdrr.io/bioc/limma/man/ebayes.html
 # typical values for lfc are log2(1.1), log2(1.2) or log2(1.5)
 min_lfc: "log2(1.1)"
-
-# p-value cutoff to consider an RNA significantly differentially expressed
-pvalue_cutoff: 0.1

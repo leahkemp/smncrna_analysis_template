@@ -70,6 +70,9 @@ metadata <- utils::read.csv(config$metadata_path)
 
 # read in differential expression data
 diff_expr_data <- utils::read.table("./diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+sig_diff_expr_data_1 <- utils::read.table("./diff_expression/diff_expr_results/sig_diff_expr_results_1.csv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+sig_diff_expr_data_5 <- utils::read.table("./diff_expression/diff_expr_results/sig_diff_expr_results_5.csv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+sig_diff_expr_data_10 <- utils::read.table("./diff_expression/diff_expr_results/sig_diff_expr_results_10.csv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 
 # read in mapping rates data
 mapping_rates <- utils::read.csv("./mapping_rates/mapping_rates.csv") %>%
@@ -97,55 +100,6 @@ raw_read_count <- mapping_rates %>%
   dplyr::select(sample, raw_read_count_fastq_file)
 
 counts <- dplyr::left_join(counts, raw_read_count, by = "sample")
-
-##################################################################
-##           Prep of differential expression data               ##
-##################################################################
-
-# extract a list of the significant RNAs (at three significance levels)
-sig_diff_expr_data_1 <- diff_expr_data %>%
-  dplyr::filter(significance == "significant_1%") %>%
-  dplyr::select(rna) %>%
-  dplyr::distinct(rna)
-
-sig_diff_expr_data_5 <- diff_expr_data %>%
-  dplyr::filter(significance == "significant_5%") %>%
-  dplyr::select(rna) %>%
-  dplyr::distinct(rna)
-
-sig_diff_expr_data_10 <- diff_expr_data %>%
-  dplyr::filter(significance == "significant_10%") %>%
-  dplyr::select(rna) %>%
-  dplyr::distinct(rna)
-
-##################################################################
-##                   Fix for CSS highlighting                   ##
-##################################################################
-
-# fix for css highlighting in shiny app not working for rnas/rows with ":" or "|"
-
-# | needed to be escaped with \\ in order to be interpreted correctly
-# also need to use gsub instead of sub to replace all occurrences instead of just the first one
-
-counts <- counts %>%
-  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
-
-diff_expr_data <- diff_expr_data %>%
-  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
-
-sig_diff_expr_data_1 <- sig_diff_expr_data_1 %>%
-  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
-
-sig_diff_expr_data_5 <- sig_diff_expr_data_5 %>%
-  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
-
-sig_diff_expr_data_10 <- sig_diff_expr_data_10 %>%
-  dplyr::mutate(rna = base::gsub(":", "_", rna)) %>%
-  dplyr::mutate(rna = base::gsub("\\|", "_", rna))
 
 #################################################################
 ##                        Write to file                        ##
