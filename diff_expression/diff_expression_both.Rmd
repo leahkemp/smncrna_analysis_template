@@ -80,7 +80,7 @@ to_eval_chunk <- config[c("mirna_smrnaseq",
                           "trna_excerpt",
                           "circrna_excerpt",
                           "gencode_excerpt")] %>%
-  rep(times = 6)
+  rep(times = 10)
 
 names(to_eval_chunk)[1:6] <- paste(names(to_eval_chunk)[1:6], "1", sep = "_")
 names(to_eval_chunk)[7:12] <- paste(names(to_eval_chunk)[7:12], "2", sep = "_")
@@ -88,20 +88,32 @@ names(to_eval_chunk)[13:18] <- paste(names(to_eval_chunk)[13:18], "3", sep = "_"
 names(to_eval_chunk)[19:24] <- paste(names(to_eval_chunk)[19:24], "4", sep = "_")
 names(to_eval_chunk)[25:30] <- paste(names(to_eval_chunk)[25:30], "5", sep = "_")
 names(to_eval_chunk)[31:36] <- paste(names(to_eval_chunk)[31:36], "6", sep = "_")
+names(to_eval_chunk)[37:42] <- paste(names(to_eval_chunk)[37:42], "7", sep = "_")
+names(to_eval_chunk)[43:48] <- paste(names(to_eval_chunk)[43:48], "8", sep = "_")
+names(to_eval_chunk)[49:54] <- paste(names(to_eval_chunk)[49:54], "9", sep = "_")
+names(to_eval_chunk)[55:60] <- paste(names(to_eval_chunk)[55:60], "10", sep = "_")
 
 n_contrasts <- base::length(config$contrasts)
 
 to_eval_chunk <- if(n_contrasts == 1) {
-  replace(to_eval_chunk, 7:36, FALSE)
+  replace(to_eval_chunk, 7:60, FALSE)
 } else if(n_contrasts == 2) {
-  replace(to_eval_chunk, 13:36, FALSE)
+  replace(to_eval_chunk, 13:60, FALSE)
 } else if(n_contrasts == 3) {
-  replace(to_eval_chunk, 19:36, FALSE)
+  replace(to_eval_chunk, 19:60, FALSE)
 } else if(n_contrasts == 4) {
-  replace(to_eval_chunk, 25:36, FALSE)
+  replace(to_eval_chunk, 25:60, FALSE)
 } else if(n_contrasts == 5) {
-  replace(to_eval_chunk, 31:36, FALSE)
+  replace(to_eval_chunk, 31:60, FALSE)
 } else if(n_contrasts == 6) {
+  replace(to_eval_chunk, 37:60, FALSE)
+} else if(n_contrasts == 7) {
+  replace(to_eval_chunk, 43:60, FALSE)
+} else if(n_contrasts == 8) {
+  replace(to_eval_chunk, 49:60, FALSE)
+} else if(n_contrasts == 9) {
+  replace(to_eval_chunk, 55:60, FALSE)
+} else if(n_contrasts == 10) {
   to_eval_chunk
 }
 
@@ -111,19 +123,31 @@ contrasts_chunk_eval <- list(contrast_1 = TRUE,
                              contrast_3 = TRUE,
                              contrast_4 = TRUE,
                              contrast_5 = TRUE,
-                             contrast_6 = TRUE)
+                             contrast_6 = TRUE,
+                             contrast_7 = TRUE,
+                             contrast_8 = TRUE,
+                             contrast_9 = TRUE,
+                             contrast_10 = TRUE)
 
 contrasts_chunk_eval <- if(n_contrasts == 1) {
-  replace(contrasts_chunk_eval, 2:6, FALSE)
+  replace(contrasts_chunk_eval, 2:10, FALSE)
 } else if(n_contrasts == 2) {
-  replace(contrasts_chunk_eval, 3:6, FALSE)
+  replace(contrasts_chunk_eval, 3:10, FALSE)
 } else if(n_contrasts == 3) {
-  replace(contrasts_chunk_eval, 4:6, FALSE)
+  replace(contrasts_chunk_eval, 4:10, FALSE)
 } else if(n_contrasts == 4) {
-  replace(contrasts_chunk_eval, 5:6, FALSE)
+  replace(contrasts_chunk_eval, 5:10, FALSE)
 } else if(n_contrasts == 5) {
-  replace(contrasts_chunk_eval, 6, FALSE)
+  replace(contrasts_chunk_eval, 6:10, FALSE)
 } else if(n_contrasts == 6) {
+  replace(contrasts_chunk_eval, 7:10, FALSE)
+} else if(n_contrasts == 7) {
+  replace(contrasts_chunk_eval, 8:10, FALSE)
+} else if(n_contrasts == 8) {
+  replace(contrasts_chunk_eval, 9:10, FALSE)
+} else if(n_contrasts == 9) {
+  replace(contrasts_chunk_eval, 10, FALSE)
+} else if(n_contrasts == 10) {
   contrasts_chunk_eval
 }
 
@@ -183,7 +207,7 @@ deseq_results_2 <- utils::read.table("../diff_expression/diff_expr_results/deseq
 
 ```{r, eval = contrasts[3]}
 # read differential expression results
-limma_voom_results_3 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_3.tsv", header = TRUE, sep="\t")
+limma_voom_results_3 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_3.tsv", header = TRUE, sep="\t")
 deseq_results_3 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_3.tsv", header = TRUE, sep="\t")
 ```
 
@@ -203,6 +227,30 @@ deseq_results_5 <- utils::read.table("../diff_expression/diff_expr_results/deseq
 # read differential expression results
 limma_voom_results_6 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_6.tsv", header = TRUE, sep="\t")
 deseq_results_6 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_6.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[7]}
+# read differential expression results
+limma_voom_results_7 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_7.tsv", header = TRUE, sep="\t")
+deseq_results_7 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_7.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[8]}
+# read differential expression results
+limma_voom_results_8 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_8.tsv", header = TRUE, sep="\t")
+deseq_results_8 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_8.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[9]}
+# read differential expression results
+limma_voom_results_9 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_9.tsv", header = TRUE, sep="\t")
+deseq_results_9 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_9.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[10]}
+# read differential expression results
+limma_voom_results_10 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_10.tsv", header = TRUE, sep="\t")
+deseq_results_10 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_10.tsv", header = TRUE, sep="\t")
 ```
 
 ## All differential expression results
@@ -235,6 +283,26 @@ diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5, b
 ```{r, eval = contrasts[6]}
 # collapse results from deseq and limma/voom differential expression analysis together
 diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[7]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_7 <- dplyr::full_join(limma_voom_results_7, deseq_results_7, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[8]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_8 <- dplyr::full_join(limma_voom_results_8, deseq_results_8, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[9]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_9 <- dplyr::full_join(limma_voom_results_9, deseq_results_9, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[10]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_10 <- dplyr::full_join(limma_voom_results_10, deseq_results_10, by = c("rna", "p_value", "adj_p_value", "log_fc", "rna_species", "pipeline", "comparison", "diff_expr_method"))
 ```
 
 ```{r, results = "asis"}

@@ -85,7 +85,7 @@ to_eval_chunk <- config[c("mirna_smrnaseq",
                           "trna_excerpt",
                           "circrna_excerpt",
                           "gencode_excerpt")] %>%
-  rep(times = 6)
+  rep(times = 10)
 
 names(to_eval_chunk)[1:6] <- paste(names(to_eval_chunk)[1:6], "1", sep = "_")
 names(to_eval_chunk)[7:12] <- paste(names(to_eval_chunk)[7:12], "2", sep = "_")
@@ -93,20 +93,32 @@ names(to_eval_chunk)[13:18] <- paste(names(to_eval_chunk)[13:18], "3", sep = "_"
 names(to_eval_chunk)[19:24] <- paste(names(to_eval_chunk)[19:24], "4", sep = "_")
 names(to_eval_chunk)[25:30] <- paste(names(to_eval_chunk)[25:30], "5", sep = "_")
 names(to_eval_chunk)[31:36] <- paste(names(to_eval_chunk)[31:36], "6", sep = "_")
+names(to_eval_chunk)[37:42] <- paste(names(to_eval_chunk)[37:42], "7", sep = "_")
+names(to_eval_chunk)[43:48] <- paste(names(to_eval_chunk)[43:48], "8", sep = "_")
+names(to_eval_chunk)[49:54] <- paste(names(to_eval_chunk)[49:54], "9", sep = "_")
+names(to_eval_chunk)[55:60] <- paste(names(to_eval_chunk)[55:60], "10", sep = "_")
 
 n_contrasts <- base::length(config$contrasts)
 
 to_eval_chunk <- if(n_contrasts == 1) {
-  replace(to_eval_chunk, 7:36, FALSE)
+  replace(to_eval_chunk, 7:60, FALSE)
 } else if(n_contrasts == 2) {
-  replace(to_eval_chunk, 13:36, FALSE)
+  replace(to_eval_chunk, 13:60, FALSE)
 } else if(n_contrasts == 3) {
-  replace(to_eval_chunk, 19:36, FALSE)
+  replace(to_eval_chunk, 19:60, FALSE)
 } else if(n_contrasts == 4) {
-  replace(to_eval_chunk, 25:36, FALSE)
+  replace(to_eval_chunk, 25:60, FALSE)
 } else if(n_contrasts == 5) {
-  replace(to_eval_chunk, 31:36, FALSE)
+  replace(to_eval_chunk, 31:60, FALSE)
 } else if(n_contrasts == 6) {
+  replace(to_eval_chunk, 37:60, FALSE)
+} else if(n_contrasts == 7) {
+  replace(to_eval_chunk, 43:60, FALSE)
+} else if(n_contrasts == 8) {
+  replace(to_eval_chunk, 49:60, FALSE)
+} else if(n_contrasts == 9) {
+  replace(to_eval_chunk, 55:60, FALSE)
+} else if(n_contrasts == 10) {
   to_eval_chunk
 }
 
@@ -116,19 +128,31 @@ contrasts_chunk_eval <- list(contrast_1 = TRUE,
                              contrast_3 = TRUE,
                              contrast_4 = TRUE,
                              contrast_5 = TRUE,
-                             contrast_6 = TRUE)
+                             contrast_6 = TRUE,
+                             contrast_7 = TRUE,
+                             contrast_8 = TRUE,
+                             contrast_9 = TRUE,
+                             contrast_10 = TRUE)
 
 contrasts_chunk_eval <- if(n_contrasts == 1) {
-  replace(contrasts_chunk_eval, 2:6, FALSE)
+  replace(contrasts_chunk_eval, 2:10, FALSE)
 } else if(n_contrasts == 2) {
-  replace(contrasts_chunk_eval, 3:6, FALSE)
+  replace(contrasts_chunk_eval, 3:10, FALSE)
 } else if(n_contrasts == 3) {
-  replace(contrasts_chunk_eval, 4:6, FALSE)
+  replace(contrasts_chunk_eval, 4:10, FALSE)
 } else if(n_contrasts == 4) {
-  replace(contrasts_chunk_eval, 5:6, FALSE)
+  replace(contrasts_chunk_eval, 5:10, FALSE)
 } else if(n_contrasts == 5) {
-  replace(contrasts_chunk_eval, 6, FALSE)
+  replace(contrasts_chunk_eval, 6:10, FALSE)
 } else if(n_contrasts == 6) {
+  replace(contrasts_chunk_eval, 7:10, FALSE)
+} else if(n_contrasts == 7) {
+  replace(contrasts_chunk_eval, 8:10, FALSE)
+} else if(n_contrasts == 8) {
+  replace(contrasts_chunk_eval, 9:10, FALSE)
+} else if(n_contrasts == 9) {
+  replace(contrasts_chunk_eval, 10, FALSE)
+} else if(n_contrasts == 10) {
   contrasts_chunk_eval
 }
 
@@ -936,6 +960,170 @@ limma_voom_results_6 %>%
   utils::write.table(file = "./diff_expr_results/limma_voom_diff_expr_results_comparison_6.tsv", row.names=FALSE, sep="\t")
 ```
 
+```{r, eval = contrasts[7]}
+# extract the results of the limma/voom differential expression analysis (sixth contrast) (loop over all efit datasets)
+limma_voom_results_7 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 7,
+                    n = Inf,
+                    adjust.method = "BH") %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_7 <- base::do.call(rbind, limma_voom_results_7)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_7 <- limma_voom_results_7 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[7]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_7 <- limma_voom_results_7 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_7 <- limma_voom_results_7 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+
+# write differential expression results to file
+limma_voom_results_7 %>%
+  utils::write.table(file = "./diff_expr_results/limma_voom_diff_expr_results_comparison_7.tsv", row.names=FALSE, sep="\t")
+```
+
+```{r, eval = contrasts[8]}
+# extract the results of the limma/voom differential expression analysis (sixth contrast) (loop over all efit datasets)
+limma_voom_results_8 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 8,
+                    n = Inf,
+                    adjust.method = "BH") %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_8 <- base::do.call(rbind, limma_voom_results_8)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_8 <- limma_voom_results_8 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[8]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_8 <- limma_voom_results_8 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_8 <- limma_voom_results_8 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+
+# write differential expression results to file
+limma_voom_results_8 %>%
+  utils::write.table(file = "./diff_expr_results/limma_voom_diff_expr_results_comparison_8.tsv", row.names=FALSE, sep="\t")
+```
+
+```{r, eval = contrasts[9]}
+# extract the results of the limma/voom differential expression analysis (sixth contrast) (loop over all efit datasets)
+limma_voom_results_9 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 9,
+                    n = Inf,
+                    adjust.method = "BH") %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_9 <- base::do.call(rbind, limma_voom_results_9)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_9 <- limma_voom_results_9 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[9]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_9 <- limma_voom_results_9 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_9 <- limma_voom_results_9 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+
+# write differential expression results to file
+limma_voom_results_9 %>%
+  utils::write.table(file = "./diff_expr_results/limma_voom_diff_expr_results_comparison_9.tsv", row.names=FALSE, sep="\t")
+```
+
+```{r, eval = contrasts[10]}
+# extract the results of the limma/voom differential expression analysis (sixth contrast) (loop over all efit datasets)
+limma_voom_results_10 <- base::lapply(efit, function(x) {
+  
+  x %>%
+    limma::treat(lfc = min_logfc) %>%
+    limma::topTreat(coef = 10,
+                    n = Inf,
+                    adjust.method = "BH") %>%
+    tibble::rownames_to_column("rna")
+  
+})
+
+# collapse the list of dataframes into one
+limma_voom_results_10 <- base::do.call(rbind, limma_voom_results_10)
+
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+limma_voom_results_10 <- limma_voom_results_10 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
+  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[10]) %>%
+  dplyr::mutate(diff_expr_method = "limma/voom") %>%
+  select(-source)
+
+# select only some columns we're interested in
+limma_voom_results_10 <- limma_voom_results_10 %>%
+  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+
+# rename adjusted p-value column before join
+limma_voom_results_10 <- limma_voom_results_10 %>%
+  dplyr::rename(p_value = P.Value) %>%
+  dplyr::rename(adj_p_value = adj.P.Val) %>%
+  dplyr::rename(log_fc = logFC)
+
+# write differential expression results to file
+limma_voom_results_10 %>%
+  utils::write.table(file = "./diff_expr_results/limma_voom_diff_expr_results_comparison_10.tsv", row.names=FALSE, sep="\t")
+```
+
 ```{r}
 # make a list of all the differential expression results objects in the global environment
 limma_voom_diff_expr_results <- base::do.call("list", base::mget(base::grep("limma_voom_results_*", base::names(.GlobalEnv), value=TRUE)))
@@ -1418,6 +1606,290 @@ base::cat("#### gencodes (excerpt)")
 ```{r, eval = to_eval_chunk$gencode_excerpt_6, out.width = "100%"}
 limma_voom_diff_expr_results %>%
   dplyr::filter((rna_species == "gencode") & (comparison == config$contrasts[[6]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[7]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_7, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[7]]) & (pipeline == "smrnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_7, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[7]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_7, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "pirna") & (comparison == config$contrasts[[7]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_7, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "trna") & (comparison == config$contrasts[[7]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_7, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "circrna") & (comparison == config$contrasts[[7]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_7, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "gencode") & (comparison == config$contrasts[[7]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[8]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_8, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[8]]) & (pipeline == "smrnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_8, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[8]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_8, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "pirna") & (comparison == config$contrasts[[8]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_8, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "trna") & (comparison == config$contrasts[[8]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_8, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "circrna") & (comparison == config$contrasts[[8]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_8, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "gencode") & (comparison == config$contrasts[[8]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[9]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_9, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[9]]) & (pipeline == "smrnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_9, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[9]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_9, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "pirna") & (comparison == config$contrasts[[9]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_9, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "trna") & (comparison == config$contrasts[[9]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_9, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "circrna") & (comparison == config$contrasts[[9]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_9, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "gencode") & (comparison == config$contrasts[[9]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[10]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (smrnaseq)")
+```
+
+```{r, eval = to_eval_chunk$mirna_smrnaseq_10, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[10]]) & (pipeline == "smrnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### miRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$mirna_excerpt_10, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "mirna") & (comparison == config$contrasts[[10]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### piRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$pirna_excerpt_10, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "pirna") & (comparison == config$contrasts[[10]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### tRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$trna_excerpt_10, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "trna") & (comparison == config$contrasts[[10]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### circRNA's (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$circrna_excerpt_10, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "circrna") & (comparison == config$contrasts[[10]]) & (pipeline == "excerpt")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gencodes (excerpt)")
+```
+
+```{r, eval = to_eval_chunk$gencode_excerpt_10, out.width = "100%"}
+limma_voom_diff_expr_results %>%
+  dplyr::filter((rna_species == "gencode") & (comparison == config$contrasts[[10]]) & (pipeline == "excerpt")) %>%
   volcano_interactive()
 ```
 
