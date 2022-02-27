@@ -2,7 +2,7 @@
 
 ## Overview of the analysis
 
-The small RNA-seq data was analysed with [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0) and [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2). The outputs of these pipelines were then analysed with the [smncrna_analysis_template 3.2.1](https://github.com/leahkemp/smncrna_analysis_template/tree/3.2.1). The following treatment groups were compared for analysis:
+The small RNA-seq data was analysed with [smrnaseq version 1.1.0](https://github.com/nf-core/smrnaseq/tree/1.1.0) and [excerpt version 4.3.2](https://github.com/rkitchen/exceRpt/tree/4.3.2). The outputs of these pipelines were then analysed with the [smncrna_analysis_template 3.2.2](https://github.com/leahkemp/smncrna_analysis_template/tree/3.2.2). The following treatment groups were compared for analysis:
 
 - treatment1 vs. treatment2
 - treatment1 vs. treatment3
@@ -40,9 +40,19 @@ The full analysis has been documented so others can take a "deep dive" into the 
   
 ## Differential expression
 
+### limma/voom
+
 - [Differential expression (limma/voom)](./example_webpage/diff_expression_limma_voom.html)
+- [Differential expression results (limma/voom)](./example_webpage/diff_expression_limma_voom_results.html)
+
+### deseq2
+
 - [Differential expression (deseq2)](./example_webpage/diff_expression_deseq.html)
-- [Differential expression - all results](./example_webpage/diff_expression_both.html)
+- [Differential expression results (deseq2)](./example_webpage/diff_expression_deseq_results.html)
+
+### Both differential expression methods
+
+- [Differential expression - all results](./example_webpage/diff_expression_all_results.html)
 
 ## Heatmaps
 
