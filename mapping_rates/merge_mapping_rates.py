@@ -1,6 +1,7 @@
 import pandas as pd
 import yaml
 import os
+from natsort import natsort_keygen
 
 ##### INFO #####
 
@@ -23,6 +24,12 @@ excerpt_results_dir=config_dict["excerpt_results_dir"]
 # sample names
 metadata = pd.read_csv(metadata_path)
 sample_names=metadata[["sample"]]
+
+# ensure the samples are are natually sorted to correctly match the rows
+sample_names=sample_names.sort_values(
+    by="sample",
+    key=natsort_keygen()
+)
 
 # data from raw fastq
 with open(os.path.join(template_dir, "mapping_rates/extracted_all_samples/raw_read_count_fastq_file.txt")) as file:
