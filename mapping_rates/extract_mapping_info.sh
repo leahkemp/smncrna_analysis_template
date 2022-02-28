@@ -69,43 +69,43 @@ if [ $excerpt_results_dir = 'none' ]; then
 else
 
   # get the number of reads in fastq files after clipping (excerpt pipeline run)
-  for i in `ls $excerpt_results_dir/*.fastq/*.fastq.clipped.fastq.gz`
+  for i in `ls -v $excerpt_results_dir/*.fastq/*.fastq.clipped.fastq.gz`
   do
   echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/excerpt_clipped_read_count_fastq_file.txt
   done
 
   # get the number of reads in fastq files after clipping and trimming (excerpt pipeline run)
-  for i in `ls $excerpt_results_dir/*.fastq/*.fastq.clipped.trimmed.fastq.gz`
+  for i in `ls -v $excerpt_results_dir/*.fastq/*.fastq.clipped.trimmed.fastq.gz`
   do
   echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/excerpt_clipped_trimmed_read_count_fastq_file.txt
   done
 
   # get the number of reads in fastq files after clipping, trimming and filtering (excerpt pipeline run)
-  for i in `ls $excerpt_results_dir/*.fastq/*.fastq.clipped.trimmed.filtered.fastq.gz`
+  for i in `ls -v $excerpt_results_dir/*.fastq/*.fastq.clipped.trimmed.filtered.fastq.gz`
   do
   echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/excerpt_clipped_trimmed_filtered_read_count_fastq_file.txt
   done
 
   # get the number of reads in fastq files after clipping, trimming, filtering and removing ribosomal RNA (excerpt pipeline run)
-  for i in `ls $excerpt_results_dir/*.fastq.stats`
+  for i in `ls -v $excerpt_results_dir/*.fastq.stats`
   do
   grep "failed_quality_filter" $i | cut -d $'\t' -f2- >> $template_dir/mapping_rates/extracted_all_samples/excerpt_failed_quality_filter_read_count_stats_file.txt
   done
 
   # get number of reads that failed the homopolymer filter
-  for i in `ls $excerpt_results_dir/*.fastq.stats`
+  for i in `ls -v $excerpt_results_dir/*.fastq.stats`
   do
   grep "failed_homopolymer_filter" $i | cut -d $'\t' -f2- >> $template_dir/mapping_rates/extracted_all_samples/excerpt_failed_homopolymer_filter_read_count_stats_file.txt
   done
 
   # get number of reads that were used for alignment (excerpt pipeline run)
-  for i in `ls $excerpt_results_dir/*.fastq.stats`
+  for i in `ls -v $excerpt_results_dir/*.fastq.stats`
   do
   grep "reads_used_for_alignment" $i | cut -d $'\t' -f2- >> $template_dir/mapping_rates/extracted_all_samples/excerpt_reads_used_for_alignment_stats_file.txt
   done
 
   # get number of reads that were not mapped to genome or libs (excerpt pipeline run)
-  for i in `ls $excerpt_results_dir/*.fastq.stats`
+  for i in `ls -v $excerpt_results_dir/*.fastq.stats`
   do
   grep "not_mapped_to_genome_or_libs" $i | cut -d $'\t' -f2- >> $template_dir/mapping_rates/extracted_all_samples/excerpt_not_mapped_to_genome_or_libs_stats_file.txt
   done
@@ -118,61 +118,61 @@ if [ $smrnaseq_results_dir = 'none' ]; then
 else
 
   # get the number of read in the raw fastq files based on the fastqc file (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/fastqc_unzipped/*_fastqc/fastqc_data.txt`
+  for i in `ls -v $smrnaseq_results_dir/fastqc_unzipped/*_fastqc/fastqc_data.txt`
   do
   grep "Total Sequences" $i | cut -d $'\t' -f2- >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_raw_read_count_fastqc_file.txt
   done
 
   # get the number of reads in fastq files after trimming (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/trim_galore/*_trimmed.fq.gz`
+  for i in `ls -v $smrnaseq_results_dir/trim_galore/*_trimmed.fq.gz`
   do
   echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_trimmed_read_count_fastq_file.txt
   done
 
   # get the number of QC passed reads in fastq files (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/miRTrace/mirtrace/qc_passed_reads.all.collapsed/*.fasta`
+  for i in `ls -v $smrnaseq_results_dir/miRTrace/mirtrace/qc_passed_reads.all.collapsed/*.fasta`
   do
   echo $(cat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_qc_passed_read_count_fastq_file.txt
   done
 
   # get the number of QC passed reads for which the rna type is unknown in fastq files (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/miRTrace/mirtrace/qc_passed_reads.rnatype_unknown.collapsed/*.fasta`
+  for i in `ls -v $smrnaseq_results_dir/miRTrace/mirtrace/qc_passed_reads.rnatype_unknown.collapsed/*.fasta`
   do
   echo $(cat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_qc_passed_rna_type_unknown_read_count_fastq_file.txt
   done
 
   # get number of reads that were mapped to mature mirnas (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/bowtie/miRBase_mature/*.mature.sorted.bam.stats`
+  for i in `ls -v $smrnaseq_results_dir/bowtie/miRBase_mature/*.mature.sorted.bam.stats`
   do
   grep "reads mapped:" $i | cut -d $'\t' -f3- >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_mature_bowtie_stats_file.txt
   done
 
   # get number of reads that were un-mapped to mature mirnas (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/bowtie/miRBase_mature/*.mature.sorted.bam.stats`
+  for i in `ls -v $smrnaseq_results_dir/bowtie/miRBase_mature/*.mature.sorted.bam.stats`
   do
   grep "reads unmapped:" $i | cut -d $'\t' -f3- >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_mature_bowtie_stats_file.txt
   done
 
   # get the number of reads in fastq files that were un-mapped to mature mirnas (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/bowtie/miRBase_mature/*.mature_unmapped.fq.gz`
+  for i in `ls -v $smrnaseq_results_dir/bowtie/miRBase_mature/*.mature_unmapped.fq.gz`
   do
   echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_mature_fastq_file.txt
   done
 
   # get number of reads that were mapped to hairpin mirnas (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/bowtie/miRBase_hairpin/*.hairpin.sorted.bam.stats`
+  for i in `ls -v $smrnaseq_results_dir/bowtie/miRBase_hairpin/*.hairpin.sorted.bam.stats`
   do
   grep "reads mapped:" $i | cut -d $'\t' -f3- >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file.txt
   done
 
   # get number of reads that were un-mapped to hairpin mirnas (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/bowtie/miRBase_hairpin/*.hairpin.sorted.bam.stats`
+  for i in `ls -v $smrnaseq_results_dir/bowtie/miRBase_hairpin/*.hairpin.sorted.bam.stats`
   do
   grep "reads unmapped:" $i | cut -d $'\t' -f3- >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file.txt
   done
 
   # get the number of reads in fastq files that were un-mapped to hairpin mirnas (smrnaseq pipeline run)
-  for i in `ls $smrnaseq_results_dir/bowtie/miRBase_hairpin/*.hairpin_unmapped.fq.gz`
+  for i in `ls -v $smrnaseq_results_dir/bowtie/miRBase_hairpin/*.hairpin_unmapped.fq.gz`
   do
   echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/smrnaseq_reads_unmapped_to_hairpin_fastq_file.txt
   done
