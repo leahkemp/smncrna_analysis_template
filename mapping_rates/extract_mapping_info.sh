@@ -58,7 +58,7 @@ else
 fi
 
 # get the number of read in the raw fastq files
-for i in $fastq_dir/*
+for i in `ls -v $fastq_dir/*.fastq.gz`
 do
 echo $(zcat ${i} | wc -l) /4 | bc >> $template_dir/mapping_rates/extracted_all_samples/raw_read_count_fastq_file.txt
 done
