@@ -21,8 +21,8 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 ### smrnaseq
 
-- [Mirtrace report](./test/excerpt_pipeline_run/results/miRTrace/mirtrace/mirtrace-report.html)
-- [MultiQC report](./test/excerpt_pipeline_run/results/MultiQC/multiqc_report.html)
+- [Mirtrace report](./test/smrnaseq_pipeline_run/results/miRTrace/mirtrace/mirtrace-report.html)
+- [MultiQC report](./test/smrnaseq_pipeline_run/results/MultiQC/multiqc_report.html)
 
 ## RNA counts/expression
 
