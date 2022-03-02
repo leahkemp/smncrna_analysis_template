@@ -53,7 +53,7 @@ Lastly, the composition of the RNA species that are identified in each treatment
 
 ## Prerequisite software
 
-[python 3](https://www.python.org/), [cut](https://www.man7.org/linux/man-pages/man1/cut.1.html), [zgrep](https://linux.die.net/man/1/zgrep), [GNU software](https://www.gnu.org/software/), [pandas](https://pypi.org/project/pandas/), [PyYAML](https://pypi.org/project/PyYAML/), [R](https://www.r-project.org/), [git](https://git-scm.com/)
+[python 3](https://www.python.org/), [cut](https://www.man7.org/linux/man-pages/man1/cut.1.html), [zgrep](https://linux.die.net/man/1/zgrep), [GNU software](https://www.gnu.org/software/), [pandas](https://pypi.org/project/pandas/), [PyYAML](https://pypi.org/project/PyYAML/), [natsort](https://pypi.org/project/natsort/), [R](https://www.r-project.org/), [git](https://git-scm.com/)
 
 ## Testing
 

@@ -15,7 +15,7 @@ counts <- utils::read.csv("./prepare_counts/counts.csv")
 config <- yaml::yaml.load_file("./config/config.yaml")
 
 # read in metadata
-metadata <- utils::read.csv(file.path(config$metadata))
+metadata <- utils::read.csv(base::file.path(config$metadata_path))
 
 # create output directory
 dir.create("./expression_plotting/expr_plotting_results/", showWarnings = FALSE)
@@ -64,9 +64,6 @@ if(config$gencode_excerpt == "FALSE") {
     dplyr::filter(!((rna_species == "gencode") & (pipeline == "excerpt")))
   
 }
-
-# read in metadata
-metadata <- utils::read.csv(config$metadata_path)
 
 # read in differential expression data
 diff_expr_data <- utils::read.table("./diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
