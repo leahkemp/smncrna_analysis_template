@@ -181,13 +181,25 @@ data <- counts %>%
   dplyr::group_by(rna_species_2, sample, pipeline) %>%
   dplyr::summarise(total_raw_count = base::sum(raw_counts))
 
+# calculate the total number of RNA's present in the sample and pipeline
+total_rna_abundance  <- data %>%
+  dplyr::group_by(sample, pipeline) %>%
+  dplyr::summarise(total_raw_count_all_rnas = sum(total_raw_count))
+
+# join this with my data
+data <- dplyr::left_join(data, total_rna_abundance, by = c("sample", "pipeline"))
+
+# calculate the percentage each RNA represents per sample and pipeline
+data <- data %>%
+  dplyr::mutate(percentage_total_raw_count_all_rnas = base::round((total_raw_count/total_raw_count_all_rnas)*100, digits = 2))
+
 # join with metadata
 data <- dplyr::left_join(data, metadata, by = "sample")
 
 # create datatable of data
 data %>%
   base::as.data.frame() %>%
-  dplyr::select(sample, treatment, rna_species_2, pipeline, total_raw_count) %>%
+  dplyr::select(sample, treatment, rna_species_2, pipeline, total_raw_count, percentage_total_raw_count_all_rnas) %>%
   dplyr::mutate(across(c(treatment,
                          sample,
                          rna_species_2,
@@ -200,7 +212,8 @@ data %>%
                              "Treatment",
                              "RNA species",
                              "Pipeline",
-                             "Raw count"),
+                             "Raw count",
+                             "Percentage of all RNA's identified"),
                 extensions = base::list("ColReorder" = NULL,
                                         "Buttons" = NULL,
                                         "FixedColumns" = base::list(leftColumns=1)),
@@ -257,7 +270,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$sam
                                   "</br>",
                                   "Total raw count per sample: ", base::prettyNum(base::round(total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((total_raw_count/sum(total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of all RNA's identified: ", percentage_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE) %>%
     add_pie() %>%
     plotly::layout(title = x,
@@ -285,7 +298,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$sam
                                   "</br>",
                                   "Total raw count per sample: ", base::prettyNum(base::round(total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((total_raw_count/sum(total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of all RNA's identified: ", percentage_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE,
                     domain = base::list(x = c(0, 0.05))) %>%
     # get the same xaxis range for easy visual comparing between plots
@@ -342,7 +355,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$samp
                                   "</br>",
                                   "Total raw count per sample: ", base::prettyNum(base::round(total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((total_raw_count/sum(total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of all RNA's identified: ", percentage_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE) %>%
     add_pie() %>%
     plotly::layout(title = x,
@@ -370,7 +383,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$samp
                                   "</br>",
                                   "Total raw count per sample: ", base::prettyNum(base::round(total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((total_raw_count/sum(total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of all RNA's identified: ", percentage_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE,
                     domain = base::list(x = c(0, 0.05))) %>%
     # get the same xaxis range for easy visual comparing between plots
