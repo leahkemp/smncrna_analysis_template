@@ -187,7 +187,7 @@ data <- dplyr::left_join(data, metadata, by = "sample")
 # create datatable of data
 data %>%
   base::as.data.frame() %>%
-  dplyr::select(treatment, sample, rna_species_2, pipeline, total_raw_count) %>%
+  dplyr::select(sample, treatment, rna_species_2, pipeline, total_raw_count) %>%
   dplyr::mutate(across(c(treatment,
                          sample,
                          rna_species_2,
@@ -196,8 +196,8 @@ data %>%
   DT::datatable(selection = "single",
                 filter = "top",
                 rownames = FALSE,
-                colnames = c("Treatment",
-                             "Sample",
+                colnames = c("Sample",
+                             "Treatment",
                              "RNA species",
                              "Pipeline",
                              "Raw count"),
