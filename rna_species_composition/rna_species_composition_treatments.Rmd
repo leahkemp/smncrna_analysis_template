@@ -1,5 +1,5 @@
 ---
-title: "RNA species composition"
+title: "RNA species composition - treatments"
 author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
