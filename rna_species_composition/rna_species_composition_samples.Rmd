@@ -35,7 +35,7 @@ General info:
 
 - **The pie charts present only the RNA's from the datasets the user has chosen to analyse and RNA's that have been identified by the pipelines, rather than all the RNA's possibly present in the samples**
 - *For each combination of sample and pipeline, the total number of RNA counts are calculated for each RNA species to give 'Raw count'*
-- *Then for each combination of sample and pipeline, the total RNA's identified are calculated. This is then used to calculate 'Percentage of all RNA's identified' in the given treatment and pipeline*
+- *Then for each combination of sample and pipeline, the total RNA's identified are calculated (by summing 'Raw count'). This is then used to calculate 'Percentage of all RNA's identified' of an RNA species for a given sample*
 - *Values have been rounded*
 
 ```{r}
