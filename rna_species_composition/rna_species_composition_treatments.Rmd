@@ -1,5 +1,5 @@
 ---
-title: "RNA species composition"
+title: "RNA species composition - treatments"
 author:
   # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
   # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
@@ -34,7 +34,8 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 General info:
 
 - **The pie charts present only the RNA's from the datasets the user has chosen to analyse and RNA's that have been identified by the pipelines, rather than all the RNA's possibly present in the samples**
-- *The total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group*
+- *For each combination of sample, treatment and pipeline, the total number of RNA counts are calculated for each RNA species, then the average of this is taken for each treatment group/pipeline comination to calculate the average raw count ('Average raw count') in a given sample*
+- *Then for each combination of treatment and pipeline, the average total RNA's identified are calculated (by summing 'Average raw count'). This is then used to calculate the 'Percentage of average number of all RNA's identified' of an RNA species for a given sample*
 - *Values have been rounded*
 
 ```{r}
@@ -190,9 +191,22 @@ data <- data %>%
   dplyr::summarise(mean_total_raw_count = base::mean(total_raw_count)) %>%
   dplyr::arrange(dplyr::desc(treatment, mean_total_raw_count))
 
+# calculate the total number of RNA's present in the treatment and pipeline
+total_rna_abundance  <- data %>%
+  dplyr::group_by(treatment, pipeline) %>%
+  dplyr::summarise(mean_total_raw_count_all_rnas = sum(mean_total_raw_count))
+
+# join this with my data
+data <- dplyr::left_join(data, total_rna_abundance, by = c("treatment", "pipeline"))
+
+# calculate the percentage each RNA represents per treatment and pipeline
+data <- data %>%
+  dplyr::mutate(percentage_mean_total_raw_count_all_rnas = base::round((mean_total_raw_count/mean_total_raw_count_all_rnas)*100, digits = 2))
+
 # create datatable of data
 data %>%
   base::as.data.frame() %>%
+  dplyr::select(treatment, rna_species_2, pipeline, mean_total_raw_count, percentage_mean_total_raw_count_all_rnas) %>%
   dplyr::mutate(across(c(treatment,
                          rna_species_2,
                          pipeline), base::as.factor)) %>%
@@ -203,7 +217,8 @@ data %>%
                 colnames = c("Treatment",
                              "RNA species",
                              "Pipeline",
-                             "Average raw count"),
+                             "Average raw count",
+                             "Percentage of average number of all RNA's identified"),
                 extensions = base::list("ColReorder" = NULL,
                                         "Buttons" = NULL,
                                         "FixedColumns" = base::list(leftColumns=1)),
@@ -265,7 +280,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
                                   "</br>",
                                   "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of average number of all RNA's identified: ", percentage_mean_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE) %>%
     add_pie() %>%
     plotly::layout(title = x,
@@ -293,7 +308,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_smrnaseq$tre
                                   "</br>",
                                   "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of average number of all RNA's identified: ", percentage_mean_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE,
                     domain = base::list(x = c(0, 0.05))) %>%
     # get the same xaxis range for easy visual comparing between plots
@@ -355,7 +370,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$trea
                                   "</br>",
                                   "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of average number of all RNA's identified: ", percentage_mean_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE) %>%
     add_pie() %>%
     plotly::layout(title = x,
@@ -383,7 +398,7 @@ htmltools::tagList(base::lapply(base::unique(gtools::mixedsort(data_excerpt$trea
                                   "</br>",
                                   "Average raw count per sample: ", base::prettyNum(base::round(mean_total_raw_count, digits = 0), big.mark=","),
                                   "</br>",
-                                  "Proportion of all RNA's identified: ", base::round((mean_total_raw_count/sum(mean_total_raw_count)*100), digits = 0), "%"),
+                                  "Percentage of average number of all RNA's identified: ", percentage_mean_total_raw_count_all_rnas, "%"),
                     showlegend = FALSE,
                     domain = base::list(x = c(0, 0.05))) %>%
     # get the same xaxis range for easy visual comparing between plots
