@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 
 ## Info
 
-Explore the number of raw sequencing reads and the number of aligned/unaligned reads for each pipeline run
+Explore the number of raw sequencing reads and RNA counts identified by the pipelines
 
 ```{r, out.width = "100%"}
 # load libraries
@@ -70,23 +70,147 @@ mapping_rates_data <- mapping_rates_data %>%
 
 # join metadata with mapping rates data
 mapping_rates_data <- dplyr::left_join(mapping_rates_data, metadata, by = "sample")
-
-# create a vector to decide if the r chunks should be evaluated based on whether the dats from a given pipeline was analysed
-smrnaseq_chunk_eval <- config$mirna_smrnaseq
-excerpt_chunk_eval <- base::any("TRUE" %in% c(config$mirna_excerpt,
-                                              config$pirna_excerpt,
-                                              config$trna_excerpt,
-                                              config$circrna_excerpt,
-                                              config$gencode_excerpt))
 ```
 
-## Alignment rates {.tabset .tabset-fade}
+```{r}
+# load the miRNA smrnaseq count dataset
+raw_mirna_smrnaseq_data <- utils::read.table(base::file.path(config$smrnaseq_results_dir,
+                                                             "/mirtop/mirtop.tsv"),
+                                             header = TRUE) %>%
+  # get only the count data
+  dplyr::select(-c("UID", "Read", "Variant", "iso_5p", "iso_3p", "iso_add3p", "iso_snp", "iso_5p_nt", "iso_3p_nt", "iso_add3p_nt", "iso_snp_nt")) %>%
+  # "squash" out the isoform info (of the mirtop from smrnaseq pipeline)
+  dplyr::group_by(miRNA) %>%
+  dplyr::summarise_each(sum) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::column_to_rownames(var="miRNA")
 
-```{r, eval = smrnaseq_chunk_eval, results = 'asis'}
-base::cat(base::paste0("### smrnaseq"))
+# formatting to make counts datasets consistent between smrnaseq and excerpt pipelines
+raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data %>%
+  # make all count data numeric
+  dplyr::mutate_all(as.numeric)
+
+# replace "." with "-" so RNA names are the same
+base::row.names(raw_mirna_smrnaseq_data) <- base::gsub("\\.", "\\-", base::row.names(raw_mirna_smrnaseq_data))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_mirna_smrnaseq_data <- raw_mirna_smrnaseq_data[rowSums(raw_mirna_smrnaseq_data[])>0,]
+
+# load the miRNA excerpt count dataset
+raw_mirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                            "exceRpt_miRNA_ReadCounts.txt"),
+                                            header = TRUE,
+                                            stringsAsFactors = FALSE,
+                                            check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_mirna_excerpt_data <- raw_mirna_excerpt_data[rowSums(raw_mirna_excerpt_data[])>0,]
+
+# load the piRNA count dataset
+raw_pirna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                            "exceRpt_piRNA_ReadCounts.txt"),
+                                            header = TRUE,
+                                            stringsAsFactors = FALSE,
+                                            check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_pirna_excerpt_data <- raw_pirna_excerpt_data[rowSums(raw_pirna_excerpt_data[])>0,]
+
+# load the tRNA count dataset
+raw_trna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                           "exceRpt_tRNA_ReadCounts.txt"),
+                                           header = TRUE,
+                                           stringsAsFactors = FALSE,
+                                           check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+
+# remove weird tRNA row
+raw_trna_excerpt_data <- raw_trna_excerpt_data %>%
+  dplyr::filter(!(rownames(raw_trna_excerpt_data) == "tRNA"))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_trna_excerpt_data <- raw_trna_excerpt_data[rowSums(raw_trna_excerpt_data[])>0,]
+
+# load the gencode count dataset
+raw_circrna_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                              "exceRpt_circularRNA_ReadCounts.txt"),
+                                              header = TRUE,
+                                              stringsAsFactors = FALSE,
+                                              comment.char = "") %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_circrna_excerpt_data <- raw_circrna_excerpt_data[rowSums(raw_circrna_excerpt_data[])>0,]
+
+# load the count dataset
+raw_gencode_excerpt_data <- utils::read.table(base::file.path(config$excerpt_merged_results_dir,
+                                                              "exceRpt_gencode_ReadCounts.txt"),
+                                              header = TRUE,
+                                              stringsAsFactors = FALSE,
+                                              check.names = FALSE) %>%
+  # remove S*_R1.fastq suffix from the sample/column names
+  dplyr::rename_with(~ base::sub(".fastq", "", .))
+
+# remove rows that are all 0 (no counts for that given RNA found in any sample)
+raw_gencode_excerpt_data <- raw_gencode_excerpt_data[rowSums(raw_gencode_excerpt_data[])>0,]
+
+# make a list of all the count datasets in the global environment
+count_datasets <- base::do.call("list", base::mget(base::grep("raw_", base::names(.GlobalEnv), value=TRUE)))
+
+# prepare raw counts (loop over all the count datasets the user has specified)
+counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, rna_species, i){
+  
+  # prepare raw counts for all datasets in the list
+  y[[i]] %>%
+    base::as.data.frame() %>%
+    # sort all the columns in the different datasets so they are consistent among each other
+    # (important for specifying the treatment groups downstream)
+    dplyr::select(gtools::mixedsort(tidyselect::peek_vars())) %>%
+    tibble::rownames_to_column("rna") %>%
+    # make data long
+    tidyr::pivot_longer(-rna, names_to = "sample", values_to = "raw_counts") %>%
+    # create a column that has defines the rna_species the data has come from
+    # based on the names of the "count_dataset" list, grab everything BEFORE 
+    # the underscore
+    dplyr::mutate(rna_species = rna_species[[i]]) %>%
+    # also create a column that defines the pipeline the data has come from
+    # based on the names of the "count_dataset" list, grab everything AFTER
+    # the underscore
+    dplyr::mutate(pipeline = pipeline[[i]])
+}, y=count_datasets,
+rna_species=base::gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", base::paste(base::names(count_datasets)))
+)
+
+# collapse my list of dataframes into single dataframes
+counts_raw <- base::Reduce(rbind, counts_raw)
+
+# calculate the total RNA count found per sample per pipeline
+read_count_smrnaseq <- counts_raw %>%
+  dplyr::filter(pipeline == "smrnaseq") %>%
+  dplyr::group_by(sample) %>%
+  dplyr::summarise(smrnaseq_total_rna_count_count_datasets = base::sum(raw_counts))
+
+read_count_excerpt <- counts_raw %>%
+  dplyr::filter(pipeline == "excerpt") %>%
+  dplyr::group_by(sample) %>%
+  dplyr::summarise(excerpt_total_rna_count_count_datasets = base::sum(raw_counts))
+
+# join total RNA count data with metadata
+mapping_rates_data <- dplyr::left_join(mapping_rates_data, read_count_smrnaseq, by = "sample")
+mapping_rates_data <- dplyr::left_join(mapping_rates_data, read_count_excerpt, by = "sample")
 ```
 
-```{r, eval = smrnaseq_chunk_eval, out.width = "100%"}
+## Raw read count {.tabset .tabset-fade}
+
+```{r, out.width = "100%"}
 # create a bar chart of the raw read counts
 mapping_rates_data %>%
   plotly::plot_ly(x = ~sample,
@@ -99,32 +223,18 @@ mapping_rates_data %>%
                   text = ~base::paste("</br> Raw sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2),
                                       "</br> Sample:", sample,
                                       "</br> Treatment:", treatment)) %>%
-  plotly::add_trace(y = ~smrnaseq_reads_mapped_to_mature_bowtie_stats_file,
+    plotly::add_trace(y = ~smrnaseq_total_rna_count_count_datasets,
                     color = I("#85C659"),
-                    name = "Reads aligned to mature RNA's",
+                    name = "smrnaseq total RNA count",
                     hoverinfo = "text",
-                    text = ~base::paste("</br> Reads aligned to mature RNA's:", base::format(smrnaseq_reads_mapped_to_mature_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
+                    text = ~base::paste("</br> smrnaseq total RNA count:", base::format(smrnaseq_total_rna_count_count_datasets, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
-  plotly::add_trace(y = ~smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file,
+  plotly::add_trace(y = ~excerpt_total_rna_count_count_datasets,
                     color = I("#ec1515"),
-                    name = "Reads aligned to hairpin RNA's",
+                    name = "exceRpt total RNA count",
                     hoverinfo = "text",
-                    text = ~base::paste("</br> Reads aligned to hairpin RNA's:", base::format(smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
-                                        "</br> Sample:", sample,
-                                        "</br> Treatment:", treatment)) %>%
-  plotly::add_trace(y = ~smrnaseq_reads_unmapped_to_mature_bowtie_stats_file,
-                    color = I("#febf2a"),
-                    name = "Reads unaligned to mature RNA's",
-                    hoverinfo = "text",
-                    text = ~base::paste("</br> Reads unaligned to mature RNA's:", base::format(smrnaseq_reads_unmapped_to_mature_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
-                                        "</br> Sample:", sample,
-                                        "</br> Treatment:", treatment)) %>%
-  plotly::add_trace(y = ~smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file,
-                    color = I("#784f96"),
-                    name = "Reads unaligned to hairpin RNA's",
-                    hoverinfo = "text",
-                    text = ~base::paste("</br> Reads unaligned to hairpin RNA's:", base::format(smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
+                    text = ~base::paste("</br> exceRpt total RNA count:", base::format(excerpt_total_rna_count_count_datasets, big.mark = ",", scientific = FALSE, digits = 2),
                                         "</br> Sample:", sample,
                                         "</br> Treatment:", treatment)) %>%
   # add line that show you the average raw read count across all samples
@@ -134,164 +244,47 @@ mapping_rates_data %>%
                        yend = base::mean(mapping_rates_data$raw_read_count_fastq_file),
                        name = "Average raw \n sequencing read count",
                        color = I("#0097db")) %>%
-  # add line that show you the average number of reads aligned to mature RNA's
+  # add line that show you the average smrnaseq total RNA count across all samples
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
-                       y = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_mature_bowtie_stats_file),
-                       yend = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_mature_bowtie_stats_file),
-                       name = "Average reads aligned to \n mature RNA's",
+                       y = base::mean(mapping_rates_data$smrnaseq_total_rna_count_count_datasets),
+                       yend = base::mean(mapping_rates_data$smrnaseq_total_rna_count_count_datasets),
+                       name = "Average smrnaseq \n total RNA count",
                        color = I("#85C659")) %>%
-  # add line that show you the average number of reads aligned to hairpin RNA's
+  # add line that show you the average excerpt total RNA count across all samples
   plotly::add_segments(x = dplyr::first(sample_list),
                        xend = dplyr::last(sample_list),
-                       y = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file),
-                       yend = base::mean(mapping_rates_data$smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file),
-                       name = "Average reads aligned to \n hairpin RNA's",
-                       color = I("#ec1515")) %>%
-  # add line that show you the average number of reads unmapped to mature RNA's
-  plotly::add_segments(x = dplyr::first(sample_list),
-                       xend = dplyr::last(sample_list),
-                       y = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_mature_bowtie_stats_file),
-                       yend = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_mature_bowtie_stats_file),
-                       name = "Average reads unaligned to \n mature RNA's",
-                       color = I("#febf2a")) %>%
-  # add line that show you the average number of reads unmapped to hairpin RNA's
-  plotly::add_segments(x = dplyr::first(sample_list),
-                       xend = dplyr::last(sample_list),
-                       y = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file),
-                       yend = base::mean(mapping_rates_data$smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file),
-                       name = "Average reads unaligned to \n hairpin RNA's",
-                       color = I("#784f96")) %>%
-  plotly::layout(xaxis = xform) %>%
-  plotly::layout(xaxis = list(title = "Sample"),
-                 yaxis = list(title = "Read count"))
-```
-
-```{r, eval = smrnaseq_chunk_eval, out.width = "100%"}
-# create datatable to explore the RNA's that are found in the media
-DT::datatable(mapping_rates_data %>%
-                dplyr::mutate(across(c("sample",
-                                       "treatment",
-                                       "low_fastq_read_count"), as.factor)) %>%
-                dplyr::mutate(across(c("raw_read_count_fastq_file",
-                                       "smrnaseq_reads_mapped_to_mature_bowtie_stats_file",
-                                       "smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file",
-                                       "smrnaseq_reads_unmapped_to_mature_bowtie_stats_file",
-                                       "smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file"), as.integer)) %>%
-                dplyr::select(sample,
-                              treatment,
-                              raw_read_count_fastq_file,
-                              smrnaseq_reads_mapped_to_mature_bowtie_stats_file,
-                              smrnaseq_reads_mapped_to_hairpin_bowtie_stats_file,
-                              smrnaseq_reads_unmapped_to_mature_bowtie_stats_file,
-                              smrnaseq_reads_unmapped_to_hairpin_bowtie_stats_file,
-                              low_fastq_read_count),
-              filter = "top",
-              rownames = FALSE,
-              colnames = c("Sample",
-                           "Treatment",
-                           "Raw sequencing read count",
-                           "Reads aligned to mature RNA's",
-                           "Reads aligned to hairpin RNA's",
-                           "Reads unaligned to mature RNA's",
-                           "Reads unaligned to hairpin RNA's",
-                           "Low raw sequencing read count"),
-              extensions = list("ColReorder" = NULL,
-                                "Buttons" = NULL,
-                                "FixedColumns" = list(leftColumns=1)),
-              options = list(
-                dom = "BRrltpi",
-                autoWidth = TRUE,
-                columnDefs = list(list(width = "200px", targets = 0)),
-                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
-                ColReorder = TRUE,
-                buttons =
-                  list("copy",
-                       list(extend = "collection",
-                            buttons = c("csv", "excel", "pdf"),
-                            text = "Download"),
-                       I("colvis"))))
-```
-
-```{r, eval = excerpt_chunk_eval, results = 'asis'}
-base::cat(base::paste0("### excerpt"))
-```
-
-```{r, eval = excerpt_chunk_eval, out.width = "100%"}
-# create a bar chart of the raw read counts
-mapping_rates_data %>%
-  plotly::plot_ly(x = ~sample,
-                  y = ~raw_read_count_fastq_file,
-                  type = "bar",
-                  color = I("#0097db"),
-                  textposition = "none",
-                  name = "Raw sequencing \n read count",
-                  hoverinfo = "text",
-                  text = ~base::paste("</br> Raw sequencing read count:", base::format(raw_read_count_fastq_file, big.mark = ",", scientific = FALSE, digits = 2),
-                                      "</br> Sample:", sample,
-                                      "</br> Treatment:", treatment)) %>%
-  plotly::add_trace(y = ~excerpt_reads_used_for_alignment_stats_file,
-                    color = I("#85C659"),
-                    name = "Reads used for alignment",
-                    hoverinfo = "text",
-                    text = ~base::paste("</br> Reads used for alignment:", base::format(excerpt_reads_used_for_alignment_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
-                                        "</br> Sample:", sample,
-                                        "</br> Treatment:", treatment)) %>%
-  plotly::add_trace(y = ~excerpt_not_mapped_to_genome_or_libs_stats_file,
-                    color = I("#ec1515"),
-                    name = "Not mapped to \n genome or libs",
-                    hoverinfo = "text",
-                    text = ~base::paste("</br> Not mapped to \n genome or libs:", base::format(excerpt_not_mapped_to_genome_or_libs_stats_file, big.mark = ",", scientific = FALSE, digits = 2),
-                                        "</br> Sample:", sample,
-                                        "</br> Treatment:", treatment)) %>%
-  # add line that show you the average raw read count across all samples
-  plotly::add_segments(x = dplyr::first(sample_list),
-                       xend = dplyr::last(sample_list),
-                       y = base::mean(mapping_rates_data$raw_read_count_fastq_file),
-                       yend = base::mean(mapping_rates_data$raw_read_count_fastq_file),
-                       name = "Average raw sequencing \n read count",
-                       color = I("#0097db")) %>%
-  # add line that show you the average number of reads used for alignment across all samples
-  plotly::add_segments(x = dplyr::first(sample_list),
-                       xend = dplyr::last(sample_list),
-                       y = base::mean(mapping_rates_data$excerpt_reads_used_for_alignment_stats_file),
-                       yend = base::mean(mapping_rates_data$excerpt_reads_used_for_alignment_stats_file),
-                       name = "Average reads used \n for alignment",
-                       color = I("#85C659")) %>%
-  # add line that show you the average number of reads not mapped to genome or libs
-  plotly::add_segments(x = dplyr::first(sample_list),
-                       xend = dplyr::last(sample_list),
-                       y = base::mean(mapping_rates_data$excerpt_not_mapped_to_genome_or_libs_stats_file),
-                       yend = base::mean(mapping_rates_data$excerpt_not_mapped_to_genome_or_libs_stats_file),
-                       name = "Average reads not \n mapped to genome or libs",
+                       y = base::mean(mapping_rates_data$excerpt_total_rna_count_count_datasets),
+                       yend = base::mean(mapping_rates_data$excerpt_total_rna_count_count_datasets),
+                       name = "Average excerpt \n total RNA count",
                        color = I("#ec1515")) %>%
   plotly::layout(xaxis = xform) %>%
   plotly::layout(xaxis = list(title = "Sample"),
                  yaxis = list(title = "Read count"))
 ```
 
-```{r, eval = excerpt_chunk_eval, out.width = "100%"}
+```{r, out.width = "100%"}
 # create datatable to explore the RNA's that are found in the media
 DT::datatable(mapping_rates_data %>%
                 dplyr::mutate(across(c("sample",
                                        "treatment",
                                        "low_fastq_read_count"), as.factor)) %>%
                 dplyr::mutate(across(c("raw_read_count_fastq_file",
-                                       "excerpt_reads_used_for_alignment_stats_file",
-                                       "excerpt_not_mapped_to_genome_or_libs_stats_file"), as.integer)) %>%
+                                       "smrnaseq_total_rna_count_count_datasets",
+                                       "excerpt_total_rna_count_count_datasets"), as.integer)) %>%
                 dplyr::select(sample,
                               treatment,
                               raw_read_count_fastq_file,
-                              excerpt_reads_used_for_alignment_stats_file,
-                              excerpt_not_mapped_to_genome_or_libs_stats_file,
+                              smrnaseq_total_rna_count_count_datasets,
+                              excerpt_total_rna_count_count_datasets,
                               low_fastq_read_count),
               filter = "top",
               rownames = FALSE,
               colnames = c("Sample",
                            "Treatment",
                            "Raw sequencing read count",
-                           "Reads used for alignment",
-                           "Not mapped to genome or libs",
+                           "smrnaseq total RNA count",
+                           "exceRpt total RNA count",
                            "Low raw sequencing read count"),
               extensions = list("ColReorder" = NULL,
                                 "Buttons" = NULL,
