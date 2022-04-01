@@ -437,6 +437,13 @@ sig_diff_expr_data_10 <- diff_expr_results %>%
   dplyr::select(rna) %>%
   dplyr::distinct(rna)
 
+# remove RNA's in sig_diff_expr_data_5 and sig_diff_expr_data_10 that are present in a higher significance level
+# this deals with the situation where multiple comparisons are used in the differential expression analysis
+# and an RNA gets placed in both significance categories, here we "round up" to the smallest significance category
+sig_diff_expr_data_5 <- dplyr::anti_join(sig_diff_expr_data_5, sig_diff_expr_data_1, by = "rna")
+sig_diff_expr_data_10 <- dplyr::anti_join(sig_diff_expr_data_10, sig_diff_expr_data_1, by = "rna")
+sig_diff_expr_data_10 <- dplyr::anti_join(sig_diff_expr_data_10, sig_diff_expr_data_5, by = "rna")
+
 # also write these to file
 utils::write.csv(sig_diff_expr_data_1, file = "./diff_expr_results/sig_diff_expr_results_1.csv", row.names = FALSE)
 utils::write.csv(sig_diff_expr_data_5, file = "./diff_expr_results/sig_diff_expr_results_5.csv", row.names = FALSE)
